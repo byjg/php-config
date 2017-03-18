@@ -1,5 +1,7 @@
 # PHP Config
 
+[![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
+
 A very basic and minimalist component for config management and dependency injection.
 
 ## How it Works?
