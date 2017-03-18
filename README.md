@@ -31,7 +31,7 @@ Your folder will look like to:
 
 ### Create environment variable
 
-You need to setup a variable called "MACHINE_ENV" before start your server. 
+You need to setup a variable called "APPLICATION_ENV" before start your server. 
 
 This can be done using nginx:
 
