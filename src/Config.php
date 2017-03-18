@@ -13,7 +13,7 @@ class Config
 
     public static function inherit($env)
     {
-        $file = __DIR__ . '/../../../config/config-' . $env .  '.php';
+        $file = __DIR__ . '/../../../../config/config-' . $env .  '.php';
 
         if (!file_exists($file)) {
             $file = __DIR__ . '/../config/config-' . $env .  '.php';
@@ -22,7 +22,7 @@ class Config
         if (!file_exists($file)) {
             throw new \Exception(
                 "The config file '"
-                . realpath(__DIR__ . '/../../../config/config-' . $env .  '.php')
+                . "config-$env.php'"
                 . 'does not found'
             );
         }
