@@ -1,6 +1,9 @@
 <?php
-/**
- * User: jg
- * Date: 18/03/17
- * Time: 19:05
- */
+
+return [
+    'property1' => 'string',
+    'property2' => true,
+    'property3' => function () {
+        return 'calculated';
+    },
+];

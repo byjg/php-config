@@ -4,19 +4,29 @@ namespace ByJG\Util;
 
 class Config
 {
-    private static $_config = null;
+    private static $config = null;
 
     protected static function loadConfig()
     {
-        self::$_config = self::inherit(getenv('APPLICATION_ENV'));
+        self::$config = self::inherit(getenv('APPLICATION_ENV'));
     }
 
     public static function inherit($env)
     {
-        $file = __DIR__ . '/../../config/config-' . $env .  '.php';
+        $file = __DIR__ . '/../../../config/config-' . $env .  '.php';
+
         if (!file_exists($file)) {
-            throw new \Exception("The config file '$file' does not found" );
+            $file = __DIR__ . '/../config/config-' . $env .  '.php';
         }
+
+        if (!file_exists($file)) {
+            throw new \Exception(
+                "The config file '"
+                . realpath(__DIR__ . '/../../../config/config-' . $env .  '.php')
+                . 'does not found'
+            );
+        }
+
         $config = (include $file);
         return $config;
     }
@@ -28,17 +38,22 @@ class Config
      */
     public static function get($property, $throwError = true)
     {
-        if (empty(self::$_config)) {
+        if (empty(self::$config)) {
             self::loadConfig();
         }
 
-        if (!isset(self::$_config[$property])) {
+        if (!isset(self::$config[$property])) {
             if ($throwError) {
                 throw new \InvalidArgumentException("The key '$property'' does not exists");
             }
             return null;
         }
 
-        return self::$_config[$property];
+        return self::$config[$property];
+    }
+
+    public static function reset()
+    {
+        self::$config = null;
     }
 }
