@@ -52,4 +52,11 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
         Config::get('property4');
     }
+
+    public function testLoadConfigNotExistant2()
+    {
+        putenv('APPLICATION_ENV=test');
+
+        $this->assertEmpty(Config::get('property4', false));
+    }
 }
