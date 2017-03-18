@@ -1,0 +1,14 @@
+{
+  "name": "byjg/config",
+  "license": "MIT",
+  "require": {
+    "php": ">=5.6"
+  },
+  "prefer-stable": true,
+  "minimum-stability": "dev",
+  "autoload": {
+    "psr-4": {
+      "ByJG\\Util\\": "src/"
+    }
+  }
+}
