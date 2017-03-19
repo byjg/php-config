@@ -52,6 +52,22 @@ class Config
         return self::$config[$property];
     }
 
+    /**
+     * @param $property
+     * @param $args
+     * @return mixed
+     */
+    public static function getArgs($property, $args)
+    {
+        $closure = self::get($property);
+
+        if (is_array($args)) {
+            return call_user_func_array($closure, $args);
+        }
+
+        return call_user_func_array($closure, array_slice(func_get_args(), 1));
+    }
+
     public static function reset()
     {
         self::$config = null;

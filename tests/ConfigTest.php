@@ -43,6 +43,17 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('new', Config::get('property4'));
     }
 
+    public function testLoadConfigArgs()
+    {
+        putenv('APPLICATION_ENV=closure');
+
+        $result = Config::getArgs('closureProp', 'value1', 'value2');
+        $this->assertEquals('value1:value2', $result);
+
+        $result2 = Config::getArgs('closureProp', ['valueA', 'valueB']);
+        $this->assertEquals('valueA:valueB', $result2);
+    }
+
     /**
      * @expectedException \Exception
      */
