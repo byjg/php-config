@@ -52,6 +52,12 @@ class ConfigTest extends \PHPUnit\Framework\TestCase
 
         $result2 = Config::getArgs('closureProp', ['valueA', 'valueB']);
         $this->assertEquals('valueA:valueB', $result2);
+
+        $result3 = Config::getArgs('closureProp2', null);
+        $this->assertEquals('No Param', $result3);
+
+        $result4 = Config::getArgs('closureProp2', []);
+        $this->assertEquals('No Param', $result4);
     }
 
     /**

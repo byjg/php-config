@@ -52,25 +52,9 @@ environment:
     APPLIACTION_ENV: dev
 ```
 
-### Use in your PHP Code
-
-The code below will get a property from the defined environment:
-
-```php
-<?php
-$property = \ByJG\Util\Config::get('property');
-```
-
-By default if the property does not exists an error will be throwed.
-If you want to get null instead throw an error use:
-
-```php
-<?php
-$property = \ByJG\Util\Config::get('property', false);
-```
-
 ### The `config-xxxx.php` file
 
+**config-homolog.php**
 ```php
 <?php
 
@@ -80,11 +64,15 @@ return [
     'property3' => function () {
         return xxxxxx;
     },
+    'propertyWithArgs' => function ($p1, $p2) {
+        return xxxxxx;
+    },
 ];
 ```
 
 You can inherit properties from another environment:
 
+**config-live.php**
 ```php
 <?php
 
@@ -93,6 +81,31 @@ $config = \ByJG\Util\Config::inherit('homolog');
 $config['property2'] = false;
 
 return $config;
+```
+
+### Use in your PHP Code
+
+The code below will get a property from the defined environment:
+
+```php
+<?php
+$property = \ByJG\Util\Config::get('property1');
+```
+
+By default if the property does not exists an error will be throwed.
+If you want to get null instead throw an error use:
+
+```php
+<?php
+$property = \ByJG\Util\Config::get('property-not-exists', false);
+```
+
+Or you can pass parameters to the closure function:
+
+```php
+<?php
+$property = \ByJG\Util\Config::get('propertyWithArgs', 'value1', 'value2');
+$property = \ByJG\Util\Config::get('propertyWithArgs', ['value1', 'value2']);
 ```
 
 ## Install
