@@ -104,8 +104,8 @@ Or you can pass parameters to the closure function:
 
 ```php
 <?php
-$property = \ByJG\Util\Config::get('propertyWithArgs', 'value1', 'value2');
-$property = \ByJG\Util\Config::get('propertyWithArgs', ['value1', 'value2']);
+$property = \ByJG\Util\Config::getArgs('propertyWithArgs', 'value1', 'value2');
+$property = \ByJG\Util\Config::getArgs('propertyWithArgs', ['value1', 'value2']);
 ```
 
 ## Install
