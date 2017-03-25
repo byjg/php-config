@@ -1,5 +1,6 @@
 # PHP Config
 
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
 [![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
 A very basic and minimalist component for config management and dependency injection.
