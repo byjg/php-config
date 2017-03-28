@@ -8,7 +8,7 @@ class Config
 
     protected static function loadConfig()
     {
-        self::$config = self::inherit(getenv('APPLICATION_ENV'));
+        self::$config = self::inherit(self::getCurrentEnv());
     }
 
     public static function inherit($env)
@@ -71,5 +71,10 @@ class Config
     public static function reset()
     {
         self::$config = null;
+    }
+
+    public static function getCurrentEnv()
+    {
+        return getenv('APPLICATION_ENV');
     }
 }
