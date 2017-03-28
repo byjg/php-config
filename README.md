@@ -109,6 +109,13 @@ $property = \ByJG\Util\Config::getArgs('propertyWithArgs', 'value1', 'value2');
 $property = \ByJG\Util\Config::getArgs('propertyWithArgs', ['value1', 'value2']);
 ```
 
+### Checking current environment
+
+```php
+<?php
+\ByJG\Util\Config::getCurrentEnv();
+```
+
 ## Install
 
 ```
