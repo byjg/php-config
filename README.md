@@ -1,4 +1,4 @@
-# PHP Config
+# PHP Container
 
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
 [![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
@@ -77,7 +77,7 @@ You can inherit properties from another environment:
 ```php
 <?php
 
-$config = \ByJG\Util\Config::inherit('homolog');
+$config = \ByJG\Util\Container::inherit('homolog');
 
 $config['property2'] = false;
 
@@ -90,7 +90,7 @@ The code below will get a property from the defined environment:
 
 ```php
 <?php
-$property = \ByJG\Util\Config::get('property1');
+$property = \ByJG\Util\Container::get('property1');
 ```
 
 By default if the property does not exists an error will be throwed.
@@ -98,22 +98,22 @@ If you want to get null instead throw an error use:
 
 ```php
 <?php
-$property = \ByJG\Util\Config::get('property-not-exists', false);
+$property = \ByJG\Util\Container::get('property-not-exists', false);
 ```
 
 Or you can pass parameters to the closure function:
 
 ```php
 <?php
-$property = \ByJG\Util\Config::getArgs('propertyWithArgs', 'value1', 'value2');
-$property = \ByJG\Util\Config::getArgs('propertyWithArgs', ['value1', 'value2']);
+$property = \ByJG\Util\Container::getArgs('propertyWithArgs', 'value1', 'value2');
+$property = \ByJG\Util\Container::getArgs('propertyWithArgs', ['value1', 'value2']);
 ```
 
 ### Checking current environment
 
 ```php
 <?php
-\ByJG\Util\Config::getCurrentEnv();
+\ByJG\Util\Container::getCurrentEnv();
 ```
 
 ## Install
