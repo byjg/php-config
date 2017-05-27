@@ -23,7 +23,8 @@ class ContainerTest extends TestCase
             ->addEnvironment('test')
             ->addEnvironment('test2')
                 ->inheritFrom('test')
-            ->addEnvironment('closure');
+            ->addEnvironment('closure')
+            ->addEnvironment('notfound');
     }
 
     public function tearDown()
@@ -64,6 +65,19 @@ class ContainerTest extends TestCase
         $this->assertEquals('new', $config->get('property4'));
     }
 
+    public function testLoadConfig3()
+    {
+        putenv('APPLICATION_ENV=test');
+        $config = $this->object->build();
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertTrue($config->get('property2'));
+
+        putenv('APPLICATION_ENV=test2');
+        $config2 = $this->object->build();
+        $this->assertEquals('string', $config2->get('property1'));
+        $this->assertFalse($config2->get('property2'));
+    }
+
     public function testLoadConfigArgs()
     {
         $config = $this->object->build('closure');
@@ -92,12 +106,18 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @expectedException \Psr\Container\NotFoundExceptionInterface
+     * @expectedException \InvalidArgumentException
      */
     public function testLoadConfigNotExistant2()
     {
-        $config = $this->object->build('test');
+        $this->object->build('notset');
+    }
 
-        $config->get('property4');
+    /**
+     * @expectedException \Psr\Container\NotFoundExceptionInterface
+     */
+    public function testLoadConfigNotExistant3()
+    {
+        $this->object->build('notfound');
     }
 }
