@@ -1,5 +1,6 @@
 {
   "name": "byjg/config",
+  "description": "A very basic and minimalist PSR-11 implementation for config management and dependency injection.",
   "license": "MIT",
   "require": {
     "psr/container": "1.0.*",

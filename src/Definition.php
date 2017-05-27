@@ -7,6 +7,7 @@
 
 namespace ByJG\Config;
 
+use ByJG\Config\Exception\NotFoundException;
 use Psr\SimpleCache\CacheInterface;
 
 class Definition
@@ -29,7 +30,7 @@ class Definition
         }
 
         if (!file_exists($file)) {
-            throw new \Exception(
+            throw new NotFoundException(
                 "The config file '"
                 . "config-$env.php'"
                 . 'does not found'
@@ -43,6 +44,7 @@ class Definition
     public function setCache(CacheInterface $cache)
     {
         $this->cache = $cache;
+        return $this;
     }
 
     public function addEnvironment($env)
@@ -67,9 +69,7 @@ class Definition
     }
 
     /**
-     * @todo PSR-6 Method para Cache
-     * @todo Fazer o Cache Engine utilizar o SimpleCache também!
-     * @todo Performance!
+     * @param string|null $env
      * @return \ByJG\Config\Container
      */
     public function build($env = null)
