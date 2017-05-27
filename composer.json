@@ -7,6 +7,9 @@
     "psr/simple-cache": "1.0.*",
     "php": ">=5.6"
   },
+  "require-dev": {
+    "byjg/cache-engine": "4.0.*"
+  },
   "prefer-stable": true,
   "minimum-stability": "dev",
   "autoload": {

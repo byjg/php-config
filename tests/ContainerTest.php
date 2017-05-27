@@ -2,6 +2,7 @@
 
 namespace ByJG\Util;
 
+use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
 use PHPUnit\Framework\TestCase;
 
@@ -119,5 +120,36 @@ class ContainerTest extends TestCase
     public function testLoadConfigNotExistant3()
     {
         $this->object->build('notfound');
+    }
+
+    public function testCache()
+    {
+        // With Cache!
+        $arrayCache = new ArrayCacheEngine();
+
+        $container = $this->object->setCache($arrayCache)
+            ->build('test');  // Expected build and set to cache
+
+        $container2 = (new Definition())
+            ->addEnvironment('test')
+            ->addEnvironment('test2')
+            ->inheritFrom('test')
+            ->addEnvironment('closure')
+            ->addEnvironment('notfound')
+            ->setCache($arrayCache)
+            ->build('test');   // Expected get from cache
+
+        $this->assertSame($container, $container2); // The exact object
+
+        // Without cache
+        $container3 = (new Definition())
+            ->addEnvironment('test')
+            ->addEnvironment('test2')
+            ->inheritFrom('test')
+            ->addEnvironment('closure')
+            ->addEnvironment('notfound')
+            ->build('test');
+
+        $this->assertNotSame($container, $container3);  // There two different objects
     }
 }

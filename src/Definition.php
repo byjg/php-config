@@ -86,7 +86,7 @@ class Definition
         if (isset($this->cache)) {
             $container = $this->cache->get("container-cache-$env");
             if (!is_null($container)) {
-                return unserialize($container);
+                return $container;
             }
         }
 
@@ -98,7 +98,7 @@ class Definition
 
         $container = new Container($config);
         if (isset($this->cache)) {
-            $this->cache->set("container-cache-$env", serialize($container));
+            $this->cache->set("container-cache-$env", $container);
         }
         return $container;
     }

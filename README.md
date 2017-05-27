@@ -7,6 +7,9 @@ A very basic and minimalist PSR-11 implementation for config management and depe
 
 ## How it Works?
 
+The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
+
+See below how to setup:
 
 ### Setup files:
 
