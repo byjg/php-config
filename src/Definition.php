@@ -16,6 +16,8 @@ class Definition
 
     private $environments = [];
 
+    private $envVar = 'APPLICATION_ENV';
+
     /**
      * @var CacheInterface
      */
@@ -63,9 +65,18 @@ class Definition
         return $this;
     }
 
+    public function environmentVar($var)
+    {
+        $this->envVar = $var;
+    }
+
     public function getCurrentEnv()
     {
-        return getenv('APPLICATION_ENV');
+        $env = getenv($this->envVar);
+        if (empty($env)) {
+            throw new \InvalidArgumentException("The environment variable '$this->envVar' is not set");
+        }
+        return  $env;
     }
 
     /**

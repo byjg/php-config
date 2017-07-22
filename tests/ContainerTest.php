@@ -152,4 +152,11 @@ class ContainerTest extends TestCase
 
         $this->assertNotSame($container, $container3);  // There two different objects
     }
+
+    public function testChangeEnvironmentVariable()
+    {
+        putenv('NEWENV=test');
+        $this->object->environmentVar('NEWENV');
+        $this->assertEquals("test", $this->object->getCurrentEnv());
+    }
 }
