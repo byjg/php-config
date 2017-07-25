@@ -127,7 +127,7 @@ class ContainerTest extends TestCase
         // With Cache!
         $arrayCache = new ArrayCacheEngine();
 
-        $container = $this->object->setCache($arrayCache)
+        $container = $this->object->setCache($arrayCache, 'test')
             ->build('test');  // Expected build and set to cache
 
         $container2 = (new Definition())
@@ -136,13 +136,24 @@ class ContainerTest extends TestCase
             ->inheritFrom('test')
             ->addEnvironment('closure')
             ->addEnvironment('notfound')
-            ->setCache($arrayCache)
+            ->setCache($arrayCache, 'test')
             ->build('test');   // Expected get from cache
 
         $this->assertSame($container, $container2); // The exact object
 
-        // Without cache
         $container3 = (new Definition())
+            ->addEnvironment('test')
+            ->addEnvironment('test2')
+            ->inheritFrom('test')
+            ->addEnvironment('closure')
+            ->addEnvironment('notfound')
+            ->setCache($arrayCache, 'test2')
+            ->build('test');   // Expected get a fresh new defintion
+
+        $this->assertNotSame($container, $container3); // Expected to be a different object
+
+        // Without cache
+        $container4 = (new Definition())
             ->addEnvironment('test')
             ->addEnvironment('test2')
             ->inheritFrom('test')
@@ -150,13 +161,18 @@ class ContainerTest extends TestCase
             ->addEnvironment('notfound')
             ->build('test');
 
-        $this->assertNotSame($container, $container3);  // There two different objects
+        $this->assertNotSame($container, $container4);  // There two different objects
     }
 
     public function testChangeEnvironmentVariable()
     {
+        $container = $this->object->build('test');
+
         putenv('NEWENV=test');
         $this->object->environmentVar('NEWENV');
         $this->assertEquals("test", $this->object->getCurrentEnv());
+
+        $container2 = $this->object->build();
+        $this->assertEquals($container, $container2);
     }
 }

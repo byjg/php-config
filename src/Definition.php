@@ -19,9 +19,14 @@ class Definition
     private $envVar = 'APPLICATION_ENV';
 
     /**
-     * @var CacheInterface
+     * @var CacheInterface[]
      */
-    private $cache = null;
+    private $cache = [];
+
+    /**
+     * @var \DateInterval[]
+     */
+    private $cacheTTL = [];
 
     private function loadConfig($currentConfig, $env)
     {
@@ -43,10 +48,20 @@ class Definition
         return array_merge($config, $currentConfig);
     }
 
-    public function setCache(CacheInterface $cache)
+    public function setCache(CacheInterface $cache, $env = "live")
     {
-        $this->cache = $cache;
+        $this->cache[$env] = $cache;
+        $this->cacheTTL[$env] = new \DateInterval('P7D');
         return $this;
+    }
+
+    public function setCacheTTL(\DateInterval $ttl, $env = "live")
+    {
+        if (!isset($this->cache[$env])) {
+            throw new \Exception('Environment does not exists. Could not set Cache TTL.');
+        }
+
+        $this->cacheTTL[$env] = $ttl;
     }
 
     public function addEnvironment($env)
@@ -94,8 +109,8 @@ class Definition
         }
 
         $container = null;
-        if (isset($this->cache)) {
-            $container = $this->cache->get("container-cache-$env");
+        if (isset($this->cache[$env])) {
+            $container = $this->cache[$env]->get("container-cache-$env");
             if (!is_null($container)) {
                 return $container;
             }
@@ -108,8 +123,8 @@ class Definition
         }
 
         $container = new Container($config);
-        if (isset($this->cache)) {
-            $this->cache->set("container-cache-$env", $container);
+        if (isset($this->cache[$env])) {
+            $this->cache[$env]->set("container-cache-$env", $container, $this->cacheTTL[$env]);
         }
         return $container;
     }
