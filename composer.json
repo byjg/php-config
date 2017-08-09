@@ -1,14 +1,20 @@
 {
   "name": "byjg/config",
+  "description": "A very basic and minimalist PSR-11 implementation for config management and dependency injection.",
   "license": "MIT",
   "require": {
+    "psr/container": "1.0.*",
+    "psr/simple-cache": "1.0.*",
     "php": ">=5.6"
+  },
+  "require-dev": {
+    "byjg/cache-engine": "4.0.*"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",
   "autoload": {
     "psr-4": {
-      "ByJG\\Util\\": "src/"
+      "ByJG\\Config\\": "src/"
     }
   }
 }

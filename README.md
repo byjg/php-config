@@ -1,12 +1,15 @@
-# PHP Config
+# PHP Container PSR-11
 
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
 [![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
-A very basic and minimalist component for config management and dependency injection.
+A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
 ## How it Works?
 
+The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
+
+See below how to setup:
 
 ### Setup files:
 
@@ -63,63 +66,67 @@ return [
     'property1' => 'string',
     'property2' => true,
     'property3' => function () {
-        return xxxxxx;
+        return 'xxxxxx';
     },
     'propertyWithArgs' => function ($p1, $p2) {
-        return xxxxxx;
+        return 'xxxxxx';
     },
 ];
 ```
-
-You can inherit properties from another environment:
 
 **config-live.php**
 ```php
 <?php
 
-$config = \ByJG\Util\Config::inherit('homolog');
-
-$config['property2'] = false;
-
-return $config;
+return [
+    'property2' => false
+];
 ```
 
 ### Use in your PHP Code
+
+Create the Definition:
+
+```php
+<?php
+$definition = (new \ByJG\Config\Definition())
+    ->addEnvironment('homolog')         // This will setup the HOMOLOG environment
+    ->addEnvironment('live')            // This will setup the LIVE environenment inherited HOMOLOG
+        ->inheritFrom('hormolog')
+    ->setCache($somePsr16Implementation); // This will cache the result;
+```
 
 The code below will get a property from the defined environment:
 
 ```php
 <?php
-$property = \ByJG\Util\Config::get('property1');
+$container = $definition->build();
+$property = $container->get('property2');
 ```
 
-By default if the property does not exists an error will be throwed.
-If you want to get null instead throw an error use:
+If the property does not exists an error will be throwed.
+
+
+If the property is a closure, you can get and run passing parameters (this is not a PSR-11 implementation):
 
 ```php
 <?php
-$property = \ByJG\Util\Config::get('property-not-exists', false);
-```
-
-Or you can pass parameters to the closure function:
-
-```php
-<?php
-$property = \ByJG\Util\Config::getArgs('propertyWithArgs', 'value1', 'value2');
-$property = \ByJG\Util\Config::getArgs('propertyWithArgs', ['value1', 'value2']);
+$container = $definition->build();
+$property = $container->getClosure('propertyWithArgs', 'value1', 'value2');
+$property = $container->getClosure('propertyWithArgs', ['value1', 'value2']);
 ```
 
 ### Checking current environment
 
 ```php
 <?php
-\ByJG\Util\Config::getCurrentEnv();
+$defintion->getCurrentEnv();
 ```
 
 ## Install
 
 ```
-composer require "byjg/config=1.0.*"
+composer require "byjg/config=2.0.*"
 ```
 
 ## Tests
