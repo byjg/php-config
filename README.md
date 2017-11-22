@@ -49,11 +49,17 @@ Apache:
 SetEnv APPLICATION_ENV dev
 ```
 
-Or Docker-Compose
+Docker-Compose
 
 ```
 environment:
-    APPLIACTION_ENV: dev
+    APPLICATION_ENV: dev
+```
+
+Docker CLI
+
+```
+docker -e APPLICATION_ENV=dev image
 ```
 
 ### The `config-xxxx.php` file
@@ -90,10 +96,11 @@ Create the Definition:
 ```php
 <?php
 $definition = (new \ByJG\Config\Definition())
+    ->environmentVar('APPLICATION_ENV') // This will setup the environment var to 'APPLICATION_ENV' (default)
     ->addEnvironment('homolog')         // This will setup the HOMOLOG environment
     ->addEnvironment('live')            // This will setup the LIVE environenment inherited HOMOLOG
-        ->inheritFrom('hormolog')
-    ->setCache($somePsr16Implementation); // This will cache the result;
+        ->inheritFrom('homolog')
+    ->setCache($somePsr16Implementation, 'live'); // This will cache the result only to live Environment;
 ```
 
 The code below will get a property from the defined environment:

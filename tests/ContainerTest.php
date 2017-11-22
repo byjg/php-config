@@ -127,6 +127,8 @@ class ContainerTest extends TestCase
         // With Cache!
         $arrayCache = new ArrayCacheEngine();
 
+        $this->assertNull($arrayCache->get('container-cache-test'));
+
         $container = $this->object->setCache($arrayCache, 'test')
             ->build('test');  // Expected build and set to cache
 
@@ -139,6 +141,7 @@ class ContainerTest extends TestCase
             ->setCache($arrayCache, 'test')
             ->build('test');   // Expected get from cache
 
+        $this->assertNotNull($arrayCache->get('container-cache-test'));
         $this->assertSame($container, $container2); // The exact object
 
         $container3 = (new Definition())
