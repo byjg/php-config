@@ -48,6 +48,9 @@ class ContainerTest extends TestCase
 
         $this->assertEquals('string', $config->get('property1'));
         $this->assertTrue($config->get('property2'));
+
+        $closure = $config->raw('property3');
+        $this->assertEquals('calculated', $closure());
     }
 
     public function testLoadConfig2()
@@ -56,6 +59,9 @@ class ContainerTest extends TestCase
 
         $this->assertEquals('string', $config->get('property1'));
         $this->assertFalse($config->get('property2'));
+
+        $closure = $config->raw('property3');
+        $this->assertEquals('calculated', $closure());
 
         $this->assertEquals('new', $config->get('property4'));
     }

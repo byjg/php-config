@@ -23,11 +23,7 @@ class Container implements ContainerInterface
      */
     public function get($id)
     {
-        if (!$this->has($id)) {
-            throw new NotFoundException("The key '$id'' does not exists");
-        }
-
-        $value = $this->config[$id];
+        $value = $this->raw($id);
 
         if (!($value instanceof \Closure)) {
             return $value;
@@ -58,5 +54,14 @@ class Container implements ContainerInterface
     public function has($id)
     {
         return isset($this->config[$id]);
+    }
+
+    public function raw($id)
+    {
+        if (!$this->has($id)) {
+            throw new NotFoundException("The key '$id'' does not exists");
+        }
+
+        return $this->config[$id];
     }
 }
