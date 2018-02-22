@@ -9,5 +9,8 @@ return [
     },
     'closureArray' => function ($param) {
         return is_array($param);
+    },
+    'closureWithoutArgs' => function () {
+        return true;
     }
 ];

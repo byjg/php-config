@@ -91,6 +91,9 @@ class ContainerTest extends TestCase
 
         $result5 = $config->get('closureArray', [['a', 'b']]);
         $this->assertTrue($result5);
+
+        $result6 = $config->get('closureWithoutArgs');
+        $this->assertTrue($result6);
     }
 
     /**
