@@ -35,7 +35,7 @@ class Container implements ContainerInterface
 
         $args = array_slice(func_get_args(), 1);
 
-        if (count($args) === 1) {
+        if (count($args) === 1 && is_array($args[0])) {
             $args = $args[0];
         }
 
