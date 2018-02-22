@@ -7,4 +7,7 @@ return [
     'closureProp2' => function () {
         return 'No Param';
     },
+    'closureArray' => function ($param) {
+        return is_array($param);
+    }
 ];

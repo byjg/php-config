@@ -114,13 +114,14 @@ $property = $container->get('property2');
 If the property does not exists an error will be throwed.
 
 
-If the property is a closure, you can get and run passing parameters (this is not a PSR-11 implementation):
+If the property is a closure, you can call the get method and you'll get the closure execution result:
 
 ```php
 <?php
 $container = $definition->build();
-$property = $container->getClosure('propertyWithArgs', 'value1', 'value2');
-$property = $container->getClosure('propertyWithArgs', ['value1', 'value2']);
+$property = $container->get('closureProperty');
+$property = $container->get('closurePropertyWithArgs', 'value1', 'value2');
+$property = $container->get('closurePropertyWithArgs', ['value1', 'value2']);
 ```
 
 ### Checking current environment
