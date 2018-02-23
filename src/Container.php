@@ -3,9 +3,7 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\NotFoundException;
-use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
 
 class Container implements ContainerInterface
 {
@@ -20,17 +18,28 @@ class Container implements ContainerInterface
      * Finds an entry of the container by its identifier and returns it.
      *
      * @param string $id Identifier of the entry to look for.
-     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-     * @throws ContainerExceptionInterface Error while retrieving the entry.
      * @return mixed Entry.
+     * @throws \ByJG\Config\Exception\NotFoundException
      */
     public function get($id)
     {
-        if (!$this->has($id)) {
-            throw new NotFoundException("The key '$id'' does not exists");
+        $value = $this->raw($id);
+
+        if (!($value instanceof \Closure)) {
+            return $value;
         }
 
-        return $this->config[$id];
+        $args = array_slice(func_get_args(), 1);
+
+        if (count($args) === 1 && is_array($args[0])) {
+            $args = $args[0];
+        }
+
+        if (empty($args)) {
+            $args = [];
+        }
+
+        return call_user_func_array($value, $args);
     }
 
     /**
@@ -47,19 +56,12 @@ class Container implements ContainerInterface
         return isset($this->config[$id]);
     }
 
-    /**
-     * @param $id
-     * @param $args
-     * @return mixed
-     */
-    public function getClosure($id, $args = null)
+    public function raw($id)
     {
-        $closure = $this->get($id);
-
-        if (is_array($args)) {
-            return call_user_func_array($closure, $args);
+        if (!$this->has($id)) {
+            throw new NotFoundException("The key '$id'' does not exists");
         }
 
-        return call_user_func_array($closure, array_slice(func_get_args(), 1));
+        return $this->config[$id];
     }
 }

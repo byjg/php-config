@@ -49,9 +49,8 @@ class ContainerTest extends TestCase
         $this->assertEquals('string', $config->get('property1'));
         $this->assertTrue($config->get('property2'));
 
-        $closure = $config->get('property3');
+        $closure = $config->raw('property3');
         $this->assertEquals('calculated', $closure());
-        // $this->assertEmpty($config->get('property4', false));
     }
 
     public function testLoadConfig2()
@@ -61,8 +60,9 @@ class ContainerTest extends TestCase
         $this->assertEquals('string', $config->get('property1'));
         $this->assertFalse($config->get('property2'));
 
-        $closure = $config->get('property3');
+        $closure = $config->raw('property3');
         $this->assertEquals('calculated', $closure());
+
         $this->assertEquals('new', $config->get('property4'));
     }
 
@@ -83,17 +83,26 @@ class ContainerTest extends TestCase
     {
         $config = $this->object->build('closure');
 
-        $result = $config->getClosure('closureProp', 'value1', 'value2');
+        $result = $config->get('closureProp', 'value1', 'value2');
         $this->assertEquals('value1:value2', $result);
 
-        $result2 = $config->getClosure('closureProp', ['valueA', 'valueB']);
+        $result2 = $config->get('closureProp', ['valueA', 'valueB']);
         $this->assertEquals('valueA:valueB', $result2);
 
-        $result3 = $config->getClosure('closureProp2', null);
+        $result3 = $config->get('closureProp2', null);
         $this->assertEquals('No Param', $result3);
 
-        $result4 = $config->getClosure('closureProp2', []);
+        $result4 = $config->get('closureProp2', []);
         $this->assertEquals('No Param', $result4);
+
+        $result5 = $config->get('closureArray', [['a', 'b']]);
+        $this->assertTrue($result5);
+
+        $result5 = $config->get('closureArray', 'string');
+        $this->assertFalse($result5);
+
+        $result6 = $config->get('closureWithoutArgs');
+        $this->assertTrue($result6);
     }
 
     /**
