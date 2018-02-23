@@ -124,6 +124,14 @@ $property = $container->get('closurePropertyWithArgs', 'value1', 'value2');
 $property = $container->get('closurePropertyWithArgs', ['value1', 'value2']);
 ```
 
+If you want get the RAW value without parse clousure:
+
+```php
+<?php
+$container = $definition->build();
+$property = $container->raw('closureProperty');
+```
+
 ### Checking current environment
 
 ```php
