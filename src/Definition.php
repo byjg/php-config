@@ -58,6 +58,7 @@ class Definition
      * @param \Psr\SimpleCache\CacheInterface $cache
      * @param string|array $env
      * @return $this
+     * @throws \Exception
      */
     public function setCache(CacheInterface $cache, $env = "live")
     {
@@ -141,6 +142,8 @@ class Definition
      *
      * @param string|null $env
      * @return \ByJG\Config\Container
+     * @throws \ByJG\Config\Exception\NotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
      */
     public function build($env = null)
     {

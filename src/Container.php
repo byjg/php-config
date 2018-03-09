@@ -56,6 +56,11 @@ class Container implements ContainerInterface
         return isset($this->config[$id]);
     }
 
+    /**
+     * @param $id
+     * @return mixed
+     * @throws \ByJG\Config\Exception\NotFoundException
+     */
     public function raw($id)
     {
         if (!$this->has($id)) {

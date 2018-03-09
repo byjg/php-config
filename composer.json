@@ -9,7 +9,7 @@
   },
   "require-dev": {
     "byjg/cache-engine": "4.0.*",
-    "phpunit/phpunit": "5.7.* || 6.5.*"
+    "phpunit/phpunit": ">5.7"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",

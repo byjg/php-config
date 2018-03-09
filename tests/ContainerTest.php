@@ -6,11 +6,6 @@ use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
 use PHPUnit\Framework\TestCase;
 
-// backward compatibility
-if (!class_exists('\PHPUnit\Framework\TestCase')) {
-    class_alias('\PHPUnit_Framework_TestCase', '\PHPUnit\Framework\TestCase');
-}
-
 class ContainerTest extends TestCase
 {
     /**
