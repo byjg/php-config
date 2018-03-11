@@ -101,7 +101,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @expectedException \Exception
+     * @expectedException \ByJG\Config\Exception\KeyNotFoundException
+     * @expectedExceptionMessage The key 'property4' does not exists
      */
     public function testLoadConfigNotExistant()
     {
@@ -111,7 +112,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @expectedException \InvalidArgumentException
+     * @expectedException \ByJG\Config\Exception\EnvironmentException
+     * @expectedExceptionMessage Environment 'notset' does not defined
      */
     public function testLoadConfigNotExistant2()
     {
@@ -119,7 +121,8 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @expectedException \Psr\Container\NotFoundExceptionInterface
+     * @expectedException \ByJG\Config\Exception\ConfigNotFoundException
+     * @expectedExceptionMessage The config file 'config-notfound.php' does not found at
      */
     public function testLoadConfigNotExistant3()
     {

@@ -2,7 +2,7 @@
 
 namespace ByJG\Config;
 
-use ByJG\Config\Exception\NotFoundException;
+use ByJG\Config\Exception\KeyNotFoundException;
 use Psr\Container\ContainerInterface;
 
 class Container implements ContainerInterface
@@ -19,7 +19,7 @@ class Container implements ContainerInterface
      *
      * @param string $id Identifier of the entry to look for.
      * @return mixed Entry.
-     * @throws \ByJG\Config\Exception\NotFoundException
+     * @throws \ByJG\Config\Exception\KeyNotFoundException
      */
     public function get($id)
     {
@@ -59,12 +59,12 @@ class Container implements ContainerInterface
     /**
      * @param $id
      * @return mixed
-     * @throws \ByJG\Config\Exception\NotFoundException
+     * @throws \ByJG\Config\Exception\KeyNotFoundException
      */
     public function raw($id)
     {
         if (!$this->has($id)) {
-            throw new NotFoundException("The key '$id'' does not exists");
+            throw new KeyNotFoundException("The key '$id' does not exists");
         }
 
         return $this->config[$id];

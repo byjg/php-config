@@ -1,13 +1,10 @@
 <?php
-/**
- * User: jg
- * Date: 26/05/17
- * Time: 00:56
- */
 
 namespace ByJG\Config;
 
-use ByJG\Config\Exception\NotFoundException;
+use ByJG\Config\Exception\ConfigNotFoundException;
+use ByJG\Config\Exception\EnvironmentException;
+use ByJG\Config\Exception\InvalidDateException;
 use Psr\SimpleCache\CacheInterface;
 
 class Definition
@@ -32,7 +29,7 @@ class Definition
      * @param array $currentConfig The array with current loaded configuration
      * @param string $env The environment to be loaded
      * @return array
-     * @throws \ByJG\Config\Exception\NotFoundException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
      */
     private function loadConfig($currentConfig, $env)
     {
@@ -43,10 +40,11 @@ class Definition
         }
 
         if (!file_exists($file)) {
-            throw new NotFoundException(
+            throw new ConfigNotFoundException(
                 "The config file '"
-                . "config-$env.php'"
-                . 'does not found'
+                . "config-$env.php' "
+                . 'does not found at '
+                . "'<ROOT>/config/config-$env.php'"
             );
         }
 
@@ -58,13 +56,18 @@ class Definition
      * @param \Psr\SimpleCache\CacheInterface $cache
      * @param string|array $env
      * @return $this
-     * @throws \Exception
+     * @throws \ByJG\Config\Exception\InvalidDateException
      */
     public function setCache(CacheInterface $cache, $env = "live")
     {
         foreach ((array)$env as $item) {
+            try {
+                $date = new \DateInterval('P7D');
+            } catch (\Exception $ex) {
+                throw new InvalidDateException($ex->getMessage());
+            }
             $this->cache[$item] = $cache;
-            $this->cacheTTL[$item] = new \DateInterval('P7D');
+            $this->cacheTTL[$item] = $date;
         }
         return $this;
     }
@@ -73,13 +76,13 @@ class Definition
      * @param \DateInterval $ttl
      * @param string|array $env
      * @return $this
-     * @throws \Exception
+     * @throws \ByJG\Config\Exception\EnvironmentException
      */
     public function setCacheTTL(\DateInterval $ttl, $env = "live")
     {
         foreach ((array)$env as $item) {
             if (!isset($this->cache[$item])) {
-                throw new \Exception('Environment does not exists. Could not set Cache TTL.');
+                throw new EnvironmentException('Environment does not exists. Could not set Cache TTL.');
             }
 
             $this->cacheTTL[$item] = $ttl;
@@ -90,11 +93,12 @@ class Definition
     /**
      * @param string $env
      * @return $this
+     * @throws \ByJG\Config\Exception\EnvironmentException
      */
     public function addEnvironment($env)
     {
         if (isset($this->environments[$env])) {
-            throw new \InvalidArgumentException("Environment '$env' already exists");
+            throw new EnvironmentException("Environment '$env' already exists");
         }
         $this->lastEnv = $env;
         $this->environments[$env] = [];
@@ -127,12 +131,13 @@ class Definition
      * Get the current environment
      *
      * @return array|false|string
+     * @throws \ByJG\Config\Exception\EnvironmentException
      */
     public function getCurrentEnv()
     {
         $env = getenv($this->envVar);
         if (empty($env)) {
-            throw new \InvalidArgumentException("The environment variable '$this->envVar' is not set");
+            throw new EnvironmentException("The environment variable '$this->envVar' is not set");
         }
         return $env;
     }
@@ -142,7 +147,8 @@ class Definition
      *
      * @param string|null $env
      * @return \ByJG\Config\Container
-     * @throws \ByJG\Config\Exception\NotFoundException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \ByJG\Config\Exception\EnvironmentException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
     public function build($env = null)
@@ -152,7 +158,7 @@ class Definition
         }
 
         if (!isset($this->environments[$env])) {
-            throw new \InvalidArgumentException("Environment '$env' does not defined");
+            throw new EnvironmentException("Environment '$env' does not defined");
         }
 
         $container = null;

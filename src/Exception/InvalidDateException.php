@@ -4,7 +4,7 @@ namespace ByJG\Config\Exception;
 
 use Psr\Container\ContainerExceptionInterface;
 
-class ContainerException extends \Exception implements ContainerExceptionInterface
+class InvalidDateException extends \Exception implements ContainerExceptionInterface
 {
 
 }
