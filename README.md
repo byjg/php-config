@@ -1,17 +1,18 @@
-# PHP Container PSR-11
+# Config: Container PSR-11
 
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
 [![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
-## How it Works?
+# How it Works?
 
 The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
 
 See below how to setup:
 
-### Setup files:
+# Setup files:
 
 Create in your project root at the same level of the vendor directory a folder called `config`. 
 
@@ -33,7 +34,7 @@ Your folder will look like to:
    +-- composer.json
 ```
 
-### Create environment variable
+# Create environment variable
 
 You need to setup a variable called "APPLICATION_ENV" before start your server. 
 
@@ -62,7 +63,7 @@ Docker CLI
 docker -e APPLICATION_ENV=dev image
 ```
 
-### The `config-xxxx.php` file
+# The `config-xxxx.php` file
 
 **config-homolog.php**
 ```php
@@ -89,7 +90,7 @@ return [
 ];
 ```
 
-### Use in your PHP Code
+# Use in your PHP Code
 
 Create the Definition:
 
@@ -132,20 +133,20 @@ $container = $definition->build();
 $property = $container->raw('closureProperty');
 ```
 
-### Checking current environment
+# Checking current environment
 
 ```php
 <?php
 $defintion->getCurrentEnv();
 ```
 
-## Install
+# Install
 
 ```
-composer require "byjg/config=2.0.*"
+composer require "byjg/config=3.0.*"
 ```
 
-## Tests
+# Tests
 
 ```
 phpunit
