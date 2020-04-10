@@ -19,6 +19,9 @@ class ContainerTest extends TestCase
             ->addEnvironment('test')
             ->addEnvironment('test2')
                 ->inheritFrom('test')
+            ->addEnvironment('test3')
+                ->inheritFrom('test2')
+                ->inheritFrom('test')
             ->addEnvironment('closure')
             ->addEnvironment('notfound');
     }
@@ -46,6 +49,8 @@ class ContainerTest extends TestCase
 
         $closure = $config->raw('property3');
         $this->assertEquals('calculated', $closure());
+
+        $this->assertEquals('test', $config->get('property5'));
     }
 
     public function testLoadConfig2()
@@ -59,6 +64,23 @@ class ContainerTest extends TestCase
         $this->assertEquals('calculated', $closure());
 
         $this->assertEquals('new', $config->get('property4'));
+
+        $this->assertEquals('test2', $config->get('property5'));
+    }
+
+    public function testLoadConfigMultipleInherits()
+    {
+        $config = $this->object->build('test3');
+
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertFalse($config->get('property2'));
+
+        $closure = $config->raw('property3');
+        $this->assertEquals('calculated', $closure());
+
+        $this->assertEquals('new', $config->get('property4'));
+
+        $this->assertEquals('test3', $config->get('property5'));
     }
 
     public function testLoadConfig3()

@@ -6,4 +6,5 @@ return [
     'property3' => function () {
         return 'calculated';
     },
+    'property5' => 'test',
 ];
