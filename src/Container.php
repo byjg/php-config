@@ -3,7 +3,9 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\KeyNotFoundException;
+use Closure;
 use Psr\Container\ContainerInterface;
+use ReflectionException;
 
 class Container implements ContainerInterface
 {
@@ -19,7 +21,8 @@ class Container implements ContainerInterface
      *
      * @param string $id Identifier of the entry to look for.
      * @return mixed Entry.
-     * @throws \ByJG\Config\Exception\KeyNotFoundException
+     * @throws KeyNotFoundException
+     * @throws ReflectionException
      */
     public function get($id)
     {
@@ -30,7 +33,7 @@ class Container implements ContainerInterface
             return $value->getInstance();
         }
 
-        if (!($value instanceof \Closure)) {
+        if (!($value instanceof Closure)) {
             return $value;
         }
 
@@ -64,7 +67,7 @@ class Container implements ContainerInterface
     /**
      * @param $id
      * @return mixed
-     * @throws \ByJG\Config\Exception\KeyNotFoundException
+     * @throws KeyNotFoundException
      */
     public function raw($id)
     {

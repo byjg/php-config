@@ -5,6 +5,9 @@ namespace ByJG\Config;
 
 use ByJG\Config\Exception\DependencyInjectionException;
 use Psr\Container\ContainerInterface;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 
 class DependencyInjection
 {
@@ -82,8 +85,6 @@ class DependencyInjection
     /**
      * DependencyInjection constructor.
      * @param $class
-     * @param $type
-     * @param $args
      * @throws DependencyInjectionException
      */
     protected function __construct($class)
@@ -93,7 +94,6 @@ class DependencyInjection
 
     /**
      * @param $class
-     * @param $args
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
@@ -103,20 +103,19 @@ class DependencyInjection
     }
 
     /**
-     * @param $class
      * @return DependencyInjection
      * @throws DependencyInjectionException
+     * @throws ReflectionException
      */
     public function withConstructor()
     {
-        $reflection = new \ReflectionMethod($this->getClass(), "__construct");
+        $reflection = new ReflectionMethod($this->getClass(), "__construct");
 
         $docComments = str_replace("\n", " ", $reflection->getDocComment());
 
         $params = [];
         $result = preg_match_all('/@param\s+\$[\w_\d]+\s+([\d\w_\\\\]+)/', $docComments, $params);
 
-        $reflectionClass = new \ReflectionClass($this->getClass());
         if ($result) {
             $args = [];
             foreach ($params[1] as $param) {
@@ -125,26 +124,40 @@ class DependencyInjection
             return $this->withArgs($args);
         }
 
-        return $this;
+        return $this->withNoConstructor();
     }
 
+    /**
+     * @return DependencyInjection
+     */
     public function withNoConstructor()
     {
         $this->args = null;
+        return $this;
     }
 
+    /**
+     * @return DependencyInjection
+     */
     public function toSingleton()
     {
         $this->singleton = true;
         return $this;
     }
 
+    /**
+     * @return DependencyInjection
+     */
     public function toInstance()
     {
         $this->singleton = false;
         return $this;
     }
 
+    /**
+     * @return object
+     * @throws ReflectionException
+     */
     public function getInstance()
     {
         if ($this->singleton) {
@@ -155,9 +168,13 @@ class DependencyInjection
 
     }
 
+    /**
+     * @return object
+     * @throws ReflectionException
+     */
     protected function getNewInstance()
     {
-        $reflectionClass = new \ReflectionClass($this->getClass());
+        $reflectionClass = new ReflectionClass($this->getClass());
 
         if (is_null($this->args)) {
             return $reflectionClass->newInstanceWithoutConstructor();
@@ -166,6 +183,10 @@ class DependencyInjection
         return $reflectionClass->newInstanceArgs($this->getArgs());
     }
 
+    /**
+     * @return object
+     * @throws ReflectionException
+     */
     protected function getSingletonInstace()
     {
         if (empty($this->instance)) {

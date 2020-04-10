@@ -2,7 +2,9 @@
 
 namespace ByJG\Config\Exception;
 
-class DependencyInjectionException extends \Exception
+use Exception;
+
+class DependencyInjectionException extends Exception
 {
 
 }
