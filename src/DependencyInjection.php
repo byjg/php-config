@@ -76,7 +76,12 @@ class DependencyInjection
      */
     protected function getArgs()
     {
-        return $this->args;
+        return array_map(function ($value) {
+            if ($value instanceof Param) {
+                return $this->containerInterface->get($value->getParam());
+            }
+            return $value;
+        }, $this->args);
     }
 
     /**

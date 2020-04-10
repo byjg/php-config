@@ -77,4 +77,14 @@ class DependencyInjectionTest extends TestCase
         $this->assertSame($random, $random2);
     }
 
+    public function testGetInstancesWithParam()
+    {
+        $config = $this->object->build('di-test2');
+
+        $sumAreas = $config->get(SumAreas::class);
+
+        $this->assertInstanceOf(SumAreas::class, $sumAreas);
+    }
+
+
 }
