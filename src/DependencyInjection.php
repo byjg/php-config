@@ -8,22 +8,18 @@ use Psr\Container\ContainerInterface;
 
 class DependencyInjection
 {
-    const TO_INSTANCE=1;
-    const SINGLETON=2;
-    const TO_CONSTRUCTOR=4;
-
     /**
      * @var ContainerInterface
      */
     protected $containerInterface;
 
-    protected $bindType;
-
     protected $class;
 
-    protected $args;
+    protected $args = [];
 
     protected $instance;
+
+    protected $singleton = false;
 
     /**
      * @param $containerInterface ContainerInterface
@@ -33,22 +29,6 @@ class DependencyInjection
     {
         $this->containerInterface = $containerInterface;
         return $this;
-    }
-
-    /**
-     * @return mixed
-     */
-    protected function getBindType()
-    {
-        return $this->bindType;
-    }
-
-    /**
-     * @param mixed $bindType
-     */
-    protected function setBindType($bindType)
-    {
-        $this->bindType = $bindType;
     }
 
     /**
@@ -86,14 +66,17 @@ class DependencyInjection
 
     /**
      * @param mixed $args
+     * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    protected function setArgs($args)
+    public function withArgs($args)
     {
         if (!is_null($args) && !is_array($args)) {
             throw new DependencyInjectionException("Arguments should be an array");
         }
         $this->args = $args;
+
+        return $this;
     }
 
     /**
@@ -103,11 +86,9 @@ class DependencyInjection
      * @param $args
      * @throws DependencyInjectionException
      */
-    protected function __construct($class, $type, $args)
+    protected function __construct($class)
     {
-        $this->setArgs($args);
         $this->setClass($class);
-        $this->setBindType($type);
     }
 
     /**
@@ -116,9 +97,9 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function bindToInstance($class, $args = [])
+    public static function bind($class)
     {
-        return new DependencyInjection($class, DependencyInjection::TO_INSTANCE, $args);
+        return new DependencyInjection($class);
     }
 
     /**
@@ -126,28 +107,47 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function bindToConstructor($class)
+    public function withConstructor()
     {
-        return new DependencyInjection($class, DependencyInjection::TO_CONSTRUCTOR, []);
+        $reflection = new \ReflectionMethod($this->getClass(), "__construct");
+
+        $docComments = str_replace("\n", " ", $reflection->getDocComment());
+
+        $params = [];
+        $result = preg_match_all('/@param\s+\$[\w_\d]+\s+([\d\w_\\\\]+)/', $docComments, $params);
+
+        $reflectionClass = new \ReflectionClass($this->getClass());
+        if ($result) {
+            $args = [];
+            foreach ($params[1] as $param) {
+                $args[] = Param::get(ltrim($param, "\\"));
+            }
+            return $this->withArgs($args);
+        }
+
+        return $this;
     }
 
-    /**
-     * @param $class
-     * @param $args
-     * @return DependencyInjection
-     * @throws DependencyInjectionException
-     */
-    public static function bindToSingletonInstance($class, $args = [])
+    public function withNoConstructor()
     {
-        return new DependencyInjection($class, DependencyInjection::TO_INSTANCE | DependencyInjection::SINGLETON, $args);
+        $this->args = null;
+    }
+
+    public function toSingleton()
+    {
+        $this->singleton = true;
+        return $this;
+    }
+
+    public function toInstance()
+    {
+        $this->singleton = false;
+        return $this;
     }
 
     public function getInstance()
     {
-        if ($this->getBindType() & DependencyInjection::TO_CONSTRUCTOR) {
-            return $this->getNewInstanceConstructor();
-        }
-        if ($this->getBindType() & DependencyInjection::SINGLETON) {
+        if ($this->singleton) {
             return $this->getSingletonInstace();
         }
 
@@ -172,30 +172,5 @@ class DependencyInjection
             $this->instance = $this->getNewInstance();
         }
         return $this->instance;
-    }
-
-    /**
-     * @throws \ReflectionException
-     */
-    public function getNewInstanceConstructor()
-    {
-        $reflection = new \ReflectionMethod($this->getClass(), "__construct");
-
-        $docComments = str_replace("\n", " ", $reflection->getDocComment());
-
-        $params = [];
-        $result = preg_match_all('/@param\s+\$[\w_\d]+\s+([\d\w_\\\\]+)/', $docComments, $params);
-
-        $reflectionClass = new \ReflectionClass($this->getClass());
-        if (!$result || empty($params)) {
-            return $reflectionClass->newInstanceWithoutConstructor();
-        }
-
-        $args = [];
-        foreach ($params[1] as $param) {
-            $args[] = $this->containerInterface->get(ltrim($param, "\\"));
-        }
-
-        return $reflectionClass->newInstanceArgs($args);
     }
 }

@@ -6,9 +6,11 @@ use DIClasses\Random;
 use DIClasses\SumAreas;
 
 return [
-    Random::class => DI::bindToSingletonInstance(Random::class),
+    Random::class => DI::bind(Random::class)->toSingleton(),
 
-    SumAreas::class => DI::bindToInstance(SumAreas::class, [Param::get(Random::class), param::get("control")]),
+    SumAreas::class => DI::bind(SumAreas::class)
+        ->withArgs([Param::get(Random::class), param::get("control")])
+        ->toInstance(),
 
-    "control" => DI::bindToInstance(Random::class),
+    "control" => DI::bind(Random::class)->toInstance(),
 ];

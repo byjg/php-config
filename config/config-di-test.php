@@ -6,9 +6,15 @@ use DIClasses\Square;
 use DIClasses\SumAreas;
 
 return [
-    Square::class => DI::bindToInstance(Square::class, [4]),
+    Square::class => DI::bind(Square::class)
+        ->withArgs([4])
+        ->toInstance(),
 
-    RectangleTriangle::class => DI::bindToInstance(RectangleTriangle::class, [3, 4]),
+    RectangleTriangle::class => DI::bind(RectangleTriangle::class)
+        ->withArgs([3, 4])
+        ->toInstance(),
 
-    SumAreas::class => DI::bindToConstructor(SumAreas::class),
+    SumAreas::class => DI::bind(SumAreas::class)
+        ->withConstructor()
+        ->toInstance(),
 ];
