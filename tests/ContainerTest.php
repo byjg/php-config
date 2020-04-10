@@ -13,6 +13,9 @@ class ContainerTest extends TestCase
      */
     protected $object;
 
+    /**
+     * @throws \ByJG\Config\Exception\EnvironmentException
+     */
     public function setUp()
     {
         $this->object = (new Definition())
@@ -23,7 +26,8 @@ class ContainerTest extends TestCase
                 ->inheritFrom('test2')
                 ->inheritFrom('test')
             ->addEnvironment('closure')
-            ->addEnvironment('notfound');
+            ->addEnvironment('notfound')
+        ;
     }
 
     public function tearDown()

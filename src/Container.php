@@ -25,6 +25,11 @@ class Container implements ContainerInterface
     {
         $value = $this->raw($id);
 
+        if ($value instanceof DependencyInjection) {
+            $value->injectContainer($this);
+            return $value->getInstance();
+        }
+
         if (!($value instanceof \Closure)) {
             return $value;
         }
