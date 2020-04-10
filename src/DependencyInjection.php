@@ -10,6 +10,7 @@ class DependencyInjection
 {
     const TO_INSTANCE=1;
     const SINGLETON=2;
+    const TO_CONSTRUCTOR=4;
 
     /**
      * @var ContainerInterface
@@ -37,7 +38,7 @@ class DependencyInjection
     /**
      * @return mixed
      */
-    public function getBindType()
+    protected function getBindType()
     {
         return $this->bindType;
     }
@@ -45,7 +46,7 @@ class DependencyInjection
     /**
      * @param mixed $bindType
      */
-    public function setBindType($bindType)
+    protected function setBindType($bindType)
     {
         $this->bindType = $bindType;
     }
@@ -53,7 +54,7 @@ class DependencyInjection
     /**
      * @return mixed
      */
-    public function getClass()
+    protected function getClass()
     {
         return $this->class;
     }
@@ -62,7 +63,7 @@ class DependencyInjection
      * @param mixed $class
      * @throws DependencyInjectionException
      */
-    public function setClass($class)
+    protected function setClass($class)
     {
         if (!class_exists($class)) {
             throw new DependencyInjectionException("Class $class does not exists");
@@ -73,7 +74,7 @@ class DependencyInjection
     /**
      * @return mixed
      */
-    public function getArgs()
+    protected function getArgs()
     {
         return $this->args;
     }
@@ -82,20 +83,12 @@ class DependencyInjection
      * @param mixed $args
      * @throws DependencyInjectionException
      */
-    public function setArgs($args)
+    protected function setArgs($args)
     {
         if (!is_null($args) && !is_array($args)) {
             throw new DependencyInjectionException("Arguments should be an array");
         }
         $this->args = $args;
-    }
-
-
-    /**
-     * @return ContainerInterface
-     */
-    public function container() {
-        return $this->containerInterface;
     }
 
     /**
@@ -118,9 +111,19 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function bindToInstance($class, $args = null)
+    public static function bindToInstance($class, $args = [])
     {
         return new DependencyInjection($class, DependencyInjection::TO_INSTANCE, $args);
+    }
+
+    /**
+     * @param $class
+     * @return DependencyInjection
+     * @throws DependencyInjectionException
+     */
+    public static function bindToConstructor($class)
+    {
+        return new DependencyInjection($class, DependencyInjection::TO_CONSTRUCTOR, []);
     }
 
     /**
@@ -129,13 +132,16 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function bindToSingletonInstance($class, $args)
+    public static function bindToSingletonInstance($class, $args = [])
     {
         return new DependencyInjection($class, DependencyInjection::TO_INSTANCE | DependencyInjection::SINGLETON, $args);
     }
 
     public function getInstance()
     {
+        if ($this->getBindType() & DependencyInjection::TO_CONSTRUCTOR) {
+            return $this->getNewInstanceConstructor();
+        }
         if ($this->getBindType() & DependencyInjection::SINGLETON) {
             return $this->getSingletonInstace();
         }
@@ -161,5 +167,30 @@ class DependencyInjection
             $this->instance = $this->getNewInstance();
         }
         return $this->instance;
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    public function getNewInstanceConstructor()
+    {
+        $reflection = new \ReflectionMethod($this->getClass(), "__construct");
+
+        $docComments = str_replace("\n", " ", $reflection->getDocComment());
+
+        $params = [];
+        $result = preg_match_all('/@param\s+\$[\w_\d]+\s+([\d\w_\\\\]+)/', $docComments, $params);
+
+        $reflectionClass = new \ReflectionClass($this->getClass());
+        if (!$result || empty($params)) {
+            return $reflectionClass->newInstanceWithoutConstructor();
+        }
+
+        $args = [];
+        foreach ($params[1] as $param) {
+            $args[] = $this->containerInterface->get(ltrim($param, "\\"));
+        }
+
+        return $reflectionClass->newInstanceArgs($args);
     }
 }
