@@ -3,8 +3,6 @@
 
 namespace DIClasses;
 
-use Area;
-
 class Random implements Area
 {
     protected $random;

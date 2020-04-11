@@ -3,8 +3,6 @@
 
 namespace DIClasses;
 
-use Area;
-
 require_once __DIR__ . "/Area.php";
 
 class SumAreas implements Area
@@ -17,7 +15,7 @@ class SumAreas implements Area
      * @param \DIClasses\RectangleTriangle $triangle
      * @param \DIClasses\Square $square
      */
-    public function __construct($triangle, $square)
+    public function __construct(RectangleTriangle $triangle, Square $square)
     {
         $this->triangle = $triangle;
         $this->square = $square;

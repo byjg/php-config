@@ -3,8 +3,6 @@
 
 namespace DIClasses;
 
-use Area;
-
 require_once __DIR__ . "/Area.php";
 
 class Square implements Area

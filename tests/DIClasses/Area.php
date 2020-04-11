@@ -1,6 +1,6 @@
 <?php
 
-
+namespace DIClasses;
 
 interface Area
 {
