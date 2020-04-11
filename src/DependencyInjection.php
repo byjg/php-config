@@ -24,6 +24,8 @@ class DependencyInjection
 
     protected $singleton = false;
 
+    protected $methodCall = [];
+
     /**
      * @param $containerInterface ContainerInterface
      * @return DependencyInjection
@@ -72,7 +74,7 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public function withArgs($args)
+    public function withConstructorArgs($args)
     {
         if (!is_null($args) && !is_array($args)) {
             throw new DependencyInjectionException("Arguments should be an array");
@@ -107,7 +109,7 @@ class DependencyInjection
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
-    public function withConstructor()
+    public function withInjectedConstructor()
     {
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
 
@@ -121,7 +123,7 @@ class DependencyInjection
             foreach ($params[1] as $param) {
                 $args[] = Param::get(ltrim($param, "\\"));
             }
-            return $this->withArgs($args);
+            return $this->withConstructorArgs($args);
         }
 
         return $this->withNoConstructor();
@@ -133,6 +135,12 @@ class DependencyInjection
     public function withNoConstructor()
     {
         $this->args = null;
+        return $this;
+    }
+
+    public function withMethodCall($method, $args = [])
+    {
+        $this->methodCall[$method] = $args;
         return $this;
     }
 
@@ -177,10 +185,27 @@ class DependencyInjection
         $reflectionClass = new ReflectionClass($this->getClass());
 
         if (is_null($this->args)) {
-            return $reflectionClass->newInstanceWithoutConstructor();
+            return $this->callMethods($reflectionClass->newInstanceWithoutConstructor());
         }
 
-        return $reflectionClass->newInstanceArgs($this->getArgs());
+        return $this->callMethods($reflectionClass->newInstanceArgs($this->getArgs()));
+    }
+
+    /**
+     * @param $instance
+     * @return mixed
+     */
+    protected function callMethods($instance)
+    {
+        foreach ($this->methodCall as $methodName => $args) {
+            if (is_null($args)) {
+                call_user_func([$instance, $methodName]);
+            } else {
+                call_user_func_array([$instance, $methodName], $args);
+            }
+        }
+
+        return $instance;
     }
 
     /**

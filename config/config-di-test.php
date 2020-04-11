@@ -7,14 +7,14 @@ use DIClasses\SumAreas;
 
 return [
     Square::class => DI::bind(Square::class)
-        ->withArgs([4])
+        ->withConstructorArgs([4])
         ->toInstance(),
 
     RectangleTriangle::class => DI::bind(RectangleTriangle::class)
-        ->withArgs([3, 4])
+        ->withConstructorArgs([3, 4])
         ->toInstance(),
 
     SumAreas::class => DI::bind(SumAreas::class)
-        ->withConstructor()
+        ->withInjectedConstructor()
         ->toInstance(),
 ];

@@ -9,7 +9,7 @@ return [
     Random::class => DI::bind(Random::class)->toSingleton(),
 
     SumAreas::class => DI::bind(SumAreas::class)
-        ->withArgs([Param::get(Random::class), param::get("control")])
+        ->withConstructorArgs([Param::get(Random::class), param::get("control")])
         ->toInstance(),
 
     "control" => DI::bind(Random::class)->toInstance(),

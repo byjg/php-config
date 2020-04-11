@@ -30,6 +30,7 @@ class DependencyInjectionTest extends TestCase
         $this->object = (new Definition())
             ->addEnvironment('di-test')
             ->addEnvironment('di-test2')
+            ->addEnvironment('di-test3')
         ;
     }
 
@@ -86,5 +87,13 @@ class DependencyInjectionTest extends TestCase
         $this->assertInstanceOf(SumAreas::class, $sumAreas);
     }
 
+    public function testWithMethodCall()
+    {
+        $config = $this->object->build('di-test3');
+
+        $random = $config->get(Random::class);
+        $this->assertInstanceOf(Random::class, $random);
+        $this->assertEquals(10, $random->calculate());
+    }
 
 }
