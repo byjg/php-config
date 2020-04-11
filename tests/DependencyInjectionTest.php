@@ -1,6 +1,6 @@
 <?php
 
-namespace ByJG\Util;
+namespace Test;
 
 require_once (__DIR__ . "/DIClasses/Square.php");
 require_once (__DIR__ . "/DIClasses/RectangleTriangle.php");

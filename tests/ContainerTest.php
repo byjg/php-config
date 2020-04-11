@@ -1,6 +1,6 @@
 <?php
 
-namespace ByJG\Util;
+namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
