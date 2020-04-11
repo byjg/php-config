@@ -3,13 +3,17 @@
 
 namespace DIClasses;
 
-class Random implements Area
+class Random
 {
     protected $random;
 
-    public function __construct()
+    public function __construct($value = 0)
     {
-        $this->random = rand(0, 200000);
+        if ($value == 0) {
+            $this->random = rand(0, 200000);
+        } else {
+            $this->setFixedNumber($value);
+        }
     }
 
     public function setFixedNumber($value)
@@ -17,7 +21,7 @@ class Random implements Area
         $this->random = $value;
     }
 
-    public function calculate()
+    public function getNumber()
     {
         return $this->random;
     }

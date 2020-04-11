@@ -9,6 +9,7 @@ require_once (__DIR__ . "/DIClasses/Random.php");
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
+use DIClasses\Area;
 use DIClasses\Random;
 use DIClasses\RectangleTriangle;
 use DIClasses\Square;
@@ -31,6 +32,7 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment('di-test')
             ->addEnvironment('di-test2')
             ->addEnvironment('di-test3')
+            ->addEnvironment('di-test4')
         ;
     }
 
@@ -38,17 +40,17 @@ class DependencyInjectionTest extends TestCase
     {
         $config = $this->object->build('di-test');
 
-        $square = $config->get(Square::class);
-        $this->assertInstanceOf(Square::class, $square);
-        $this->assertEquals(16, $square->calculate());
+        $random = $config->get(Random::class);
+        $this->assertInstanceOf(Random::class, $random);
+        $this->assertEquals(4, $random->getNumber());
 
-        $triangle = $config->get(RectangleTriangle::class);
+        $triangle = $config->get(Area::class);
         $this->assertInstanceOf(RectangleTriangle::class, $triangle);
         $this->assertEquals(6, $triangle->calculate());
 
         $sumAreas = $config->get(SumAreas::class);
         $this->assertInstanceOf(SumAreas::class, $sumAreas);
-        $this->assertEquals(22, $sumAreas->calculate());
+        $this->assertEquals(24, $sumAreas->calculate());
     }
 
     public function testGetInstancesControl()
@@ -59,7 +61,7 @@ class DependencyInjectionTest extends TestCase
         $random2 = $config->get("control");
 
         $this->assertNotSame($random, $random2);
-        $this->assertNotEquals($random->calculate(), $random2->calculate());
+        $this->assertNotEquals($random->getNumber(), $random2->getNumber());
     }
 
     public function testGetInstancesSingleton()
@@ -68,23 +70,14 @@ class DependencyInjectionTest extends TestCase
 
         $random = $config->get(Random::class);
         $this->assertInstanceOf(Random::class, $random);
-        $randomCalc = $random->calculate();
+        $randomCalc = $random->getNumber();
 
         $random2 = $config->get(Random::class);
         $this->assertInstanceOf(Random::class, $random2);
-        $randomCalc2 = $random->calculate();
+        $randomCalc2 = $random->getNumber();
 
         $this->assertEquals($randomCalc, $randomCalc2);
         $this->assertSame($random, $random2);
-    }
-
-    public function testGetInstancesWithParam()
-    {
-        $config = $this->object->build('di-test2');
-
-        $sumAreas = $config->get(SumAreas::class);
-
-        $this->assertInstanceOf(SumAreas::class, $sumAreas);
     }
 
     public function testWithMethodCall()
@@ -93,7 +86,7 @@ class DependencyInjectionTest extends TestCase
 
         $random = $config->get(Random::class);
         $this->assertInstanceOf(Random::class, $random);
-        $this->assertEquals(10, $random->calculate());
+        $this->assertEquals(10, $random->getNumber());
     }
 
     public function testWithFactoryMethod()
@@ -102,7 +95,16 @@ class DependencyInjectionTest extends TestCase
 
         $random = $config->get("factory");
         $this->assertInstanceOf(Random::class, $random);
-        $this->assertEquals(20, $random->calculate());
+        $this->assertEquals(20, $random->getNumber());
+    }
+
+    public function testGetInstancesWithParam()
+    {
+        $config = $this->object->build('di-test4');
+
+        $square = $config->get(Square::class);
+
+        $this->assertEquals(16, $square->calculate());
     }
 
 }

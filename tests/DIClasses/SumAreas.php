@@ -8,21 +8,21 @@ require_once __DIR__ . "/Area.php";
 class SumAreas implements Area
 {
     protected $triangle;
-    protected $square;
+    protected $random;
 
     /**
      * SumAreas constructor.
-     * @param \DIClasses\RectangleTriangle $triangle
-     * @param \DIClasses\Square $square
+     * @param \DIClasses\Area $area
+     * @param \DIClasses\Random $random
      */
-    public function __construct(RectangleTriangle $triangle, Square $square)
+    public function __construct(Area $area, Random $random)
     {
-        $this->triangle = $triangle;
-        $this->square = $square;
+        $this->triangle = $area;
+        $this->random = $random;
     }
 
     public function calculate()
     {
-        return $this->square->calculate() + $this->triangle->calculate();
+        return $this->random->getNumber() * $this->triangle->calculate();
     }
 }
