@@ -4,6 +4,7 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\DependencyInjectionException;
+use ByJG\Config\Exception\KeyNotFoundException;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionException;
@@ -63,12 +64,16 @@ class DependencyInjection
      */
     protected function getArgs()
     {
-        return array_map(function ($value) {
-            if ($value instanceof Param) {
-                return $this->containerInterface->get($value->getParam());
-            }
-            return $value;
-        }, $this->args);
+            return array_map(function ($value) {
+                if ($value instanceof Param) {
+                    try {
+                        return $this->containerInterface->get($value->getParam());
+                    } catch (KeyNotFoundException $ex) {
+                        throw new KeyNotFoundException($ex->getMessage() . " injected from '" . $this->getClass() . "'");
+                    }
+                }
+                return $value;
+            }, $this->args);
     }
 
     /**
@@ -131,13 +136,44 @@ class DependencyInjection
     public function withInjectedConstructor()
     {
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
+        $params = $reflection->getParameters();
+
+        if (count($params) > 0) {
+            $args = [];
+            foreach ($params as $param) {
+                $type = $param->getType();
+                if (empty($type)) {
+                    throw new DependencyInjectionException("The parameter '$" . $param->getName() . "' has no type defined in class '" . $this->getClass() . "'");
+                }
+                $args[] = Param::get(ltrim($type, "\\"));
+            }
+            return $this->withConstructorArgs($args);
+        }
+
+        return $this->withNoConstructor();
+    }
+
+    /**
+     * @return DependencyInjection
+     * @throws DependencyInjectionException
+     * @throws ReflectionException
+     */
+    public function withInjectedLegacyConstructor()
+    {
+        $reflection = new ReflectionMethod($this->getClass(), "__construct");
 
         $docComments = str_replace("\n", " ", $reflection->getDocComment());
+
+        $methodParams = $reflection->getParameters();
 
         $params = [];
         $result = preg_match_all('/@param\s+([\d\w_\\\\]+)\s+\$[\w_\d]+/', $docComments, $params);
 
-        if ($result) {
+        if (count($methodParams) <> $result) {
+            throw new DependencyInjectionException("The class " . $this->getClass() . " does not have annotations with the param type.");
+        }
+
+        if (count($methodParams) > 0) {
             $args = [];
             foreach ($params[1] as $param) {
                 $args[] = Param::get(ltrim($param, "\\"));

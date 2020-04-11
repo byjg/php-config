@@ -248,16 +248,17 @@ by adding `toSingleton()` instead of `toInstance()`.
 <?php
 
 \ByJG\Config\DependencyInjection::bind("classname")
-    // Use one of these below:
-    ->withInjectedConstructor()      // If you want attach  inject automatically
-    ->withNoConstrutor()             // There is no constructor
-    ->withConstructorArgs(array)     // The constructor arguments
-    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate. 
+    // To create a new instance choose *only* one below:
+    ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
+    ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
+    ->withNoConstrutor()                // The class has no constructor
+    ->withConstructorArgs(array)        // The constructor's class arguments
+    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
 
-    // Call methods
+    // Call methods after you have a instance
     ->withMethodCall("methodName", array_of_args)
     
-    // Use one of these below:
+    // How will you get a instance?
     ->toInstance()                   // get a new instance for every container get
     ->toSingleton()                  // get the same instance for every container get 
 ;

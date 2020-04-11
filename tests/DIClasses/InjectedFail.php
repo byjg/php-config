@@ -5,7 +5,7 @@ namespace DIClasses;
 
 require_once __DIR__ . "/Area.php";
 
-class SumAreas implements Area
+class InjectedFail implements Area
 {
     protected $triangle;
     protected $random;
@@ -15,7 +15,7 @@ class SumAreas implements Area
      * @param $area
      * @param $random
      */
-    public function __construct(Area $area, Random $random)
+    public function __construct($area, $random)
     {
         $this->triangle = $area;
         $this->random = $random;
