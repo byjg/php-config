@@ -159,7 +159,7 @@ class DependencyInjection
 
     public function withMethodCall($method, $args = [])
     {
-        $this->methodCall[$method] = $args;
+        $this->methodCall[] = [$method, $args];
         return $this;
     }
 
@@ -235,11 +235,11 @@ class DependencyInjection
      */
     protected function callMethods($instance)
     {
-        foreach ($this->methodCall as $methodName => $args) {
-            if (is_null($args)) {
-                call_user_func([$instance, $methodName]);
+        foreach ($this->methodCall as $methodDefinition) {
+            if (is_null($methodDefinition[1])) {
+                call_user_func([$instance, $methodDefinition[0]]);
             } else {
-                call_user_func_array([$instance, $methodName], $args);
+                call_user_func_array([$instance, $methodDefinition[0]], $methodDefinition[1]);
             }
         }
 
