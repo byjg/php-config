@@ -24,6 +24,8 @@ class DependencyInjection
 
     protected $singleton = false;
 
+    protected $factory = null;
+
     protected $methodCall = [];
 
     /**
@@ -85,6 +87,23 @@ class DependencyInjection
     }
 
     /**
+     * @param mixed $args
+     * @return DependencyInjection
+     * @throws DependencyInjectionException
+     */
+    public function withFactoryMethod($method, $args = [])
+    {
+        if (!is_null($args) && !is_array($args)) {
+            throw new DependencyInjectionException("Arguments should be an array");
+        }
+        $this->args = $args;
+
+        $this->factory = $method;
+
+        return $this;
+    }
+
+    /**
      * DependencyInjection constructor.
      * @param $class
      * @throws DependencyInjectionException
@@ -116,7 +135,7 @@ class DependencyInjection
         $docComments = str_replace("\n", " ", $reflection->getDocComment());
 
         $params = [];
-        $result = preg_match_all('/@param\s+\$[\w_\d]+\s+([\d\w_\\\\]+)/', $docComments, $params);
+        $result = preg_match_all('/@param\s+([\d\w_\\\\]+)\s+\$[\w_\d]+/', $docComments, $params);
 
         if ($result) {
             $args = [];
@@ -164,16 +183,31 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws DependencyInjectionException
      * @throws ReflectionException
      */
     public function getInstance()
+    {
+        $instance = $this->getInternalInstance();
+
+        if (is_null($instance)) {
+            throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @return object
+     * @throws ReflectionException
+     */
+    protected function getInternalInstance()
     {
         if ($this->singleton) {
             return $this->getSingletonInstace();
         }
 
         return $this->getNewInstance();
-
     }
 
     /**
@@ -182,6 +216,10 @@ class DependencyInjection
      */
     protected function getNewInstance()
     {
+        if (!empty($this->factory)) {
+            return $this->callMethods(call_user_func_array([$this->getClass(), $this->factory], $this->getArgs()));
+        }
+
         $reflectionClass = new ReflectionClass($this->getClass());
 
         if (is_null($this->args)) {

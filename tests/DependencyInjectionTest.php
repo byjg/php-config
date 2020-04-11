@@ -96,4 +96,13 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(10, $random->calculate());
     }
 
+    public function testWithFactoryMethod()
+    {
+        $config = $this->object->build('di-test3');
+
+        $random = $config->get("factory");
+        $this->assertInstanceOf(Random::class, $random);
+        $this->assertEquals(20, $random->calculate());
+    }
+
 }

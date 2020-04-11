@@ -23,4 +23,9 @@ class Random implements Area
     {
         return $this->random;
     }
+
+    public static function factory()
+    {
+        return new Random();
+    }
 }

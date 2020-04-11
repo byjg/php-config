@@ -206,8 +206,8 @@ class SumAreas implements Area
 {
      /**
      * SumAreas constructor.
-     * @param $triangle \DIClasses\RectangleTriangle
-     * @param $square \DIClasses\Square
+     * @param \DIClasses\RectangleTriangle $triangle 
+     * @param \DIClasses\Square $square 
      */
     public function __construct($triangle, $square)
     {
@@ -252,6 +252,7 @@ by adding `toSingleton()` instead of `toInstance()`.
     ->withInjectedConstructor()      // If you want attach  inject automatically
     ->withNoConstrutor()             // There is no constructor
     ->withConstructorArgs(array)     // The constructor arguments
+    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate. 
 
     // Call methods
     ->withMethodCall("methodName", array_of_args)
@@ -259,6 +260,7 @@ by adding `toSingleton()` instead of `toInstance()`.
     // Use one of these below:
     ->toInstance()                   // get a new instance for every container get
     ->toSingleton()                  // get the same instance for every container get 
+;
 ```
 
 # Checking current environment
