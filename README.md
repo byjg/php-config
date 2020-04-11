@@ -271,7 +271,7 @@ $defintion->getCurrentEnv();
 # Install
 
 ```
-composer require "byjg/config=3.0.*"
+composer require "byjg/config=4.0.*"
 ```
 
 # Tests
