@@ -142,7 +142,7 @@ class DependencyInjection
             $args = [];
             foreach ($params as $param) {
                 $type = $param->getType();
-                if (empty($type)) {
+                if (is_null($type)) {
                     throw new DependencyInjectionException("The parameter '$" . $param->getName() . "' has no type defined in class '" . $this->getClass() . "'");
                 }
                 $args[] = Param::get(ltrim($type, "\\"));
