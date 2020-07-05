@@ -210,6 +210,18 @@ class DependencyInjection
 
     /**
      * @return DependencyInjection
+     * @throws DependencyInjectionException
+     * @throws ReflectionException
+     */
+    public function toEagerSingleton()
+    {
+        $this->singleton = true;
+        $this->getInstance();
+        return $this;
+    }
+
+    /**
+     * @return DependencyInjection
      */
     public function toInstance()
     {

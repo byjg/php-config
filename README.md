@@ -261,6 +261,7 @@ by adding `toSingleton()` instead of `toInstance()`.
     // How will you get a instance?
     ->toInstance()                   // get a new instance for every container get
     ->toSingleton()                  // get the same instance for every container get 
+    ->toEagerSingleton()             // same as singleton however get a new instance immediately  
 ;
 ```
 
