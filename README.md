@@ -1,4 +1,4 @@
-# Config: Container PSR-11
+# Config: Container PSR-11 and Dependency Injection
 
 [![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
@@ -227,7 +227,7 @@ return [
     // ....
 
     SumAreas::class => DI::bind(SumAreas::class)
-        ->withConstructor()
+        ->withInjectedConstructor()
         ->toInstance(),
 ];
 ``` 
