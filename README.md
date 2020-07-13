@@ -1,4 +1,4 @@
-# Config: Container PSR-11
+# Config: Container PSR-11 and Dependency Injection
 
 [![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
@@ -133,6 +133,138 @@ $container = $definition->build();
 $property = $container->raw('closureProperty');
 ```
 
+# Dependency Injection
+
+## Basics
+
+It is possible to create a Dependency Injection and set automatically the instances and constructors. 
+Let's get by example the following classes:
+
+```php
+<?php
+namespace Example;
+
+interface Area
+{
+    public function calculate();
+}
+
+class Square implements Area
+{
+    public function __construct($side)
+    {
+        // ...
+    }
+    
+    //...
+}
+
+class RectangleTriangle implements Area
+{
+    public function __construct($base, $height)
+    {
+        // ...
+    }
+    
+    //...
+}
+```
+
+We can create a definition for this classes:
+
+```php
+<?php
+
+use ByJG\Config\DependencyInjection as DI;
+
+return [
+    \Example\Square::class => DI::bind(\Example\Square::class)
+        ->withConstructorArgs([4])
+        ->toInstance(),
+
+    \Example\RectangleTriangle::class => DI::bind(\Example\RectangleTriangle::class)
+        ->withConstructorArgs([3, 4])
+        ->toInstance(),
+];
+```
+
+and to use in our code we just need to do:
+
+```php
+<?php
+$config = $definition->build();
+$square = $config->get(\Example\Square::class);
+```
+
+## Injecting automaticatically the Objects
+
+Let's figure it out this class:
+
+```php
+<?php
+class SumAreas implements Area
+{
+     /**
+     * SumAreas constructor.
+     * @param \DIClasses\RectangleTriangle $triangle 
+     * @param \DIClasses\Square $square 
+     */
+    public function __construct($triangle, $square)
+    {
+        $this->triangle = $triangle;
+        $this->square = $square;
+    }
+
+    //... 
+```
+
+Note that this class needs instances of objects previously defined in our container definition. In that case we just need add
+this:
+
+```php
+<?php
+return [
+    // ....
+
+    SumAreas::class => DI::bind(SumAreas::class)
+        ->withInjectedConstructor()
+        ->toInstance(),
+];
+``` 
+
+When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where 
+defined and inject automatically to get a instance.  
+
+This component uses the PHP Document to determine the classed are required. 
+
+## Get a singleton object
+
+The `DependencyInjection` class will return a new instance every time you require a new object. However, you can the same object
+by adding `toSingleton()` instead of `toInstance()`. 
+
+## All options:
+
+```php
+<?php
+
+\ByJG\Config\DependencyInjection::bind("classname")
+    // To create a new instance choose *only* one below:
+    ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
+    ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
+    ->withNoConstrutor()                // The class has no constructor
+    ->withConstructorArgs(array)        // The constructor's class arguments
+    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
+
+    // Call methods after you have a instance
+    ->withMethodCall("methodName", array_of_args)
+    
+    // How will you get a instance?
+    ->toInstance()                   // get a new instance for every container get
+    ->toSingleton()                  // get the same instance for every container get 
+    ->toEagerSingleton()             // same as singleton however get a new instance immediately  
+;
+```
+
 # Checking current environment
 
 ```php
@@ -143,7 +275,7 @@ $defintion->getCurrentEnv();
 # Install
 
 ```
-composer require "byjg/config=3.0.*"
+composer require "byjg/config=4.0.*"
 ```
 
 # Tests

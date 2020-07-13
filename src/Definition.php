@@ -5,7 +5,10 @@ namespace ByJG\Config;
 use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\EnvironmentException;
 use ByJG\Config\Exception\InvalidDateException;
+use DateInterval;
+use Exception;
 use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 
 class Definition
 {
@@ -21,7 +24,7 @@ class Definition
     private $cache = [];
 
     /**
-     * @var \DateInterval[]
+     * @var DateInterval[]
      */
     private $cacheTTL = [];
 
@@ -29,7 +32,7 @@ class Definition
      * @param array $currentConfig The array with current loaded configuration
      * @param string $env The environment to be loaded
      * @return array
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws ConfigNotFoundException
      */
     private function loadConfig($currentConfig, $env)
     {
@@ -53,17 +56,17 @@ class Definition
     }
 
     /**
-     * @param \Psr\SimpleCache\CacheInterface $cache
+     * @param CacheInterface $cache
      * @param string|array $env
      * @return $this
-     * @throws \ByJG\Config\Exception\InvalidDateException
+     * @throws InvalidDateException
      */
     public function setCache(CacheInterface $cache, $env = "live")
     {
         foreach ((array)$env as $item) {
             try {
-                $date = new \DateInterval('P7D');
-            } catch (\Exception $ex) {
+                $date = new DateInterval('P7D');
+            } catch (Exception $ex) {
                 throw new InvalidDateException($ex->getMessage());
             }
             $this->cache[$item] = $cache;
@@ -73,12 +76,12 @@ class Definition
     }
 
     /**
-     * @param \DateInterval $ttl
+     * @param DateInterval $ttl
      * @param string|array $env
      * @return $this
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws EnvironmentException
      */
-    public function setCacheTTL(\DateInterval $ttl, $env = "live")
+    public function setCacheTTL(DateInterval $ttl, $env = "live")
     {
         foreach ((array)$env as $item) {
             if (!isset($this->cache[$item])) {
@@ -93,7 +96,7 @@ class Definition
     /**
      * @param string $env
      * @return $this
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws EnvironmentException
      */
     public function addEnvironment($env)
     {
@@ -131,7 +134,7 @@ class Definition
      * Get the current environment
      *
      * @return array|false|string
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws EnvironmentException
      */
     public function getCurrentEnv()
     {
@@ -146,10 +149,10 @@ class Definition
      * Get the config based on the specified environment
      *
      * @param string|null $env
-     * @return \ByJG\Config\Container
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\EnvironmentException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @return Container
+     * @throws ConfigNotFoundException
+     * @throws EnvironmentException
+     * @throws InvalidArgumentException
      */
     public function build($env = null)
     {
