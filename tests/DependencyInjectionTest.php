@@ -149,6 +149,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \ByJG\Config\Exception\DependencyInjectionException
      * @throws \ByJG\Config\Exception\EnvironmentException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
@@ -170,6 +171,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \ByJG\Config\Exception\DependencyInjectionException
      * @throws \ByJG\Config\Exception\EnvironmentException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException

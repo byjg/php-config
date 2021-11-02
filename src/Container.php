@@ -21,6 +21,7 @@ class Container implements ContainerInterface
      *
      * @param string $id Identifier of the entry to look for.
      * @return mixed Entry.
+     * @throws Exception\DependencyInjectionException
      * @throws KeyNotFoundException
      * @throws ReflectionException
      */
