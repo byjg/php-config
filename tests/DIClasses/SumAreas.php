@@ -12,8 +12,8 @@ class SumAreas implements Area
 
     /**
      * SumAreas constructor.
-     * @param $area
-     * @param $random
+     * @param Area $area
+     * @param Random $random
      */
     public function __construct(Area $area, Random $random)
     {

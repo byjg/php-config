@@ -2,17 +2,17 @@
 
 [![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
-[![Build Status](https://travis-ci.org/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
+[![Build Status](https://travis-ci.com/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
-# How it Works?
+## How it Works?
 
 The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
 
 See below how to setup:
 
-# Setup files:
+## Setup files:
 
 Create in your project root at the same level of the vendor directory a folder called `config`. 
 
@@ -63,7 +63,9 @@ Docker CLI
 docker -e APPLICATION_ENV=dev image
 ```
 
-# The `config-xxxx.php` file
+## Configuration Files
+
+### The `config-xxxx.php` file
 
 **config-homolog.php**
 ```php
@@ -88,6 +90,23 @@ return [
 return [
     'property2' => false
 ];
+```
+
+### The `xxxx.env` file
+
+Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
+
+**live.env**
+```
+property1=mixed
+```
+
+By default, all properties are parsed as string. You can parse as bool, int or float as this example:
+
+```
+PARAM1=!bool true
+PARAM2=!int 20
+PARAM3=!float 3.14
 ```
 
 # Use in your PHP Code

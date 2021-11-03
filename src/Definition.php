@@ -8,7 +8,6 @@ use ByJG\Config\Exception\InvalidDateException;
 use DateInterval;
 use Exception;
 use Psr\SimpleCache\CacheInterface;
-use Psr\SimpleCache\InvalidArgumentException;
 
 class Definition
 {
@@ -28,31 +27,62 @@ class Definition
      */
     private $cacheTTL = [];
 
-    /**
-     * @param array $currentConfig The array with current loaded configuration
-     * @param string $env The environment to be loaded
-     * @return array
-     * @throws ConfigNotFoundException
-     */
+    private $baseDir = "";
+
+    private $loadOSEnv = false;
+
     private function loadConfig($currentConfig, $env)
     {
-        $file = __DIR__ . '/../../../../config/config-' . $env .  '.php';
+        $content1 = $this->loadConfigFile($env);
+        $content2 = $this->loadEnvFile($env);
 
-        if (!file_exists($file)) {
-            $file = __DIR__ . '/../config/config-' . $env .  '.php';
+        if (is_null($content1) && is_null($content2)) {
+            throw new ConfigNotFoundException("Configuration 'config-$env.php' or 'config-$env.env' could not found at " . $this->getBaseDir());
         }
 
+        return array_merge(is_null($content1) ? [] : $content1, is_null($content2) ? [] : $content2, $currentConfig);
+    }
+
+    /**
+     * @param string $env The environment to be loaded
+     * @return array
+     */
+    private function loadConfigFile($env)
+    {
+        $file = $this->getBaseDir() . '/config-' . $env .  '.php';
+
         if (!file_exists($file)) {
-            throw new ConfigNotFoundException(
-                "The config file '"
-                . "config-$env.php' "
-                . 'does not found at '
-                . "'<ROOT>/config/config-$env.php'"
-            );
+            return null;
         }
 
-        $config = (include $file);
-        return array_merge($config, $currentConfig);
+        return (include $file);
+    }
+
+    private function loadEnvFile($env)
+    {
+        $filename = $this->getBaseDir() . "/config-$env.env";
+        if (!file_exists($filename)) {
+            return null;
+        }
+
+        $config = [];
+        foreach (file($filename) as $line) {
+            if (!preg_match("/^\s*(?<key>\w+)\s*=\s*(?<value>.*)$/", $line, $result)) {
+                continue;
+            }
+            if (preg_match("/^!bool\s+(?<value>true|false)$/", $result["value"], $parsed)) {
+                $result["value"] = boolval($parsed["value"]);
+            }
+            if (preg_match("/^!int\s+(?<value>.*)$/", $result["value"], $parsed)) {
+                $result["value"] = intval($parsed["value"]);
+            }
+            if (preg_match("/^!float\s+(?<value>.*)$/", $result["value"], $parsed)) {
+                $result["value"] = floatval($parsed["value"]);
+            }
+            $config[$result["key"]] = $result["value"];
+        }
+
+        return $config;
     }
 
     /**
@@ -119,6 +149,15 @@ class Definition
     }
 
     /**
+     * @return $this
+     */
+    public function loadOSEnv()
+    {
+        $this->loadOSEnv = true;
+        return $this;
+    }
+
+    /**
      * Sets the environment variable. Defaults to APPLICATION_ENV
      *
      * @param string $var
@@ -128,6 +167,31 @@ class Definition
     {
         $this->envVar = $var;
         return $this;
+    }
+
+    /**
+     * @throws EnvironmentException
+     */
+    public function withBaseDir($dir)
+    {
+        if (!file_exists($dir)) {
+            throw new EnvironmentException("Directory $dir doesn't exists");
+        }
+        $this->baseDir = $dir;
+        return $this;
+    }
+
+    private function getBaseDir()
+    {
+        if (empty($this->baseDir)) {
+            $dir = __DIR__ . '/../../../../config';
+
+            if (!file_exists($dir)) {
+                $dir = __DIR__ . '/../config';
+            }
+            $this->baseDir = $dir;
+        }
+        return $this->baseDir;
     }
 
     /**
@@ -152,7 +216,7 @@ class Definition
      * @return Container
      * @throws ConfigNotFoundException
      * @throws EnvironmentException
-     * @throws InvalidArgumentException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
      */
     public function build($env = null)
     {
@@ -176,6 +240,10 @@ class Definition
         $config = $this->loadConfig($config, $env);
         foreach ($this->environments[$env] as $environment) {
             $config = $this->loadConfig($config, $environment);
+        }
+
+        if ($this->loadOSEnv) {
+            $config = array_merge($config, $_ENV);
         }
 
         $container = new Container($config);

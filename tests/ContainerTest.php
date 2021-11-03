@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 class ContainerTest extends TestCase
 {
     /**
-     * @var \ByJG\Config\Definition
+     * @var Definition
      */
     protected $object;
 
@@ -148,7 +148,7 @@ class ContainerTest extends TestCase
 
     /**
      * @expectedException \ByJG\Config\Exception\ConfigNotFoundException
-     * @expectedExceptionMessage The config file 'config-notfound.php' does not found at
+     * @expectedExceptionMessage Configuration 'config-notfound.php' or 'config-notfound.env' could not found
      */
     public function testLoadConfigNotExistant3()
     {

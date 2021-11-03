@@ -61,6 +61,7 @@ class DependencyInjection
 
     /**
      * @return mixed
+     * @throws KeyNotFoundException
      */
     protected function getArgs()
     {
@@ -145,7 +146,11 @@ class DependencyInjection
                 if (is_null($type)) {
                     throw new DependencyInjectionException("The parameter '$" . $param->getName() . "' has no type defined in class '" . $this->getClass() . "'");
                 }
-                $args[] = Param::get(ltrim($type, "\\"));
+                if (method_exists($type, "getName")) {
+                    $args[] = Param::get(ltrim($type->getName(), "\\"));
+                } else {
+                    $args[] = Param::get(ltrim($type, "\\"));
+                }
             }
             return $this->withConstructorArgs($args);
         }
@@ -247,6 +252,7 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws KeyNotFoundException
      * @throws ReflectionException
      */
     protected function getInternalInstance()
@@ -260,6 +266,7 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws KeyNotFoundException
      * @throws ReflectionException
      */
     protected function getNewInstance()
@@ -296,6 +303,7 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws KeyNotFoundException
      * @throws ReflectionException
      */
     protected function getSingletonInstace()
