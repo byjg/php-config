@@ -148,7 +148,7 @@ class ContainerTest extends TestCase
 
     /**
      * @expectedException \ByJG\Config\Exception\ConfigNotFoundException
-     * @expectedExceptionMessage Configuration 'config-notfound.php' or 'notfound.env' could not found
+     * @expectedExceptionMessage Configuration 'config-notfound.php' or 'config-notfound.env' could not found
      */
     public function testLoadConfigNotExistant3()
     {

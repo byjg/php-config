@@ -37,7 +37,7 @@ class Definition
         $content2 = $this->loadEnvFile($env);
 
         if (is_null($content1) && is_null($content2)) {
-            throw new ConfigNotFoundException("Configuration 'config-$env.php' or '$env.env' could not found at " . $this->getBaseDir());
+            throw new ConfigNotFoundException("Configuration 'config-$env.php' or 'config-$env.env' could not found at " . $this->getBaseDir());
         }
 
         return array_merge(is_null($content1) ? [] : $content1, is_null($content2) ? [] : $content2, $currentConfig);
@@ -60,7 +60,7 @@ class Definition
 
     private function loadEnvFile($env)
     {
-        $filename = $this->getBaseDir() . "/$env.env";
+        $filename = $this->getBaseDir() . "/config-$env.env";
         if (!file_exists($filename)) {
             return null;
         }
