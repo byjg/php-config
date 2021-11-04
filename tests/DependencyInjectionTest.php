@@ -28,15 +28,15 @@ class DependencyInjectionTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      */
     public function setUp()
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-test')
-            ->addEnvironment('di-test2')
-            ->addEnvironment('di-test3')
-            ->addEnvironment('di-test4')
+            ->addConfig('di-test')
+            ->addConfig('di-test2')
+            ->addConfig('di-test3')
+            ->addConfig('di-test4')
         ;
     }
 
@@ -117,7 +117,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @expectedException \ByJG\Config\Exception\DependencyInjectionException
      * @expectedExceptionMessage The class DIClasses\InjectedFail does not have annotations with the param type
@@ -125,7 +125,7 @@ class DependencyInjectionTest extends TestCase
     public function testInjectConstructorFail()
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-fail')
+            ->addConfig('di-fail')
         ;
 
         $config = $this->object->build("di-fail");
@@ -133,7 +133,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @expectedException \ByJG\Config\Exception\DependencyInjectionException
      * @expectedExceptionMessage The parameter '$area' has no type defined in class 'DIClasses\InjectedFail'
@@ -141,7 +141,7 @@ class DependencyInjectionTest extends TestCase
     public function testInjectConstructorFail2()
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-fail2')
+            ->addConfig('di-fail2')
         ;
 
         $config = $this->object->build("di-fail2");
@@ -150,7 +150,7 @@ class DependencyInjectionTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException
@@ -160,7 +160,7 @@ class DependencyInjectionTest extends TestCase
     public function testGetInstancesFail3_1()
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-fail3')
+            ->addConfig('di-fail3')
         ;
         $config = $this->object->build('di-fail3');
 
@@ -172,7 +172,7 @@ class DependencyInjectionTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException
@@ -182,7 +182,7 @@ class DependencyInjectionTest extends TestCase
     public function testGetInstancesFail3_2()
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-fail3')
+            ->addConfig('di-fail3')
         ;
         $config = $this->object->build('di-fail3');
 
