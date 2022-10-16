@@ -28,7 +28,7 @@ class DependencyInjectionTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      */
     public function setUp(): void
     {
@@ -117,7 +117,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
     public function testInjectConstructorFail()
@@ -134,7 +134,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
     public function testInjectConstructorFail2()
@@ -152,7 +152,7 @@ class DependencyInjectionTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException
@@ -175,7 +175,7 @@ class DependencyInjectionTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException

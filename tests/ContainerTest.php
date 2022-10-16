@@ -4,6 +4,7 @@ namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
+use ByJG\Config\Exception\ConfigException;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -14,7 +15,7 @@ class ContainerTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      */
     public function setUp(): void
     {
@@ -32,17 +33,53 @@ class ContainerTest extends TestCase
 
     public function tearDown(): void
     {
-        putenv('APPLICATION_ENV');
+        putenv('APP_ENV');
     }
 
-    public function testGetCurrentEnv()
+    public function testgetCurrentConfig()
     {
-        putenv('APPLICATION_ENV=test');
-        
-        $this->assertEquals("test", $this->object->getCurrentEnv());
+        putenv('APP_ENV=test');
 
-        putenv('APPLICATION_ENV=bla');
-        $this->assertEquals("bla", $this->object->getCurrentEnv());
+        $this->assertEquals("test", $this->object->getCurrentConfig());
+
+        putenv('APP_ENV=bla');
+        $this->assertEquals("bla", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig2()
+    {
+        $this->object->build("test2");
+        $this->assertEquals("test2", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig3()
+    {
+        putenv('APP_ENV=test');
+        $this->object->build("test2");
+        $this->assertEquals("test2", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig4()
+    {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("The environment variable 'APP_ENV' is not set");
+
+        $this->object->getCurrentConfig();
     }
 
     public function testLoadConfig()
@@ -90,12 +127,12 @@ class ContainerTest extends TestCase
 
     public function testLoadConfig3()
     {
-        putenv('APPLICATION_ENV=test');
+        putenv('APP_ENV=test');
         $config = $this->object->build();
         $this->assertEquals('string', $config->get('property1'));
         $this->assertTrue($config->get('property2'));
 
-        putenv('APPLICATION_ENV=test2');
+        putenv('APP_ENV=test2');
         $config2 = $this->object->build();
         $this->assertEquals('string', $config2->get('property1'));
         $this->assertFalse($config2->get('property2'));
@@ -139,8 +176,8 @@ class ContainerTest extends TestCase
 
     public function testLoadConfigNotExistant2()
     {
-        $this->expectException(\ByJG\Config\Exception\EnvironmentException::class);
-        $this->expectExceptionMessage("Environment 'notset' does not defined");
+        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectExceptionMessage("Configuration 'notset' does not defined");
 
         $this->object->build('notset');
     }
@@ -198,13 +235,13 @@ class ContainerTest extends TestCase
         $this->assertNotSame($container, $container4);  // There two different objects
     }
 
-    public function testChangeEnvironmentVariable()
+    public function testChangeConfigVar()
     {
         $container = $this->object->build('test');
 
         putenv('NEWENV=test');
-        $this->object->environmentVar('NEWENV');
-        $this->assertEquals("test", $this->object->getCurrentEnv());
+        $this->object->withConfigVar('NEWENV');
+        $this->assertEquals("test", $this->object->getCurrentConfig());
 
         $container2 = $this->object->build();
         $this->assertEquals($container, $container2);

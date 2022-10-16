@@ -14,7 +14,7 @@ class EnvFileTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      */
     public function setUp(): void
     {
@@ -24,12 +24,12 @@ class EnvFileTest extends TestCase
 
     public function tearDown(): void
     {
-        putenv('APPLICATION_ENV');
+        putenv('APP_ENV');
     }
 
-    public function testGetCurrentEnv()
+    public function testgetCurrentConfig()
     {
-        putenv('APPLICATION_ENV=file');
+        putenv('APP_ENV=file');
         $config = $this->object->build();
 
         $this->assertEquals('value1', $config->get('KEY1'));

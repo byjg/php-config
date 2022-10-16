@@ -11,7 +11,7 @@ A very basic and minimalist PSR-11 implementation for config management and depe
 
 ## How it Works?
 
-The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
+The container is created based on the configuration you created (dev, homolog, test, live, ...) defined in array and `.env` files;
 
 See below how to setup:
 
@@ -19,8 +19,8 @@ See below how to setup:
 
 Create in your project root at the same level of the vendor directory a folder called `config`. 
 
-Inside this folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
-are your environments. 
+Inside these folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
+are your configuration sets. 
 
 Your folder will look like to:
 
@@ -30,40 +30,71 @@ Your folder will look like to:
     +-- config
            |
            + config-dev.php
+           + config-dev.env
            + config-homolog.php
+           + config-homolog.env
            + config-test.php
            + config-live.php
    +-- vendor
    +-- composer.json
 ```
 
-## Create environment variable
+## Select the configuration you will use
 
-You need to setup a variable called "APPLICATION_ENV" before start your server. 
+### Read from the environment variable `APP_ENV`
+
+When you call:
+
+```php
+$container = $defintion->build()
+```
+
+The component will try to get the proper configuration set based on the contents of the variable `APP_ENV`
+
+There are several ways to set the `APP_ENV` before start your server:
 
 This can be done using nginx:
 
 ```text
-fastcgi_param   APPLICATION_ENV  dev;
+fastcgi_param   APP_ENV  dev;
 ```
 
 Apache:
 
 ```text
-SetEnv APPLICATION_ENV dev
+SetEnv APP_ENV dev
 ```
 
 Docker-Compose
 
 ```text
 environment:
-    APPLICATION_ENV: dev
+    APP_ENV: dev
 ```
 
 Docker CLI
 
-```bash
-docker -e APPLICATION_ENV=dev image
+```
+docker -e APP_ENV=dev image
+```
+
+### Read from a different variable
+
+Instead of use `APP_ENV` you can set your own variable
+
+```php
+$container = $definition
+    ->withConfigVar("MY_ENV_VAR")
+    ->build("live");
+```
+
+### Specify directly 
+
+Other way to load the configuration set instead of depending on an environment variable is to specifiy directly
+which configuration you want to get:
+
+```php
+$container = $definition->build("live");
 ```
 
 ### Configuration Files
@@ -95,7 +126,7 @@ return [
 ];
 ```
 
-#### The `xxxx.env` file
+#### The `config-xxxx.env` file
 
 Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
 
@@ -119,11 +150,11 @@ Create the Definition:
 ```php
 <?php
 $definition = (new \ByJG\Config\Definition())
-    ->environmentVar('APPLICATION_ENV') // This will setup the environment var to 'APPLICATION_ENV' (default)
-    ->addConfig('homolog')         // This will setup the HOMOLOG environment
+    ->withConfigVar('APP_ENV') // This will setup the environment var to 'APP_ENV' (default)
+    ->addConfig('homolog')         // This will setup the HOMOLOG configuration set
     ->addConfig('live')            // This will setup the LIVE environenment inherited HOMOLOG
         ->inheritFrom('homolog')
-    ->setCache($somePsr16Implementation, 'live'); // This will cache the result only to live Environment;
+    ->setCache($somePsr16Implementation, 'live'); // This will cache the "live" configuration set. 
 ```
 
 The code below will get a property from the defined environment:
@@ -134,10 +165,10 @@ $container = $definition->build();
 $property = $container->get('property2');
 ```
 
-If the property does not exists an error will be throwed.
+If the property does not exist an error will be throwed.
 
 
-If the property is a closure, you can call the get method and you'll get the closure execution result:
+If the property is a closure, you can call the get method, and you'll get the closure execution result:
 
 ```php
 <?php
@@ -287,11 +318,11 @@ by adding `toSingleton()` instead of `toInstance()`.
 ;
 ```
 
-## Checking current environment
+## Get the configuration set name is active
 
 ```php
 <?php
-$defintion->getCurrentEnv();
+$defintion->getCurrentConfig();
 ```
 
 ## Install
