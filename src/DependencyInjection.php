@@ -63,7 +63,7 @@ class DependencyInjection
      * @return mixed
      * @throws KeyNotFoundException
      */
-    protected function getArgs()
+    protected function getArgs($argsToParse = null)
     {
             return array_map(function ($value) {
                 if ($value instanceof Param) {
@@ -74,7 +74,7 @@ class DependencyInjection
                     }
                 }
                 return $value;
-            }, $this->args);
+            }, is_null($argsToParse) ? $this->args : $argsToParse);
     }
 
     /**
@@ -294,7 +294,7 @@ class DependencyInjection
             if (is_null($methodDefinition[1])) {
                 call_user_func([$instance, $methodDefinition[0]]);
             } else {
-                call_user_func_array([$instance, $methodDefinition[0]], $methodDefinition[1]);
+                call_user_func_array([$instance, $methodDefinition[0]], $this->getArgs($methodDefinition[1]));
             }
         }
 

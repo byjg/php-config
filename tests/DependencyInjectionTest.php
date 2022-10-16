@@ -8,6 +8,7 @@ require_once (__DIR__ . "/DIClasses/SumAreas.php");
 require_once (__DIR__ . "/DIClasses/Random.php");
 require_once (__DIR__ . "/DIClasses/InjectedLegacy.php");
 require_once (__DIR__ . "/DIClasses/InjectedFail.php");
+require_once (__DIR__ . "/DIClasses/TestParam.php");
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
@@ -18,6 +19,7 @@ use DIClasses\Random;
 use DIClasses\RectangleTriangle;
 use DIClasses\Square;
 use DIClasses\SumAreas;
+use DIClasses\TestParam;
 use PHPUnit\Framework\TestCase;
 
 class DependencyInjectionTest extends TestCase
@@ -113,6 +115,15 @@ class DependencyInjectionTest extends TestCase
         $square = $config->get(Square::class);
 
         $this->assertEquals(16, $square->calculate());
+    }
+
+    public function testGetInstancesWithParam2()
+    {
+        $config = $this->object->build('di-test4');
+
+        $test = $config->get(TestParam::class);
+
+        $this->assertTrue($test->isOk());
     }
 
     /**
