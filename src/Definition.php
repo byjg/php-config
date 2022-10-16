@@ -128,7 +128,7 @@ class Definition
      * @return $this
      * @throws EnvironmentException
      */
-    public function addEnvironment($env)
+    public function addConfig($env)
     {
         if (isset($this->environments[$env])) {
             throw new EnvironmentException("Environment '$env' already exists");

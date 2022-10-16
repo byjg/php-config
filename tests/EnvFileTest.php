@@ -16,13 +16,13 @@ class EnvFileTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\EnvironmentException
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->object = (new Definition())
-            ->addEnvironment("file");
+            ->addConfig("file");
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         putenv('APPLICATION_ENV');
     }

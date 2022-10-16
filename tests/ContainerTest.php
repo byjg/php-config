@@ -16,21 +16,21 @@ class ContainerTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\EnvironmentException
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->object = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
                 ->inheritFrom('test')
-            ->addEnvironment('test3')
+            ->addConfig('test3')
                 ->inheritFrom('test2')
                 ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
         ;
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         putenv('APPLICATION_ENV');
     }
@@ -38,6 +38,7 @@ class ContainerTest extends TestCase
     public function testGetCurrentEnv()
     {
         putenv('APPLICATION_ENV=test');
+        
         $this->assertEquals("test", $this->object->getCurrentEnv());
 
         putenv('APPLICATION_ENV=bla');
@@ -126,32 +127,29 @@ class ContainerTest extends TestCase
         $this->assertTrue($result6);
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\KeyNotFoundException
-     * @expectedExceptionMessage The key 'property4' does not exists
-     */
     public function testLoadConfigNotExistant()
     {
+        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectExceptionMessage("The key 'property4' does not exists");
+
         $config = $this->object->build('test');
 
         $config->get('property4');
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\EnvironmentException
-     * @expectedExceptionMessage Environment 'notset' does not defined
-     */
     public function testLoadConfigNotExistant2()
     {
+        $this->expectException(\ByJG\Config\Exception\EnvironmentException::class);
+        $this->expectExceptionMessage("Environment 'notset' does not defined");
+
         $this->object->build('notset');
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\ConfigNotFoundException
-     * @expectedExceptionMessage Configuration 'config-notfound.php' or 'config-notfound.env' could not found
-     */
     public function testLoadConfigNotExistant3()
     {
+        $this->expectException(\ByJG\Config\Exception\ConfigNotFoundException::class);
+        $this->expectExceptionMessage("Configuration 'config-notfound.php' or 'config-notfound.env' could not found");
+
         $this->object->build('notfound');
     }
 
@@ -166,11 +164,11 @@ class ContainerTest extends TestCase
             ->build('test');  // Expected build and set to cache
 
         $container2 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
             ->setCache($arrayCache, 'test')
             ->build('test');   // Expected get from cache
 
@@ -178,11 +176,11 @@ class ContainerTest extends TestCase
         $this->assertSame($container, $container2); // The exact object
 
         $container3 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
             ->setCache($arrayCache, 'test2')
             ->build('test');   // Expected get a fresh new defintion
 
@@ -190,11 +188,11 @@ class ContainerTest extends TestCase
 
         // Without cache
         $container4 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
             ->build('test');
 
         $this->assertNotSame($container, $container4);  // There two different objects

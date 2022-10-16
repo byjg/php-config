@@ -30,13 +30,13 @@ class DependencyInjectionTest extends TestCase
     /**
      * @throws \ByJG\Config\Exception\EnvironmentException
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->object = (new Definition())
-            ->addEnvironment('di-test')
-            ->addEnvironment('di-test2')
-            ->addEnvironment('di-test3')
-            ->addEnvironment('di-test4')
+            ->addConfig('di-test')
+            ->addConfig('di-test2')
+            ->addConfig('di-test3')
+            ->addConfig('di-test4')
         ;
     }
 
@@ -119,13 +119,14 @@ class DependencyInjectionTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\EnvironmentException
      * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @expectedException \ByJG\Config\Exception\DependencyInjectionException
-     * @expectedExceptionMessage The class DIClasses\InjectedFail does not have annotations with the param type
      */
     public function testInjectConstructorFail()
     {
+        $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
+        $this->expectExceptionMessage("The class DIClasses\InjectedFail does not have annotations with the param type");
+
         $this->object = (new Definition())
-            ->addEnvironment('di-fail')
+            ->addConfig('di-fail')
         ;
 
         $config = $this->object->build("di-fail");
@@ -135,13 +136,14 @@ class DependencyInjectionTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\EnvironmentException
      * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @expectedException \ByJG\Config\Exception\DependencyInjectionException
-     * @expectedExceptionMessage The parameter '$area' has no type defined in class 'DIClasses\InjectedFail'
      */
     public function testInjectConstructorFail2()
     {
+        $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
+        $this->expectExceptionMessage("The parameter '\$area' has no type defined in class 'DIClasses\InjectedFail'");
+
         $this->object = (new Definition())
-            ->addEnvironment('di-fail2')
+            ->addConfig('di-fail2')
         ;
 
         $config = $this->object->build("di-fail2");
@@ -154,13 +156,14 @@ class DependencyInjectionTest extends TestCase
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException
-     * @expectedException \ByJG\Config\Exception\KeyNotFoundException
-     * @expectedExceptionMessage The key 'DIClasses\Area' does not exists injected from 'DIClasses\SumAreas'
      */
     public function testGetInstancesFail3_1()
     {
+        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectExceptionMessage("The key 'DIClasses\Area' does not exists injected from 'DIClasses\SumAreas'");
+
         $this->object = (new Definition())
-            ->addEnvironment('di-fail3')
+            ->addConfig('di-fail3')
         ;
         $config = $this->object->build('di-fail3');
 
@@ -176,13 +179,14 @@ class DependencyInjectionTest extends TestCase
      * @throws \ByJG\Config\Exception\KeyNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      * @throws \ReflectionException
-     * @expectedException \ByJG\Config\Exception\KeyNotFoundException
-     * @expectedExceptionMessage The key 'DIClasses\Area' does not exists injected from 'DIClasses\InjectedLegacy'
      */
     public function testGetInstancesFail3_2()
     {
+        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectExceptionMessage("The key 'DIClasses\Area' does not exists injected from 'DIClasses\InjectedLegacy'");
+
         $this->object = (new Definition())
-            ->addEnvironment('di-fail3')
+            ->addConfig('di-fail3')
         ;
         $config = $this->object->build('di-fail3');
 

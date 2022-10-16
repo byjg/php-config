@@ -1,8 +1,11 @@
 # Config: Container PSR-11 and Dependency Injection
 
-[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
+[![Build Status](https://github.com/byjg/config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/config/actions/workflows/phpunit.yml)
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
+[![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/config/)
+[![GitHub license](https://img.shields.io/github/license/byjg/config.svg)](https://opensource.byjg.com/opensource/licensing.html)
+[![GitHub release](https://img.shields.io/github/release/byjg/config.svg)](https://github.com/byjg/config/releases/)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
-[![Build Status](https://travis-ci.com/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
@@ -12,7 +15,7 @@ The container is created based on your current environment (dev, homolog, test, 
 
 See below how to setup:
 
-## Setup files:
+## Setup files
 
 Create in your project root at the same level of the vendor directory a folder called `config`. 
 
@@ -21,7 +24,7 @@ are your environments.
 
 Your folder will look like to:
 
-```
+```text
 <project root>
     |
     +-- config
@@ -34,38 +37,38 @@ Your folder will look like to:
    +-- composer.json
 ```
 
-# Create environment variable
+## Create environment variable
 
 You need to setup a variable called "APPLICATION_ENV" before start your server. 
 
 This can be done using nginx:
 
-```
+```text
 fastcgi_param   APPLICATION_ENV  dev;
 ```
 
 Apache:
 
-```
+```text
 SetEnv APPLICATION_ENV dev
 ```
 
 Docker-Compose
 
-```
+```text
 environment:
     APPLICATION_ENV: dev
 ```
 
 Docker CLI
 
-```
+```bash
 docker -e APPLICATION_ENV=dev image
 ```
 
-## Configuration Files
+### Configuration Files
 
-### The `config-xxxx.php` file
+#### The `config-xxxx.php` file
 
 **config-homolog.php**
 ```php
@@ -92,7 +95,7 @@ return [
 ];
 ```
 
-### The `xxxx.env` file
+#### The `xxxx.env` file
 
 Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
 
@@ -109,7 +112,7 @@ PARAM2=!int 20
 PARAM3=!float 3.14
 ```
 
-# Use in your PHP Code
+### Use in your PHP Code
 
 Create the Definition:
 
@@ -117,8 +120,8 @@ Create the Definition:
 <?php
 $definition = (new \ByJG\Config\Definition())
     ->environmentVar('APPLICATION_ENV') // This will setup the environment var to 'APPLICATION_ENV' (default)
-    ->addEnvironment('homolog')         // This will setup the HOMOLOG environment
-    ->addEnvironment('live')            // This will setup the LIVE environenment inherited HOMOLOG
+    ->addConfig('homolog')         // This will setup the HOMOLOG environment
+    ->addConfig('live')            // This will setup the LIVE environenment inherited HOMOLOG
         ->inheritFrom('homolog')
     ->setCache($somePsr16Implementation, 'live'); // This will cache the result only to live Environment;
 ```
@@ -152,9 +155,9 @@ $container = $definition->build();
 $property = $container->raw('closureProperty');
 ```
 
-# Dependency Injection
+## Dependency Injection
 
-## Basics
+### Basics
 
 It is possible to create a Dependency Injection and set automatically the instances and constructors. 
 Let's get by example the following classes:
@@ -215,7 +218,7 @@ $config = $definition->build();
 $square = $config->get(\Example\Square::class);
 ```
 
-## Injecting automaticatically the Objects
+### Injecting automaticatically the Objects
 
 Let's figure it out this class:
 
@@ -256,12 +259,12 @@ defined and inject automatically to get a instance.
 
 This component uses the PHP Document to determine the classed are required. 
 
-## Get a singleton object
+### Get a singleton object
 
 The `DependencyInjection` class will return a new instance every time you require a new object. However, you can the same object
 by adding `toSingleton()` instead of `toInstance()`. 
 
-## All options:
+### All options
 
 ```php
 <?php
@@ -284,22 +287,21 @@ by adding `toSingleton()` instead of `toInstance()`.
 ;
 ```
 
-# Checking current environment
+## Checking current environment
 
 ```php
 <?php
 $defintion->getCurrentEnv();
 ```
 
-# Install
+## Install
 
-```
-composer require "byjg/config=4.0.*"
+```bash
+composer require "byjg/config=4.1.*"
 ```
 
-# Tests
+## Tests
 
 ```
 phpunit
 ```
-
