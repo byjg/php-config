@@ -260,6 +260,13 @@ class Definition
             $config = $this->loadConfig($config, $configData);
         }
 
+        foreach ($config as $key => $value) {
+            $envValue = getenv($key);
+            if (!empty($envValue)) {
+                $config[$key] = $envValue;
+            }
+        }
+    
         if ($this->loadOsEnv) {
             $config = array_merge($config, $_ENV);
         }
