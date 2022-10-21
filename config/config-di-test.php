@@ -2,11 +2,9 @@
 
 use ByJG\Config\DependencyInjection as DI;
 use DIClasses\Area;
-use DIClasses\InjectedFail;
 use DIClasses\InjectedLegacy;
 use DIClasses\Random;
 use DIClasses\RectangleTriangle;
-use DIClasses\Square;
 use DIClasses\SumAreas;
 
 return [
@@ -16,6 +14,10 @@ return [
 
     Area::class => DI::bind(RectangleTriangle::class)
         ->withConstructorArgs([3, 4])
+        ->toInstance(),
+
+    'Value' => DI::use(Area::class)
+        ->withMethodCall('calculate')
         ->toInstance(),
 
     SumAreas::class => DI::bind(SumAreas::class)

@@ -46,7 +46,7 @@ Your folder will look like to:
 When you call:
 
 ```php
-$container = $defintion->build()
+$container = $definition->build()
 ```
 
 The component will try to get the proper configuration set based on the contents of the variable `APP_ENV`
@@ -74,7 +74,7 @@ environment:
 
 Docker CLI
 
-```
+```bash
 docker -e APP_ENV=dev image
 ```
 
@@ -88,7 +88,7 @@ $container = $definition
     ->build("live");
 ```
 
-### Specify directly 
+### Specify directly
 
 Other way to load the configuration set instead of depending on an environment variable is to specifiy directly
 which configuration you want to get:
@@ -102,6 +102,7 @@ $container = $definition->build("live");
 #### The `config-xxxx.php` file
 
 **config-homolog.php**
+
 ```php
 <?php
 
@@ -131,13 +132,14 @@ return [
 Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
 
 **live.env**
-```
+
+```ini
 property1=mixed
 ```
 
 By default, all properties are parsed as string. You can parse as bool, int or float as this example:
 
-```
+```ini
 PARAM1=!bool true
 PARAM2=!int 20
 PARAM3=!float 3.14
@@ -165,7 +167,7 @@ $container = $definition->build();
 $property = $container->get('property2');
 ```
 
-If the property does not exist an error will be throwed.
+If the property does not exist an error will be thrown.
 
 
 If the property is a closure, you can call the get method, and you'll get the closure execution result:
@@ -178,7 +180,7 @@ $property = $container->get('closurePropertyWithArgs', 'value1', 'value2');
 $property = $container->get('closurePropertyWithArgs', ['value1', 'value2']);
 ```
 
-If you want get the RAW value without parse clousure:
+If you want get the RAW value without parse closure:
 
 ```php
 <?php
@@ -190,7 +192,7 @@ $property = $container->raw('closureProperty');
 
 ### Basics
 
-It is possible to create a Dependency Injection and set automatically the instances and constructors. 
+It is possible to create a Dependency Injection and set automatically the instances and constructors.
 Let's get by example the following classes:
 
 ```php
@@ -249,7 +251,7 @@ $config = $definition->build();
 $square = $config->get(\Example\Square::class);
 ```
 
-### Injecting automaticatically the Objects
+### Injecting automatically the Objects
 
 Let's figure it out this class:
 
@@ -285,17 +287,17 @@ return [
 ];
 ``` 
 
-When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where 
-defined and inject automatically to get a instance.  
+When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where
+defined and inject automatically to get a instance.
 
-This component uses the PHP Document to determine the classed are required. 
+This component uses the PHP Document to determine the classed are required.
 
 ### Get a singleton object
 
 The `DependencyInjection` class will return a new instance every time you require a new object. However, you can the same object
-by adding `toSingleton()` instead of `toInstance()`. 
+by adding `toSingleton()` instead of `toInstance()`.
 
-### All options
+### All options (bind)
 
 ```php
 <?php
@@ -304,7 +306,7 @@ by adding `toSingleton()` instead of `toInstance()`.
     // To create a new instance choose *only* one below:
     ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
     ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
-    ->withNoConstrutor()                // The class has no constructor
+    ->withNoConstructor()                // The class has no constructor
     ->withConstructorArgs(array)        // The constructor's class arguments
     ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
 
@@ -318,11 +320,28 @@ by adding `toSingleton()` instead of `toInstance()`.
 ;
 ```
 
+### Use a dependency inject in the config
+
+If you need to use a previously DI created you can use the method `use`.
+This method will return a DI instance and allow you to call a method and return its result.
+
+This differs from `Param::get` because `DI::use` intends to get a class and return the result of a method call, 
+while `Param::get`  is intended to use as a argument.
+
+```php
+<?php
+
+\ByJG\Config\DependencyInjection::use("classname")
+    ->withMethodCall("methodName", array_of_args)
+    ->toInstance()                   // get the result of the method call
+;
+```
+
 ## Get the configuration set name is active
 
 ```php
 <?php
-$defintion->getCurrentConfig();
+$definition->getCurrentConfig();
 ```
 
 ## Install
@@ -333,6 +352,6 @@ composer require "byjg/config=4.1.*"
 
 ## Tests
 
-```
+```bash
 phpunit
 ```

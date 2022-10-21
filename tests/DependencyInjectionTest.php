@@ -126,6 +126,12 @@ class DependencyInjectionTest extends TestCase
         $this->assertTrue($test->isOk());
     }
 
+    public function testUse()
+    {
+        $config = $this->object->build('di-test');
+
+        $this->assertEquals(6, $config->get('Value'));
+    }
     /**
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \ByJG\Config\Exception\ConfigException
