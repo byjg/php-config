@@ -93,34 +93,16 @@ class Definition
      * @return $this
      * @throws InvalidDateException
      */
-    public function setCache(CacheInterface $cache, $configName = "live")
+    public function setCache($configName, CacheInterface $cache, DateInterval $ttl = null)
     {
         foreach ((array)$configName as $item) {
             try {
-                $date = new DateInterval('P7D');
+                $date = empty($ttl) ? new DateInterval('P7D') : $ttl;
             } catch (Exception $ex) {
                 throw new InvalidDateException($ex->getMessage());
             }
             $this->cache[$item] = $cache;
             $this->cacheTTL[$item] = $date;
-        }
-        return $this;
-    }
-
-    /**
-     * @param DateInterval $ttl
-     * @param string|array $configName
-     * @return $this
-     * @throws ConfigException
-     */
-    public function setCacheTTL(DateInterval $ttl, $configName = "live")
-    {
-        foreach ((array)$configName as $item) {
-            if (!isset($this->cache[$item])) {
-                throw new ConfigException('Configuration does not exists. Cannot set Cache TTL.');
-            }
-
-            $this->cacheTTL[$item] = $ttl;
         }
         return $this;
     }

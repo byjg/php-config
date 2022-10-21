@@ -8,7 +8,7 @@
     "php": ">=7.0"
   },
   "require-dev": {
-    "byjg/cache-engine": "4.0.*",
+    "byjg/cache-engine": "dev-bump",
     "phpunit/phpunit": "5.7.*|7.4.*|^9.5"
   },
   "prefer-stable": true,

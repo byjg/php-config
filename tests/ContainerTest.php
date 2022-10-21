@@ -197,7 +197,7 @@ class ContainerTest extends TestCase
 
         $this->assertNull($arrayCache->get('container-cache-test'));
 
-        $container = $this->object->setCache($arrayCache, 'test')
+        $container = $this->object->setCache('test', $arrayCache)
             ->build('test');  // Expected build and set to cache
 
         $container2 = (new Definition())
@@ -206,7 +206,7 @@ class ContainerTest extends TestCase
             ->inheritFrom('test')
             ->addConfig('closure')
             ->addConfig('notfound')
-            ->setCache($arrayCache, 'test')
+            ->setCache('test', $arrayCache)
             ->build('test');   // Expected get from cache
 
         $this->assertNotNull($arrayCache->get('container-cache-test'));
@@ -218,7 +218,7 @@ class ContainerTest extends TestCase
             ->inheritFrom('test')
             ->addConfig('closure')
             ->addConfig('notfound')
-            ->setCache($arrayCache, 'test2')
+            ->setCache('test2', $arrayCache)
             ->build('test');   // Expected get a fresh new defintion
 
         $this->assertNotSame($container, $container3); // Expected to be a different object
