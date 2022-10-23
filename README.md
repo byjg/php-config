@@ -307,6 +307,7 @@ by adding `toSingleton()` instead of `toInstance()`.
     ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
     ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
     ->withNoConstructor()                // The class has no constructor
+    ->withConstructorNoArgs()           // The constructor's class has no arguments
     ->withConstructorArgs(array)        // The constructor's class arguments
     ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
 

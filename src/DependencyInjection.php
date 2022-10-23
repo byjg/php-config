@@ -235,6 +235,19 @@ class DependencyInjection
         return $this;
     }
 
+    /**
+     * @return DependencyInjection
+     */
+    public function withConstructorNoArgs()
+    {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
+        $this->args = [];
+        return $this;
+    }
+
     public function withMethodCall($method, $args = [])
     {
         $this->methodCall[] = [$method, $args];
