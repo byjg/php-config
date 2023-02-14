@@ -20,10 +20,10 @@ class TestParam
         $this->obj1 = $random;
     }
 
-    public function testCall($random)
+    public function someMethod($random)
     {
         if (!($random instanceof Random)) {
-            throw new Exception("testCall expected Random class. Got " . get_class($random) . " instead");
+            throw new Exception("someMethod expected Random class. Got " . get_class($random) . " instead");
         }
         $this->obj2 = $random;
         return $this;

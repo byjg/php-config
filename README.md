@@ -29,6 +29,7 @@ Your folder will look like to:
     |
     +-- config
            |
+           + .env
            + config-dev.php
            + config-dev.env
            + config-homolog.php

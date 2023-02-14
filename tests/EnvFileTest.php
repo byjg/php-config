@@ -32,6 +32,7 @@ class EnvFileTest extends TestCase
         putenv('APP_ENV=file');
         $config = $this->object->build();
 
+        $this->assertEquals('ok', $config->get('GLOBAL_CONFIG'));
         $this->assertEquals('value1', $config->get('KEY1'));
         $this->assertEquals('value2', $config->get('KEY_2'));
         $this->assertEquals('value3', $config->get('KEY3'));

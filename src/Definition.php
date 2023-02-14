@@ -62,7 +62,18 @@ class Definition
 
     private function loadEnvFile($configName)
     {
-        $filename = $this->getBaseDir() . "/config-$configName.env";
+        $global = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
+        $envSpecific = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
+
+        if (is_null($global) && is_null($envSpecific)) {
+            return null;
+        }
+
+        return array_merge((array)$global, (array)$envSpecific);
+    }
+
+    private function loadEnvFileContents($filename)
+    {
         if (!file_exists($filename)) {
             return null;
         }
