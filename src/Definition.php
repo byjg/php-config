@@ -5,6 +5,7 @@ namespace ByJG\Config;
 use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\InvalidDateException;
+use ByJG\Config\Exception\RunTimeException;
 use DateInterval;
 use Exception;
 use Psr\SimpleCache\CacheInterface;
@@ -21,6 +22,8 @@ class Definition
      * @var CacheInterface[]
      */
     private $cache = [];
+
+    private $allowCache = true;
 
     /**
      * @var DateInterval[]
@@ -240,7 +243,7 @@ class Definition
         }
 
         $container = null;
-        if (isset($this->cache[$configName])) {
+        if ($this->allowCache && isset($this->cache[$configName])) {
             $container = $this->cache[$configName]->get("container-cache-$configName");
             if (!is_null($container)) {
                 return $container;
@@ -259,15 +262,27 @@ class Definition
                 $config[$key] = $envValue;
             }
         }
-    
+
         if ($this->loadOsEnv) {
             $config = array_merge($config, $_ENV);
         }
 
         $container = new Container($config);
         if (isset($this->cache[$configName])) {
-            $this->cache[$configName]->set("container-cache-$configName", $container, $this->cacheTTL[$configName]);
+            $this->allowCache = $this->cache[$configName]->set("container-cache-$configName", $container, $this->cacheTTL[$configName]);
         }
         return $container;
+    }
+
+    public function getCacheCurrentEnvironment(CacheInterface $default = null)
+    {
+        if (empty($this->configName)) {
+            throw new RunTimeException("Environment isn't build yet");
+        }
+
+        if (isset($this->cache[$this->configName])) {
+            return $this->cache[$this->configName];
+        }
+        return $default;
     }
 }

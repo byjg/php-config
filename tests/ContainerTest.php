@@ -5,6 +5,7 @@ namespace Test;
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\RunTimeException;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -200,6 +201,8 @@ class ContainerTest extends TestCase
         $container = $this->object->setCache('test', $arrayCache)
             ->build('test');  // Expected build and set to cache
 
+        $this->assertInstanceOf(ArrayCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+
         $container2 = (new Definition())
             ->addConfig('test')
             ->addConfig('test2')
@@ -245,5 +248,16 @@ class ContainerTest extends TestCase
 
         $container2 = $this->object->build();
         $this->assertEquals($container, $container2);
+    }
+
+    public function testGetCacheNotSetYet()
+    {
+        $this->object->setCache('test', new ArrayCacheEngine());
+
+        // Has to fail because isn't built yet.
+        $this->expectException(RunTimeException::class);
+        $this->expectExceptionMessage("Environment isn't build yet");
+        $this->object->getCacheCurrentEnvironment();
+
     }
 }
