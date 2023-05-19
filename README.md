@@ -17,10 +17,10 @@ See below how to setup:
 
 ## Setup files
 
-Create in your project root at the same level of the vendor directory a folder called `config`. 
+Create in your project root at the same level of the vendor directory a folder called `config`.
 
 Inside these folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
-are your configuration sets. 
+are your configuration sets.
 
 Your folder will look like to:
 
@@ -102,7 +102,7 @@ $container = $definition->build("live");
 
 #### The `config-xxxx.php` file
 
-**config-homolog.php**
+config-homolog.php:
 
 ```php
 <?php
@@ -119,7 +119,8 @@ return [
 ];
 ```
 
-**config-live.php**
+config-live.php:
+
 ```php
 <?php
 
@@ -130,9 +131,9 @@ return [
 
 #### The `config-xxxx.env` file
 
-Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
+Alternatively is possible to set an .env file with the contents KEY=VALUE one per line.
 
-**live.env**
+live.env:
 
 ```ini
 property1=mixed
@@ -157,7 +158,7 @@ $definition = (new \ByJG\Config\Definition())
     ->addConfig('homolog')         // This will setup the HOMOLOG configuration set
     ->addConfig('live')            // This will setup the LIVE environenment inherited HOMOLOG
         ->inheritFrom('homolog')
-    ->setCache($somePsr16Implementation, 'live'); // This will cache the "live" configuration set. 
+    ->setCache($somePsr16Implementation, 'live'); // This will cache the "live" configuration set.
 ```
 
 The code below will get a property from the defined environment:
@@ -169,7 +170,6 @@ $property = $container->get('property2');
 ```
 
 If the property does not exist an error will be thrown.
-
 
 If the property is a closure, you can call the get method, and you'll get the closure execution result:
 
@@ -211,7 +211,7 @@ class Square implements Area
     {
         // ...
     }
-    
+
     //...
 }
 
@@ -221,7 +221,7 @@ class RectangleTriangle implements Area
     {
         // ...
     }
-    
+
     //...
 }
 ```
@@ -262,8 +262,8 @@ class SumAreas implements Area
 {
      /**
      * SumAreas constructor.
-     * @param \DIClasses\RectangleTriangle $triangle 
-     * @param \DIClasses\Square $square 
+     * @param \DIClasses\RectangleTriangle $triangle
+     * @param \DIClasses\Square $square
      */
     public function __construct($triangle, $square)
     {
@@ -271,7 +271,7 @@ class SumAreas implements Area
         $this->square = $square;
     }
 
-    //... 
+    //...
 ```
 
 Note that this class needs instances of objects previously defined in our container definition. In that case we just need add
@@ -286,7 +286,7 @@ return [
         ->withInjectedConstructor()
         ->toInstance(),
 ];
-``` 
+```
 
 When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where
 defined and inject automatically to get a instance.
@@ -310,15 +310,15 @@ by adding `toSingleton()` instead of `toInstance()`.
     ->withNoConstructor()                // The class has no constructor
     ->withConstructorNoArgs()           // The constructor's class has no arguments
     ->withConstructorArgs(array)        // The constructor's class arguments
-    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
+    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure
 
     // Call methods after you have a instance
     ->withMethodCall("methodName", array_of_args)
-    
+
     // How will you get a instance?
     ->toInstance()                   // get a new instance for every container get
-    ->toSingleton()                  // get the same instance for every container get 
-    ->toEagerSingleton()             // same as singleton however get a new instance immediately  
+    ->toSingleton()                  // get the same instance for every container get
+    ->toEagerSingleton()             // same as singleton however get a new instance immediately
 ;
 ```
 
@@ -327,7 +327,7 @@ by adding `toSingleton()` instead of `toInstance()`.
 If you need to use a previously DI created you can use the method `use`.
 This method will return a DI instance and allow you to call a method and return its result.
 
-This differs from `Param::get` because `DI::use` intends to get a class and return the result of a method call, 
+This differs from `Param::get` because `DI::use` intends to get a class and return the result of a method call,
 while `Param::get`  is intended to use as a argument.
 
 ```php
@@ -349,11 +349,14 @@ $definition->getCurrentConfig();
 ## Install
 
 ```bash
-composer require "byjg/config=4.1.*"
+composer require "byjg/config=5.0.*"
 ```
 
 ## Tests
 
 ```bash
-phpunit
+vendor/bin/phpunit
 ```
+
+----
+[Open source ByJG](http://opensource.byjg.com)
