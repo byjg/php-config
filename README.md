@@ -1,73 +1,109 @@
 # Config: Container PSR-11 and Dependency Injection
 
-[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
+[![Build Status](https://github.com/byjg/config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/config/actions/workflows/phpunit.yml)
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
+[![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/config/)
+[![GitHub license](https://img.shields.io/github/license/byjg/config.svg)](https://opensource.byjg.com/opensource/licensing.html)
+[![GitHub release](https://img.shields.io/github/release/byjg/config.svg)](https://github.com/byjg/config/releases/)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
-[![Build Status](https://travis-ci.com/byjg/config.svg?branch=master)](https://travis-ci.org/byjg/config)
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
 ## How it Works?
 
-The container is created based on your current environment (dev, homolog, test, live, ...) defined in array files;
+The container is created based on the configuration you created (dev, homolog, test, live, ...) defined in array and `.env` files;
 
 See below how to setup:
 
-## Setup files:
+## Setup files
 
 Create in your project root at the same level of the vendor directory a folder called `config`. 
 
-Inside this folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
-are your environments. 
+Inside these folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
+are your configuration sets. 
 
 Your folder will look like to:
 
-```
+```text
 <project root>
     |
     +-- config
            |
+           + .env
            + config-dev.php
+           + config-dev.env
            + config-homolog.php
+           + config-homolog.env
            + config-test.php
            + config-live.php
    +-- vendor
    +-- composer.json
 ```
 
-# Create environment variable
+## Select the configuration you will use
 
-You need to setup a variable called "APPLICATION_ENV" before start your server. 
+### Read from the environment variable `APP_ENV`
+
+When you call:
+
+```php
+$container = $definition->build()
+```
+
+The component will try to get the proper configuration set based on the contents of the variable `APP_ENV`
+
+There are several ways to set the `APP_ENV` before start your server:
 
 This can be done using nginx:
 
-```
-fastcgi_param   APPLICATION_ENV  dev;
+```text
+fastcgi_param   APP_ENV  dev;
 ```
 
 Apache:
 
-```
-SetEnv APPLICATION_ENV dev
+```text
+SetEnv APP_ENV dev
 ```
 
 Docker-Compose
 
-```
+```text
 environment:
-    APPLICATION_ENV: dev
+    APP_ENV: dev
 ```
 
 Docker CLI
 
-```
-docker -e APPLICATION_ENV=dev image
+```bash
+docker -e APP_ENV=dev image
 ```
 
-## Configuration Files
+### Read from a different variable
 
-### The `config-xxxx.php` file
+Instead of use `APP_ENV` you can set your own variable
+
+```php
+$container = $definition
+    ->withConfigVar("MY_ENV_VAR")
+    ->build("live");
+```
+
+### Specify directly
+
+Other way to load the configuration set instead of depending on an environment variable is to specifiy directly
+which configuration you want to get:
+
+```php
+$container = $definition->build("live");
+```
+
+### Configuration Files
+
+#### The `config-xxxx.php` file
 
 **config-homolog.php**
+
 ```php
 <?php
 
@@ -92,35 +128,36 @@ return [
 ];
 ```
 
-### The `xxxx.env` file
+#### The `config-xxxx.env` file
 
 Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
 
 **live.env**
-```
+
+```ini
 property1=mixed
 ```
 
 By default, all properties are parsed as string. You can parse as bool, int or float as this example:
 
-```
+```ini
 PARAM1=!bool true
 PARAM2=!int 20
 PARAM3=!float 3.14
 ```
 
-# Use in your PHP Code
+### Use in your PHP Code
 
 Create the Definition:
 
 ```php
 <?php
 $definition = (new \ByJG\Config\Definition())
-    ->environmentVar('APPLICATION_ENV') // This will setup the environment var to 'APPLICATION_ENV' (default)
-    ->addEnvironment('homolog')         // This will setup the HOMOLOG environment
-    ->addEnvironment('live')            // This will setup the LIVE environenment inherited HOMOLOG
+    ->withConfigVar('APP_ENV') // This will setup the environment var to 'APP_ENV' (default)
+    ->addConfig('homolog')         // This will setup the HOMOLOG configuration set
+    ->addConfig('live')            // This will setup the LIVE environenment inherited HOMOLOG
         ->inheritFrom('homolog')
-    ->setCache($somePsr16Implementation, 'live'); // This will cache the result only to live Environment;
+    ->setCache($somePsr16Implementation, 'live'); // This will cache the "live" configuration set. 
 ```
 
 The code below will get a property from the defined environment:
@@ -131,10 +168,10 @@ $container = $definition->build();
 $property = $container->get('property2');
 ```
 
-If the property does not exists an error will be throwed.
+If the property does not exist an error will be thrown.
 
 
-If the property is a closure, you can call the get method and you'll get the closure execution result:
+If the property is a closure, you can call the get method, and you'll get the closure execution result:
 
 ```php
 <?php
@@ -144,7 +181,7 @@ $property = $container->get('closurePropertyWithArgs', 'value1', 'value2');
 $property = $container->get('closurePropertyWithArgs', ['value1', 'value2']);
 ```
 
-If you want get the RAW value without parse clousure:
+If you want get the RAW value without parse closure:
 
 ```php
 <?php
@@ -152,11 +189,11 @@ $container = $definition->build();
 $property = $container->raw('closureProperty');
 ```
 
-# Dependency Injection
+## Dependency Injection
 
-## Basics
+### Basics
 
-It is possible to create a Dependency Injection and set automatically the instances and constructors. 
+It is possible to create a Dependency Injection and set automatically the instances and constructors.
 Let's get by example the following classes:
 
 ```php
@@ -215,7 +252,7 @@ $config = $definition->build();
 $square = $config->get(\Example\Square::class);
 ```
 
-## Injecting automaticatically the Objects
+### Injecting automatically the Objects
 
 Let's figure it out this class:
 
@@ -251,17 +288,17 @@ return [
 ];
 ``` 
 
-When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where 
-defined and inject automatically to get a instance.  
+When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where
+defined and inject automatically to get a instance.
 
-This component uses the PHP Document to determine the classed are required. 
+This component uses the PHP Document to determine the classed are required.
 
-## Get a singleton object
+### Get a singleton object
 
 The `DependencyInjection` class will return a new instance every time you require a new object. However, you can the same object
-by adding `toSingleton()` instead of `toInstance()`. 
+by adding `toSingleton()` instead of `toInstance()`.
 
-## All options:
+### All options (bind)
 
 ```php
 <?php
@@ -270,7 +307,8 @@ by adding `toSingleton()` instead of `toInstance()`.
     // To create a new instance choose *only* one below:
     ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
     ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
-    ->withNoConstrutor()                // The class has no constructor
+    ->withNoConstructor()                // The class has no constructor
+    ->withConstructorNoArgs()           // The constructor's class has no arguments
     ->withConstructorArgs(array)        // The constructor's class arguments
     ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
 
@@ -284,22 +322,38 @@ by adding `toSingleton()` instead of `toInstance()`.
 ;
 ```
 
-# Checking current environment
+### Use a dependency inject in the config
+
+If you need to use a previously DI created you can use the method `use`.
+This method will return a DI instance and allow you to call a method and return its result.
+
+This differs from `Param::get` because `DI::use` intends to get a class and return the result of a method call, 
+while `Param::get`  is intended to use as a argument.
 
 ```php
 <?php
-$defintion->getCurrentEnv();
+
+\ByJG\Config\DependencyInjection::use("classname")
+    ->withMethodCall("methodName", array_of_args)
+    ->toInstance()                   // get the result of the method call
+;
 ```
 
-# Install
+## Get the configuration set name is active
 
-```
-composer require "byjg/config=4.0.*"
+```php
+<?php
+$definition->getCurrentConfig();
 ```
 
-# Tests
+## Install
 
+```bash
+composer require "byjg/config=4.1.*"
 ```
+
+## Tests
+
+```bash
 phpunit
 ```
-

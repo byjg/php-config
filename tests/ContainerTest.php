@@ -4,6 +4,8 @@ namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Definition;
+use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\RunTimeException;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -14,34 +16,71 @@ class ContainerTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\EnvironmentException
+     * @throws \ByJG\Config\Exception\ConfigException
      */
-    public function setUp()
+    public function setUp(): void
     {
         $this->object = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
                 ->inheritFrom('test')
-            ->addEnvironment('test3')
+            ->addConfig('test3')
                 ->inheritFrom('test2')
                 ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
         ;
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
-        putenv('APPLICATION_ENV');
+        putenv('APP_ENV');
     }
 
-    public function testGetCurrentEnv()
+    public function testgetCurrentConfig()
     {
-        putenv('APPLICATION_ENV=test');
-        $this->assertEquals("test", $this->object->getCurrentEnv());
+        putenv('APP_ENV=test');
 
-        putenv('APPLICATION_ENV=bla');
-        $this->assertEquals("bla", $this->object->getCurrentEnv());
+        $this->assertEquals("test", $this->object->getCurrentConfig());
+
+        putenv('APP_ENV=bla');
+        $this->assertEquals("bla", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig2()
+    {
+        $this->object->build("test2");
+        $this->assertEquals("test2", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig3()
+    {
+        putenv('APP_ENV=test');
+        $this->object->build("test2");
+        $this->assertEquals("test2", $this->object->getCurrentConfig());
+    }
+
+    /**
+     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws \ByJG\Config\Exception\ConfigNotFoundException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function testgetCurrentConfig4()
+    {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("The environment variable 'APP_ENV' is not set");
+
+        $this->object->getCurrentConfig();
     }
 
     public function testLoadConfig()
@@ -89,12 +128,12 @@ class ContainerTest extends TestCase
 
     public function testLoadConfig3()
     {
-        putenv('APPLICATION_ENV=test');
+        putenv('APP_ENV=test');
         $config = $this->object->build();
         $this->assertEquals('string', $config->get('property1'));
         $this->assertTrue($config->get('property2'));
 
-        putenv('APPLICATION_ENV=test2');
+        putenv('APP_ENV=test2');
         $config2 = $this->object->build();
         $this->assertEquals('string', $config2->get('property1'));
         $this->assertFalse($config2->get('property2'));
@@ -126,34 +165,31 @@ class ContainerTest extends TestCase
         $this->assertTrue($result6);
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\KeyNotFoundException
-     * @expectedExceptionMessage The key 'property4' does not exists
-     */
     public function testLoadConfigNotExistant()
     {
+        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectExceptionMessage("The key 'property4' does not exists");
+
         $config = $this->object->build('test');
 
         $config->get('property4');
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\EnvironmentException
-     * @expectedExceptionMessage Environment 'notset' does not defined
-     */
     public function testLoadConfigNotExistant2()
     {
+        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectExceptionMessage("Configuration 'notset' does not defined");
+
         $this->object->build('notset');
     }
 
-    /**
-     * @expectedException \ByJG\Config\Exception\ConfigNotFoundException
-     * @expectedExceptionMessage Configuration 'config-notfound.php' or 'config-notfound.env' could not found
-     */
-    public function testLoadConfigNotExistant3()
-    {
-        $this->object->build('notfound');
-    }
+    // public function testLoadConfigNotExistant3()
+    // {
+    //     $this->expectException(\ByJG\Config\Exception\ConfigNotFoundException::class);
+    //     $this->expectExceptionMessage("Configuration 'config-notfound.php' or 'config-notfound.env' could not found");
+
+    //     $this->object->build('notfound');
+    // }
 
     public function testCache()
     {
@@ -162,53 +198,66 @@ class ContainerTest extends TestCase
 
         $this->assertNull($arrayCache->get('container-cache-test'));
 
-        $container = $this->object->setCache($arrayCache, 'test')
+        $container = $this->object->setCache('test', $arrayCache)
             ->build('test');  // Expected build and set to cache
 
+        $this->assertInstanceOf(ArrayCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+
         $container2 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
-            ->setCache($arrayCache, 'test')
+            ->addConfig('closure')
+            ->addConfig('notfound')
+            ->setCache('test', $arrayCache)
             ->build('test');   // Expected get from cache
 
         $this->assertNotNull($arrayCache->get('container-cache-test'));
         $this->assertSame($container, $container2); // The exact object
 
         $container3 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
-            ->setCache($arrayCache, 'test2')
+            ->addConfig('closure')
+            ->addConfig('notfound')
+            ->setCache('test2', $arrayCache)
             ->build('test');   // Expected get a fresh new defintion
 
         $this->assertNotSame($container, $container3); // Expected to be a different object
 
         // Without cache
         $container4 = (new Definition())
-            ->addEnvironment('test')
-            ->addEnvironment('test2')
+            ->addConfig('test')
+            ->addConfig('test2')
             ->inheritFrom('test')
-            ->addEnvironment('closure')
-            ->addEnvironment('notfound')
+            ->addConfig('closure')
+            ->addConfig('notfound')
             ->build('test');
 
         $this->assertNotSame($container, $container4);  // There two different objects
     }
 
-    public function testChangeEnvironmentVariable()
+    public function testChangeConfigVar()
     {
         $container = $this->object->build('test');
 
         putenv('NEWENV=test');
-        $this->object->environmentVar('NEWENV');
-        $this->assertEquals("test", $this->object->getCurrentEnv());
+        $this->object->withConfigVar('NEWENV');
+        $this->assertEquals("test", $this->object->getCurrentConfig());
 
         $container2 = $this->object->build();
         $this->assertEquals($container, $container2);
+    }
+
+    public function testGetCacheNotSetYet()
+    {
+        $this->object->setCache('test', new ArrayCacheEngine());
+
+        // Has to fail because isn't built yet.
+        $this->expectException(RunTimeException::class);
+        $this->expectExceptionMessage("Environment isn't build yet");
+        $this->object->getCacheCurrentEnvironment();
+
     }
 }

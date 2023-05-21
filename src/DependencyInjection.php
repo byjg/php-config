@@ -25,6 +25,8 @@ class DependencyInjection
 
     protected $singleton = false;
 
+    protected $use = false;
+
     protected $factory = null;
 
     protected $methodCall = [];
@@ -63,7 +65,7 @@ class DependencyInjection
      * @return mixed
      * @throws KeyNotFoundException
      */
-    protected function getArgs()
+    protected function getArgs($argsToParse = null)
     {
             return array_map(function ($value) {
                 if ($value instanceof Param) {
@@ -74,7 +76,7 @@ class DependencyInjection
                     }
                 }
                 return $value;
-            }, $this->args);
+            }, is_null($argsToParse) ? $this->args : $argsToParse);
     }
 
     /**
@@ -84,6 +86,10 @@ class DependencyInjection
      */
     public function withConstructorArgs($args)
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
         if (!is_null($args) && !is_array($args)) {
             throw new DependencyInjectionException("Arguments should be an array");
         }
@@ -99,6 +105,10 @@ class DependencyInjection
      */
     public function withFactoryMethod($method, $args = [])
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
         if (!is_null($args) && !is_array($args)) {
             throw new DependencyInjectionException("Arguments should be an array");
         }
@@ -114,9 +124,14 @@ class DependencyInjection
      * @param $class
      * @throws DependencyInjectionException
      */
-    protected function __construct($class)
+    protected function __construct($class, $use = false)
     {
-        $this->setClass($class);
+        if ($use) {
+            $this->class = Param::get($class);
+            $this->use = true;
+        } else {
+            $this->setClass($class);
+        }
     }
 
     /**
@@ -130,12 +145,26 @@ class DependencyInjection
     }
 
     /**
+     * @param $class
+     * @return DependencyInjection
+     * @throws DependencyInjectionException
+     */
+    public static function use($class)
+    {
+        return new DependencyInjection($class, true);
+    }
+
+    /**
      * @return DependencyInjection
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
     public function withInjectedConstructor()
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
         $params = $reflection->getParameters();
 
@@ -165,6 +194,10 @@ class DependencyInjection
      */
     public function withInjectedLegacyConstructor()
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
 
         $docComments = str_replace("\n", " ", $reflection->getDocComment());
@@ -194,7 +227,24 @@ class DependencyInjection
      */
     public function withNoConstructor()
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
         $this->args = null;
+        return $this;
+    }
+
+    /**
+     * @return DependencyInjection
+     */
+    public function withConstructorNoArgs()
+    {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+        }
+
+        $this->args = [];
         return $this;
     }
 
@@ -209,6 +259,9 @@ class DependencyInjection
      */
     public function toSingleton()
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot get a singleton over an existent object (DI::use())');
+        }
         $this->singleton = true;
         return $this;
     }
@@ -220,6 +273,10 @@ class DependencyInjection
      */
     public function toEagerSingleton()
     {
+        if ($this->use) {
+            throw new DependencyInjection('You cannot get an eager singleton over an existent object (DI::use()');
+        }
+
         $this->singleton = true;
         $this->getInstance();
         return $this;
@@ -247,7 +304,7 @@ class DependencyInjection
             throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
         }
 
-        return $instance;
+        return $this->callMethods($instance, !$this->use);
     }
 
     /**
@@ -271,31 +328,40 @@ class DependencyInjection
      */
     protected function getNewInstance()
     {
+        if ($this->use) {
+            return $this->getArgs([$this->class])[0];
+        }
+
         if (!empty($this->factory)) {
-            return $this->callMethods(call_user_func_array([$this->getClass(), $this->factory], $this->getArgs()));
+            return call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
         }
 
         $reflectionClass = new ReflectionClass($this->getClass());
 
         if (is_null($this->args)) {
-            return $this->callMethods($reflectionClass->newInstanceWithoutConstructor());
+            return $reflectionClass->newInstanceWithoutConstructor();
         }
 
-        return $this->callMethods($reflectionClass->newInstanceArgs($this->getArgs()));
+        return $reflectionClass->newInstanceArgs($this->getArgs());
     }
 
     /**
      * @param $instance
      * @return mixed
      */
-    protected function callMethods($instance)
+    protected function callMethods($instance, $returnInstance = true)
     {
+        $result = null;
         foreach ($this->methodCall as $methodDefinition) {
             if (is_null($methodDefinition[1])) {
-                call_user_func([$instance, $methodDefinition[0]]);
+                $result = call_user_func([$instance, $methodDefinition[0]]);
             } else {
-                call_user_func_array([$instance, $methodDefinition[0]], $methodDefinition[1]);
+                $result = call_user_func_array([$instance, $methodDefinition[0]], $this->getArgs($methodDefinition[1]));
             }
+        }
+
+        if (!$returnInstance) {
+            return $result;
         }
 
         return $instance;

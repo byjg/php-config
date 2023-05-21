@@ -3,13 +3,13 @@
   "description": "A very basic and minimalist PSR-11 implementation for config management and dependency injection.",
   "license": "MIT",
   "require": {
-    "psr/container": "1.0.*",
-    "psr/simple-cache": "1.0.*",
+    "psr/container": "^2.0",
+    "psr/simple-cache": "^1.0",
     "php": ">=7.0"
   },
   "require-dev": {
-    "byjg/cache-engine": "4.0.*",
-    "phpunit/phpunit": "5.7.*|7.4.*"
+    "byjg/cache-engine": "4.9.*",
+    "phpunit/phpunit": "5.7.*|7.4.*|^9.5"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",

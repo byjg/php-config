@@ -25,7 +25,7 @@ class Container implements ContainerInterface
      * @throws KeyNotFoundException
      * @throws ReflectionException
      */
-    public function get($id)
+    public function get(string $id)
     {
         $value = $this->raw($id);
 
@@ -60,7 +60,7 @@ class Container implements ContainerInterface
      * @param string $id Identifier of the entry to look for.
      * @return bool
      */
-    public function has($id)
+    public function has(string $id): bool
     {
         return isset($this->config[$id]);
     }

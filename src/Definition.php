@@ -3,24 +3,27 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigNotFoundException;
-use ByJG\Config\Exception\EnvironmentException;
+use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\InvalidDateException;
+use ByJG\Config\Exception\RunTimeException;
 use DateInterval;
 use Exception;
 use Psr\SimpleCache\CacheInterface;
 
 class Definition
 {
-    private $lastEnv = null;
+    private $lastConfig = null;
 
-    private $environments = [];
+    private $configList = [];
 
-    private $envVar = 'APPLICATION_ENV';
+    private $configVar = 'APP_ENV';
 
     /**
      * @var CacheInterface[]
      */
     private $cache = [];
+
+    private $allowCache = true;
 
     /**
      * @var DateInterval[]
@@ -29,27 +32,29 @@ class Definition
 
     private $baseDir = "";
 
-    private $loadOSEnv = false;
+    private $loadOsEnv = false;
 
-    private function loadConfig($currentConfig, $env)
+    private $configName = null;
+
+    private function loadConfig($currentConfig, $configName)
     {
-        $content1 = $this->loadConfigFile($env);
-        $content2 = $this->loadEnvFile($env);
+        $content1 = $this->loadConfigFile($configName);
+        $content2 = $this->loadEnvFile($configName);
 
         if (is_null($content1) && is_null($content2)) {
-            throw new ConfigNotFoundException("Configuration 'config-$env.php' or 'config-$env.env' could not found at " . $this->getBaseDir());
+            throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not found at " . $this->getBaseDir());
         }
 
         return array_merge(is_null($content1) ? [] : $content1, is_null($content2) ? [] : $content2, $currentConfig);
     }
 
     /**
-     * @param string $env The environment to be loaded
+     * @param string $configName The configuration to be loaded
      * @return array
      */
-    private function loadConfigFile($env)
+    private function loadConfigFile($configName)
     {
-        $file = $this->getBaseDir() . '/config-' . $env .  '.php';
+        $file = $this->getBaseDir() . '/config-' . $configName .  '.php';
 
         if (!file_exists($file)) {
             return null;
@@ -58,9 +63,20 @@ class Definition
         return (include $file);
     }
 
-    private function loadEnvFile($env)
+    private function loadEnvFile($configName)
     {
-        $filename = $this->getBaseDir() . "/config-$env.env";
+        $global = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
+        $envSpecific = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
+
+        if (is_null($global) && is_null($envSpecific)) {
+            return null;
+        }
+
+        return array_merge((array)$global, (array)$envSpecific);
+    }
+
+    private function loadEnvFileContents($filename)
+    {
         if (!file_exists($filename)) {
             return null;
         }
@@ -87,15 +103,15 @@ class Definition
 
     /**
      * @param CacheInterface $cache
-     * @param string|array $env
+     * @param string|array $configName
      * @return $this
      * @throws InvalidDateException
      */
-    public function setCache(CacheInterface $cache, $env = "live")
+    public function setCache($configName, CacheInterface $cache, DateInterval $ttl = null)
     {
-        foreach ((array)$env as $item) {
+        foreach ((array)$configName as $item) {
             try {
-                $date = new DateInterval('P7D');
+                $date = empty($ttl) ? new DateInterval('P7D') : $ttl;
             } catch (Exception $ex) {
                 throw new InvalidDateException($ex->getMessage());
             }
@@ -106,76 +122,58 @@ class Definition
     }
 
     /**
-     * @param DateInterval $ttl
-     * @param string|array $env
+     * @param string $configName
      * @return $this
-     * @throws EnvironmentException
+     * @throws ConfigException
      */
-    public function setCacheTTL(DateInterval $ttl, $env = "live")
+    public function addConfig($configName)
     {
-        foreach ((array)$env as $item) {
-            if (!isset($this->cache[$item])) {
-                throw new EnvironmentException('Environment does not exists. Could not set Cache TTL.');
-            }
-
-            $this->cacheTTL[$item] = $ttl;
+        if (isset($this->configList[$configName])) {
+            throw new ConfigException("Configuration '$configName' already exists");
         }
+        $this->lastConfig = $configName;
+        $this->configList[$configName] = [];
         return $this;
     }
 
     /**
-     * @param string $env
-     * @return $this
-     * @throws EnvironmentException
-     */
-    public function addEnvironment($env)
-    {
-        if (isset($this->environments[$env])) {
-            throw new EnvironmentException("Environment '$env' already exists");
-        }
-        $this->lastEnv = $env;
-        $this->environments[$env] = [];
-        return $this;
-    }
-
-    /**
-     * @param string $env
+     * @param string $configName
      * @return $this
      */
-    public function inheritFrom($env)
+    public function inheritFrom($configName)
     {
-        $this->environments[$this->lastEnv][] = $env;
+        $this->configList[$this->lastConfig][] = $configName;
         return $this;
     }
 
     /**
      * @return $this
      */
-    public function loadOSEnv()
+    public function withOSEnvironment()
     {
-        $this->loadOSEnv = true;
+        $this->loadOsEnv = true;
         return $this;
     }
 
     /**
-     * Sets the environment variable. Defaults to APPLICATION_ENV
+     * Sets the environment variable. Defaults to APP_ENV
      *
      * @param string $var
      * @return $this
      */
-    public function environmentVar($var)
+    public function withConfigVar($var)
     {
-        $this->envVar = $var;
+        $this->configVar = $var;
         return $this;
     }
 
     /**
-     * @throws EnvironmentException
+     * @throws ConfigException
      */
     public function withBaseDir($dir)
     {
         if (!file_exists($dir)) {
-            throw new EnvironmentException("Directory $dir doesn't exists");
+            throw new ConfigException("Directory $dir doesn't exists");
         }
         $this->baseDir = $dir;
         return $this;
@@ -195,61 +193,96 @@ class Definition
     }
 
     /**
-     * Get the current environment
+     * Get the current config
      *
      * @return array|false|string
-     * @throws EnvironmentException
+     * @throws ConfigException
      */
-    public function getCurrentEnv()
+    public function getCurrentConfig()
     {
-        $env = getenv($this->envVar);
-        if (empty($env)) {
-            throw new EnvironmentException("The environment variable '$this->envVar' is not set");
-        }
-        return $env;
+        return $this->setCurrentConfig();
     }
 
     /**
-     * Get the config based on the specified environment
-     *
-     * @param string|null $env
-     * @return Container
-     * @throws ConfigNotFoundException
-     * @throws EnvironmentException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @param null $configName
+     * @return array|mixed|string
+     * @throws ConfigException
      */
-    public function build($env = null)
+    protected function setCurrentConfig($configName = null)
     {
-        if (empty($env)) {
-            $env = $this->getCurrentEnv();
+        if (!empty($configName)) {
+            $this->configName = $configName;
         }
 
-        if (!isset($this->environments[$env])) {
-            throw new EnvironmentException("Environment '$env' does not defined");
+        if (empty($this->configName)) {
+            $configName = getenv($this->configVar);
+            if (empty($configName)) {
+                throw new ConfigException("The environment variable '$this->configVar' is not set");
+            }
+            return $configName;
+        }
+
+        return $this->configName;
+    }
+
+    /**
+     * Get the config based on the specified configuration
+     *
+     * @param string|null $configName
+     * @return Container
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws \Psr\SimpleCache\InvalidArgumentException
+     */
+    public function build($configName = null)
+    {
+        $configName = $this->setCurrentConfig($configName);
+
+        if (!isset($this->configList[$configName])) {
+            throw new ConfigException("Configuration '$configName' does not defined");
         }
 
         $container = null;
-        if (isset($this->cache[$env])) {
-            $container = $this->cache[$env]->get("container-cache-$env");
+        if ($this->allowCache && isset($this->cache[$configName])) {
+            $container = $this->cache[$configName]->get("container-cache-$configName");
             if (!is_null($container)) {
                 return $container;
             }
         }
 
         $config = [];
-        $config = $this->loadConfig($config, $env);
-        foreach ($this->environments[$env] as $environment) {
-            $config = $this->loadConfig($config, $environment);
+        $config = $this->loadConfig($config, $configName);
+        foreach ($this->configList[$configName] as $configData) {
+            $config = $this->loadConfig($config, $configData);
         }
 
-        if ($this->loadOSEnv) {
+        foreach ($config as $key => $value) {
+            $envValue = getenv($key);
+            if (!empty($envValue)) {
+                $config[$key] = $envValue;
+            }
+        }
+
+        if ($this->loadOsEnv) {
             $config = array_merge($config, $_ENV);
         }
 
         $container = new Container($config);
-        if (isset($this->cache[$env])) {
-            $this->cache[$env]->set("container-cache-$env", $container, $this->cacheTTL[$env]);
+        if (isset($this->cache[$configName])) {
+            $this->allowCache = $this->cache[$configName]->set("container-cache-$configName", $container, $this->cacheTTL[$configName]);
         }
         return $container;
+    }
+
+    public function getCacheCurrentEnvironment(CacheInterface $default = null)
+    {
+        if (empty($this->configName)) {
+            throw new RunTimeException("Environment isn't build yet");
+        }
+
+        if (isset($this->cache[$this->configName])) {
+            return $this->cache[$this->configName];
+        }
+        return $default;
     }
 }
