@@ -9,351 +9,47 @@
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
 
-## How it Works?
+## Basics
 
-The container is created based on the configuration you created (dev, homolog, test, live, ...) defined in array and `.env` files;
+PSR-11 refers to "PHP Standard Recommendation 11," which is a PHP specification that defines a common interface for implementing dependency injection containers in PHP applications. Dependency injection is a design pattern that allows objects to be provided with their dependencies from an external source, rather than creating those dependencies internally.
 
-See below how to setup:
+Here's a summary of PSR-11:
 
-## Setup files
+- Purpose: PSR-11 aims to provide a standardized way of implementing and using dependency injection containers in PHP applications.
 
-Create in your project root at the same level of the vendor directory a folder called `config`. 
+- Container Interface: PSR-11 defines the Psr\Container\ContainerInterface, which specifies methods for retrieving instances of objects (dependencies) from the container.
 
-Inside these folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc
-are your configuration sets. 
+- Container Operations: The interface includes methods such as get($id) to retrieve an instance by its identifier (usually a string), has($id) to check if an instance exists in the container, and set($id, $value) to manually register an instance with the container.
 
-Your folder will look like to:
+- Implementing Containers: Developers can create their own containers by implementing the ContainerInterface and providing the necessary methods for managing and retrieving instances.
 
-```text
-<project root>
-    |
-    +-- config
-           |
-           + .env
-           + config-dev.php
-           + config-dev.env
-           + config-homolog.php
-           + config-homolog.env
-           + config-test.php
-           + config-live.php
-   +-- vendor
-   +-- composer.json
-```
+- Interoperability: PSR-11 promotes interoperability between different PHP frameworks and libraries by providing a common interface. Applications built using PSR-11 containers can switch between different containers without needing to modify the application code.
 
-## Select the configuration you will use
+- Autowiring: PSR-11 does not explicitly define autowiring (automatic resolution of dependencies), but containers implementing this specification can choose to include autowiring functionality if desired.
 
-### Read from the environment variable `APP_ENV`
+- Extension: PSR-11 can be extended by other PSR specifications to provide additional features or standards related to dependency injection.
 
-When you call:
+Overall, PSR-11 standardizes the way dependency injection containers are implemented and used in PHP, promoting code reusability, flexibility, and interoperability between different components of PHP applications.
 
-```php
-$container = $definition->build()
-```
+## How use this component
 
-The component will try to get the proper configuration set based on the contents of the variable `APP_ENV`
+Follow the steps below:
 
-There are several ways to set the `APP_ENV` before start your server:
-
-This can be done using nginx:
-
-```text
-fastcgi_param   APP_ENV  dev;
-```
-
-Apache:
-
-```text
-SetEnv APP_ENV dev
-```
-
-Docker-Compose
-
-```text
-environment:
-    APP_ENV: dev
-```
-
-Docker CLI
-
-```bash
-docker -e APP_ENV=dev image
-```
-
-### Read from a different variable
-
-Instead of use `APP_ENV` you can set your own variable
-
-```php
-$container = $definition
-    ->withConfigVar("MY_ENV_VAR")
-    ->build("live");
-```
-
-### Specify directly
-
-Other way to load the configuration set instead of depending on an environment variable is to specifiy directly
-which configuration you want to get:
-
-```php
-$container = $definition->build("live");
-```
-
-### Configuration Files
-
-#### The `config-xxxx.php` file
-
-**config-homolog.php**
-
-```php
-<?php
-
-return [
-    'property1' => 'string',
-    'property2' => true,
-    'property3' => function () {
-        return 'xxxxxx';
-    },
-    'propertyWithArgs' => function ($p1, $p2) {
-        return 'xxxxxx';
-    },
-];
-```
-
-**config-live.php**
-```php
-<?php
-
-return [
-    'property2' => false
-];
-```
-
-#### The `config-xxxx.env` file
-
-Alternatively is possible to set an .env file with the contents KEY=VALUE one per line. 
-
-**live.env**
-
-```ini
-property1=mixed
-```
-
-By default, all properties are parsed as string. You can parse as bool, int or float as this example:
-
-```ini
-PARAM1=!bool true
-PARAM2=!int 20
-PARAM3=!float 3.14
-```
-
-### Use in your PHP Code
-
-Create the Definition:
-
-```php
-<?php
-$definition = (new \ByJG\Config\Definition())
-    ->withConfigVar('APP_ENV') // This will setup the environment var to 'APP_ENV' (default)
-    ->addConfig('homolog')         // This will setup the HOMOLOG configuration set
-    ->addConfig('live')            // This will setup the LIVE environenment inherited HOMOLOG
-        ->inheritFrom('homolog')
-    ->setCache($somePsr16Implementation, 'live'); // This will cache the "live" configuration set. 
-```
-
-The code below will get a property from the defined environment:
-
-```php
-<?php
-$container = $definition->build();
-$property = $container->get('property2');
-```
-
-If the property does not exist an error will be thrown.
-
-
-If the property is a closure, you can call the get method, and you'll get the closure execution result:
-
-```php
-<?php
-$container = $definition->build();
-$property = $container->get('closureProperty');
-$property = $container->get('closurePropertyWithArgs', 'value1', 'value2');
-$property = $container->get('closurePropertyWithArgs', ['value1', 'value2']);
-```
-
-If you want get the RAW value without parse closure:
-
-```php
-<?php
-$container = $definition->build();
-$property = $container->raw('closureProperty');
-```
-
-## Dependency Injection
-
-### Basics
-
-It is possible to create a Dependency Injection and set automatically the instances and constructors.
-Let's get by example the following classes:
-
-```php
-<?php
-namespace Example;
-
-interface Area
-{
-    public function calculate();
-}
-
-class Square implements Area
-{
-    public function __construct($side)
-    {
-        // ...
-    }
-    
-    //...
-}
-
-class RectangleTriangle implements Area
-{
-    public function __construct($base, $height)
-    {
-        // ...
-    }
-    
-    //...
-}
-```
-
-We can create a definition for this classes:
-
-```php
-<?php
-
-use ByJG\Config\DependencyInjection as DI;
-
-return [
-    \Example\Square::class => DI::bind(\Example\Square::class)
-        ->withConstructorArgs([4])
-        ->toInstance(),
-
-    \Example\RectangleTriangle::class => DI::bind(\Example\RectangleTriangle::class)
-        ->withConstructorArgs([3, 4])
-        ->toInstance(),
-];
-```
-
-and to use in our code we just need to do:
-
-```php
-<?php
-$config = $definition->build();
-$square = $config->get(\Example\Square::class);
-```
-
-### Injecting automatically the Objects
-
-Let's figure it out this class:
-
-```php
-<?php
-class SumAreas implements Area
-{
-     /**
-     * SumAreas constructor.
-     * @param \DIClasses\RectangleTriangle $triangle 
-     * @param \DIClasses\Square $square 
-     */
-    public function __construct($triangle, $square)
-    {
-        $this->triangle = $triangle;
-        $this->square = $square;
-    }
-
-    //... 
-```
-
-Note that this class needs instances of objects previously defined in our container definition. In that case we just need add
-this:
-
-```php
-<?php
-return [
-    // ....
-
-    SumAreas::class => DI::bind(SumAreas::class)
-        ->withInjectedConstructor()
-        ->toInstance(),
-];
-``` 
-
-When use use the method `withConstructor()` we are expecting that all required classes in the constructor already where
-defined and inject automatically to get a instance.
-
-This component uses the PHP Document to determine the classed are required.
-
-### Get a singleton object
-
-The `DependencyInjection` class will return a new instance every time you require a new object. However, you can the same object
-by adding `toSingleton()` instead of `toInstance()`.
-
-### All options (bind)
-
-```php
-<?php
-
-\ByJG\Config\DependencyInjection::bind("classname")
-    // To create a new instance choose *only* one below:
-    ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
-    ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
-    ->withNoConstructor()                // The class has no constructor
-    ->withConstructorNoArgs()           // The constructor's class has no arguments
-    ->withConstructorArgs(array)        // The constructor's class arguments
-    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructure 
-
-    // Call methods after you have a instance
-    ->withMethodCall("methodName", array_of_args)
-    
-    // How will you get a instance?
-    ->toInstance()                   // get a new instance for every container get
-    ->toSingleton()                  // get the same instance for every container get 
-    ->toEagerSingleton()             // same as singleton however get a new instance immediately  
-;
-```
-
-### Use a dependency inject in the config
-
-If you need to use a previously DI created you can use the method `use`.
-This method will return a DI instance and allow you to call a method and return its result.
-
-This differs from `Param::get` because `DI::use` intends to get a class and return the result of a method call, 
-while `Param::get`  is intended to use as a argument.
-
-```php
-<?php
-
-\ByJG\Config\DependencyInjection::use("classname")
-    ->withMethodCall("methodName", array_of_args)
-    ->toInstance()                   // get the result of the method call
-;
-```
-
-## Get the configuration set name is active
-
-```php
-<?php
-$definition->getCurrentConfig();
-```
+- [Setup the configuration files](docs/setup.md);
+- [Load the configuration](docs/load-the-configuration.md);
+- [Optionally define the dependency injection](docs/dependency-injection.md));
 
 ## Install
 
 ```bash
-composer require "byjg/config=4.1.*"
+composer require "byjg/config=4.9.*"
 ```
 
 ## Tests
 
 ```bash
-phpunit
+./vendor/bin/phpunit
 ```
+
+----
+[Open source ByJG](http://opensource.byjg.com)

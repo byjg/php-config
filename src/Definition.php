@@ -50,7 +50,7 @@ class Definition
 
     /**
      * @param string $configName The configuration to be loaded
-     * @return array
+     * @return array|null
      */
     private function loadConfigFile($configName)
     {
@@ -204,7 +204,7 @@ class Definition
     }
 
     /**
-     * @param null $configName
+     * @param string|null $configName
      * @return array|mixed|string
      * @throws ConfigException
      */

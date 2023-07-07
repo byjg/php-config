@@ -87,7 +87,7 @@ class DependencyInjection
     public function withConstructorArgs($args)
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         if (!is_null($args) && !is_array($args)) {
@@ -106,7 +106,7 @@ class DependencyInjection
     public function withFactoryMethod($method, $args = [])
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         if (!is_null($args) && !is_array($args)) {
@@ -162,7 +162,7 @@ class DependencyInjection
     public function withInjectedConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
@@ -195,7 +195,7 @@ class DependencyInjection
     public function withInjectedLegacyConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
@@ -228,7 +228,7 @@ class DependencyInjection
     public function withNoConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $this->args = null;
@@ -241,7 +241,7 @@ class DependencyInjection
     public function withConstructorNoArgs()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $this->args = [];
@@ -260,7 +260,7 @@ class DependencyInjection
     public function toSingleton()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot get a singleton over an existent object (DI::use())');
+            throw new DependencyInjectionException('You cannot get a singleton over an existent object (DI::use())');
         }
         $this->singleton = true;
         return $this;
@@ -274,7 +274,7 @@ class DependencyInjection
     public function toEagerSingleton()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot get an eager singleton over an existent object (DI::use()');
+            throw new DependencyInjectionException('You cannot get an eager singleton over an existent object (DI::use()');
         }
 
         $this->singleton = true;
