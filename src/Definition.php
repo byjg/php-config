@@ -40,12 +40,18 @@ class Definition
     {
         $content1 = $this->loadConfigFile($configName);
         $content2 = $this->loadEnvFile($configName);
+        $content3 = $this->loadDirectory($configName);
 
         if (is_null($content1) && is_null($content2)) {
             throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not found at " . $this->getBaseDir());
         }
 
-        return array_merge(is_null($content1) ? [] : $content1, is_null($content2) ? [] : $content2, $currentConfig);
+        return array_merge(
+            is_null($content1) ? [] : $content1,
+            is_null($content2) ? [] : $content2,
+            is_null($content3) ? [] : $content3,
+            $currentConfig
+        );
     }
 
     /**
@@ -54,8 +60,12 @@ class Definition
      */
     private function loadConfigFile($configName)
     {
-        $file = $this->getBaseDir() . '/config-' . $configName .  '.php';
+        return $this->_loadPhp($this->getBaseDir() . '/config-' . $configName .  '.php');
 
+    }
+
+    private function _loadPhp($file)
+    {
         if (!file_exists($file)) {
             return null;
         }
@@ -96,6 +106,25 @@ class Definition
                 $result["value"] = floatval($parsed["value"]);
             }
             $config[$result["key"]] = $result["value"];
+        }
+
+        return $config;
+    }
+
+    private function loadDirectory($configName)
+    {
+        $dir = $this->getBaseDir() . '/' . $configName;
+
+        if (!file_exists($dir)) {
+            return [];
+        }
+
+        $config = [];
+        foreach (glob( "$dir/*.php") as $file) {
+            $config = array_merge($config, $this->_loadPhp($file));
+        }
+        foreach (glob("$dir/*.env") as $file) {
+            $config = array_merge($config, $this->loadEnvFileContents($file));
         }
 
         return $config;
