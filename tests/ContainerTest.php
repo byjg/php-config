@@ -29,6 +29,7 @@ class ContainerTest extends TestCase
                 ->inheritFrom('test')
             ->addConfig('closure')
             ->addConfig('notfound')
+            ->addConfig('folderenv')
         ;
     }
 
@@ -259,5 +260,14 @@ class ContainerTest extends TestCase
         $this->expectExceptionMessage("Environment isn't build yet");
         $this->object->getCacheCurrentEnvironment();
 
+    }
+
+    public function testConfigDirectory()
+    {
+        $config = $this->object->build('folderenv');
+
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertFalse($config->get('property2'));
+        $this->assertEquals('other_value3', $config->get('property3'));
     }
 }
