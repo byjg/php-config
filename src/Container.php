@@ -29,6 +29,10 @@ class Container implements ContainerInterface
     {
         $value = $this->raw($id);
 
+        if ($value instanceof Param) {
+            return $this->get($value->getParam());
+        }
+
         if ($value instanceof DependencyInjection) {
             $value->injectContainer($this);
             return $value->getInstance();
