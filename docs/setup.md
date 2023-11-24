@@ -110,5 +110,18 @@ One environment can inherit from another. This means that the environment that i
 
 That's very important because you can have a common configuration for all environments and override only the variables that are different.
 
+## Load Priority
+
+If you have multiple files and the same variable is defined in more than one file, 
+the system will override the value with the value defined by the last file loaded with the same variable.
+
+The load order is:
+- config-<ENV>.php
+- config-<ENV>.env
+- <ENV>/*.php
+- <ENV>/*.env
+- .env
+
+
 ----
 [Open source ByJG](http://opensource.byjg.com)

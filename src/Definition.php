@@ -39,8 +39,8 @@ class Definition
     private function loadConfig($currentConfig, $configName)
     {
         $content1 = $this->loadConfigFile($configName);
-        $content2 = $this->loadEnvFile($configName);
-        $content3 = $this->loadDirectory($configName);
+        $content2 = $this->loadDirectory($configName);
+        $content3 = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
 
         if (is_null($content1) && is_null($content2)) {
             throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not found at " . $this->getBaseDir());
@@ -60,8 +60,14 @@ class Definition
      */
     private function loadConfigFile($configName)
     {
-        return $this->_loadPhp($this->getBaseDir() . '/config-' . $configName .  '.php');
+        $phpConfig = $this->_loadPhp($this->getBaseDir() . '/config-' . $configName .  '.php');
+        $envFile = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
 
+        if (is_null($phpConfig) && is_null($envFile)) {
+            return null;
+        }
+
+        return array_merge((array)$phpConfig, (array)$envFile);
     }
 
     private function _loadPhp($file)
@@ -71,18 +77,6 @@ class Definition
         }
 
         return (include $file);
-    }
-
-    private function loadEnvFile($configName)
-    {
-        $global = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
-        $envSpecific = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
-
-        if (is_null($global) && is_null($envSpecific)) {
-            return null;
-        }
-
-        return array_merge((array)$global, (array)$envSpecific);
     }
 
     private function loadEnvFileContents($filename)
