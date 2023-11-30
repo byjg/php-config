@@ -14,6 +14,7 @@ class Container implements ContainerInterface
     public function __construct($config)
     {
         $this->config = $config;
+        DependencyInjection::startEagerSingletons($this);
     }
 
     /**

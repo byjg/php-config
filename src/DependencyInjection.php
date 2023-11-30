@@ -31,6 +31,8 @@ class DependencyInjection
 
     protected $methodCall = [];
 
+    protected static $eagerSingletons = [];
+
     /**
      * @param $containerInterface ContainerInterface
      * @return DependencyInjection
@@ -273,13 +275,8 @@ class DependencyInjection
      */
     public function toEagerSingleton()
     {
-        if ($this->use) {
-            throw new DependencyInjectionException('You cannot get an eager singleton over an existent object (DI::use()');
-        }
-
-        $this->singleton = true;
-        $this->getInstance();
-        return $this;
+        self::$eagerSingletons[$this->getClass()] = null;
+        return $this->toSingleton();
     }
 
     /**
@@ -378,5 +375,15 @@ class DependencyInjection
             $this->instance = $this->getNewInstance();
         }
         return $this->instance;
+    }
+
+    public static function startEagerSingletons(Container $container)
+    {
+        foreach (self::$eagerSingletons as $class => $instance) {
+            if (empty($instance)) {
+                self::$eagerSingletons[$class] = $container->get($class);
+            }
+
+        }
     }
 }

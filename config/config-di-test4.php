@@ -19,4 +19,5 @@ return [
     TestParam::class => DI::bind(TestParam::class)
         ->withConstructorArgs([Param::get(Random::class)])
         ->withMethodCall('someMethod', [Param::get(Random::class)])
+        ->toEagerSingleton()
 ];
