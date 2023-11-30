@@ -33,6 +33,8 @@ class DependencyInjection
 
     protected static $eagerSingletons = [];
 
+    protected static $eagerSingletonProcessing = false;
+
     /**
      * @param $containerInterface ContainerInterface
      * @return DependencyInjection
@@ -379,11 +381,17 @@ class DependencyInjection
 
     public static function startEagerSingletons(Container $container)
     {
+        // Avoid recursive calls
+        if (self::$eagerSingletonProcessing) {
+            return;
+        }
+
+        self::$eagerSingletonProcessing = true;
+
         foreach (self::$eagerSingletons as $class => $instance) {
             if (empty($instance)) {
                 self::$eagerSingletons[$class] = $container->get($class);
             }
-
         }
     }
 }
