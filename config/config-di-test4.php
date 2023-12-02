@@ -8,8 +8,6 @@ use DIClasses\TestParam;
 
 return [
 
-    "constnumber" => 4,
-
     Square::class => DI::bind(Square::class)
         ->withConstructorArgs([Param::get("constnumber")])
         ->toInstance(),

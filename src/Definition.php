@@ -90,14 +90,8 @@ class Definition
             if (!preg_match("/^\s*(?<key>\w+)\s*=\s*(?<value>.*)$/", $line, $result)) {
                 continue;
             }
-            if (preg_match("/^!bool\s+(?<value>true|false)$/", $result["value"], $parsed)) {
-                $result["value"] = boolval($parsed["value"]);
-            }
-            if (preg_match("/^!int\s+(?<value>.*)$/", $result["value"], $parsed)) {
-                $result["value"] = intval($parsed["value"]);
-            }
-            if (preg_match("/^!float\s+(?<value>.*)$/", $result["value"], $parsed)) {
-                $result["value"] = floatval($parsed["value"]);
+            if (preg_match("/^!(?<parser>\w+)\s+(?<value>.*)$/", $result["value"], $parsed)) {
+                $result["value"] = ParamParser::parse($parsed["parser"], $parsed["value"]);
             }
             $config[$result["key"]] = $result["value"];
         }
@@ -259,6 +253,8 @@ class Definition
      */
     public function build($configName = null)
     {
+        $this->initializeParsers();
+
         $configName = $this->setCurrentConfig($configName);
 
         if (!isset($this->configList[$configName])) {
@@ -307,5 +303,44 @@ class Definition
             return $this->cache[$this->configName];
         }
         return $default;
+    }
+
+    protected function initializeParsers()
+    {
+        if (ParamParser::isParserExists('initialized')) {
+            return;
+        }
+
+        ParamParser::addParser('initialized', function ($value) {
+            return true;
+        });
+        ParamParser::addParser('bool', function ($value) {
+            return boolval($value);
+        });
+        ParamParser::addParser('int', function ($value) {
+            return intval($value);
+        });
+        ParamParser::addParser('float', function ($value) {
+            return floatval($value);
+        });
+        ParamParser::addParser('jsondecode', function ($value) {
+            return json_decode($value, true);
+        });
+        ParamParser::addParser('array', function ($value) {
+            return explode(',', $value);
+        });
+        ParamParser::addParser('dict', function ($value) {
+            $result = [];
+            try {
+                foreach (explode(',', $value) as $item) {
+                    $item = explode('=', $item);
+                    $result[trim($item[0])] = trim($item[1]);
+                }
+            } catch (Exception $ex) {
+                throw new ConfigException("Invalid dict format '$value'");
+            }
+            return $result;
+        });
+
     }
 }

@@ -40,6 +40,21 @@ class EnvFileTest extends TestCase
         $this->assertTrue($config->get('KEY5'));
         $this->assertSame(10, $config->get('KEY6'));
         $this->assertSame(3.14, $config->get('KEY7'));
+        $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY8'));
+        $this->assertSame(['1', '2', '3', '4', '5'], $config->get('KEY9'));
+        $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY10'));
+    }
+
+    public function testMissingCustomParser()
+    {
+        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectExceptionMessage("Parser for 'nonexistent' not found");
+
+        putenv('APP_ENV=file2');
+        $definition = (new Definition())
+            ->addConfig("file2");
+
+        $config = $definition->build();
     }
 
 }
