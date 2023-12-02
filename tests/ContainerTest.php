@@ -22,11 +22,8 @@ class ContainerTest extends TestCase
     {
         $this->object = (new Definition())
             ->addConfig('test')
-            ->addConfig('test2')
-                ->inheritFrom('test')
-            ->addConfig('test3')
-                ->inheritFrom('test2')
-                ->inheritFrom('test')
+            ->addConfig('test2', ['test'])
+            ->addConfig('test3', ['test2', 'test'])
             ->addConfig('closure')
             ->addConfig('notfound')
             ->addConfig('folderenv')

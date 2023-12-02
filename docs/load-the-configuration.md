@@ -11,8 +11,7 @@ The definition will specify how the configuration will be loaded, what environme
 $definition = (new \ByJG\Config\Definition())
     ->withConfigVar('APP_ENV')     // Setup the environment var used to auto select the config. 'APP_ENV' is default.
     ->addConfig('dev')             // Defining the 'dev' environment
-    ->addConfig('prod')            // Defining the `prod` environment that inherits from `dev`
-        ->inheritFrom('dev')
+    ->addConfig('prod', ['dev'])   // Defining the `prod` environment that inherits from `dev`
     ->setCache($somePsr16Implementation, 'prod'); // This will cache the "prod" configuration set.
 ```
 

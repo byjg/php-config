@@ -143,19 +143,20 @@ class Definition
      * @return $this
      * @throws ConfigException
      */
-    public function addConfig($configName)
+    public function addConfig($configName, array $inheritFrom = [])
     {
         if (isset($this->configList[$configName])) {
             throw new ConfigException("Configuration '$configName' already exists");
         }
         $this->lastConfig = $configName;
-        $this->configList[$configName] = [];
+        $this->configList[$configName] = $inheritFrom;
         return $this;
     }
 
     /**
      * @param string $configName
      * @return $this
+     * @deprecated Use addConfig($config, $inheritFrom) instead
      */
     public function inheritFrom($configName)
     {
