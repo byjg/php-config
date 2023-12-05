@@ -2,6 +2,7 @@
 
 namespace ByJG\Config;
 
+use ByJG\Config\Exception\ConfigException;
 use Laravel\SerializableClosure\SerializableClosure;
 use ByJG\Config\Exception\KeyNotFoundException;
 use Closure;
@@ -14,6 +15,8 @@ class Container implements ContainerInterface
     private $config = [];
 
     private $processedEagers = false;
+
+    private $configChanged = [];
 
     public function __construct($config)
     {
@@ -37,24 +40,19 @@ class Container implements ContainerInterface
             return $this->get($value->getParam());
         }
 
+        if (is_string($value)) {
+            if (preg_match("/^!(?<parser>\w+)\s+(?<value>.*)$/", $value, $parsed)) {
+                $value = ParamParser::parse($parsed["parser"], $parsed["value"]);
+                $this->set($id, $value);
+            }
+        }
+
         if ($value instanceof DependencyInjection) {
             $value->injectContainer($this);
             return $value->getInstance();
         }
 
         if (!($value instanceof Closure)) {
-            if (is_string($value)) {
-                if (substr($value, 0, 6) == "!!^^:") {
-                    $value = unserialize(substr($value, 6))->getClosure();
-                    $this->config[$id] = $value;
-                    return $this->get($id);
-                } else if (substr($value, 0, 6) == "!!##:") {
-                    $value = unserialize(substr($value, 6));
-                    $this->config[$id] = $value;
-                    return $this->get($id);
-                }
-            }
-
             return $value;
         }
 
@@ -69,6 +67,12 @@ class Container implements ContainerInterface
         }
 
         return call_user_func_array($value, $args);
+    }
+
+    protected function set($key, $value)
+    {
+        $this->config[$key] = $value;
+        $this->configChanged = true;
     }
 
     /**
@@ -101,12 +105,16 @@ class Container implements ContainerInterface
 
     public function saveToCache($definitionName, CacheInterface $cacheObject)
     {
+        if ($this->configChanged) {
+            throw new \Exception("The configuration was changed. Can't save to cache.");
+        }
+
         $toCache = [];
         foreach ($this->config as $key => $value) {
             if ($value instanceof Closure) {
-                $toCache[$key] = "!!^^:" . serialize(new SerializableClosure($value));
+                $toCache[$key] = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
             } else if ($value instanceof DependencyInjection) {
-                $toCache[$key] = "!!##:" . serialize($value);
+                $toCache[$key] = "!unserialize " . base64_encode(serialize($value));
             } else {
                 $toCache[$key] = $value;
             }
@@ -162,5 +170,51 @@ class Container implements ContainerInterface
                 $this->get($key);
             }
         }
+    }
+
+    public function initializeParsers()
+    {
+        if (ParamParser::isParserExists('initialized')) {
+            return;
+        }
+
+        ParamParser::addParser('initialized', function ($value) {
+            return true;
+        });
+        ParamParser::addParser('bool', function ($value) {
+            return boolval($value);
+        });
+        ParamParser::addParser('int', function ($value) {
+            return intval($value);
+        });
+        ParamParser::addParser('float', function ($value) {
+            return floatval($value);
+        });
+        ParamParser::addParser('jsondecode', function ($value) {
+            return json_decode($value, true);
+        });
+        ParamParser::addParser('array', function ($value) {
+            return explode(',', $value);
+        });
+        ParamParser::addParser('dict', function ($value) {
+            $result = [];
+            try {
+                foreach (explode(',', $value) as $item) {
+                    $item = explode('=', $item);
+                    $result[trim($item[0])] = trim($item[1]);
+                }
+            } catch (\Exception $ex) {
+                throw new ConfigException("Invalid dict format '$value'");
+            }
+            return $result;
+        });
+
+        ParamParser::addParser('unserclosure', function ($value) {
+            return unserialize(base64_decode($value))->getClosure();
+        });
+
+        ParamParser::addParser('unserialize', function ($value) {
+            return unserialize(base64_decode($value));
+        });
     }
 }

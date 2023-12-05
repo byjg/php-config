@@ -209,9 +209,9 @@ class ContainerTest extends TestCase
         $container2 = Container::createFromCache('test', $arrayCache);
         $this->assertTrue($container->compare($container2)); // The exact object
 
-        $this->assertEquals('calculated', $container->get('property3'));
-        $this->assertEquals(4, $container->get('property6'));
-        $this->assertEquals(6, $container->get(Area::class)->calculate());
+        $this->assertEquals('calculated', $container2->get('property3'));
+        $this->assertEquals(4, $container2->get('property6'));
+        $this->assertEquals(6, $container2->get(Area::class)->calculate());
     }
 
     public function testChangeConfigVar()

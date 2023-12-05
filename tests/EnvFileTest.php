@@ -3,6 +3,7 @@
 namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
+use ByJG\Cache\Psr16\NoCacheEngine;
 use ByJG\Config\Definition;
 use PHPUnit\Framework\TestCase;
 
@@ -45,6 +46,28 @@ class EnvFileTest extends TestCase
         $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY10'));
     }
 
+    public function testSaveToCacheBeforeChange()
+    {
+        putenv('APP_ENV=file');
+        $config = $this->object->build();
+
+        ;
+        $this->assertTrue($config->saveToCache("file", new NoCacheEngine()));
+    }
+
+    public function testCannotSaveToCacheAfterChange()
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("The configuration was changed. Can't save to cache.");
+
+        putenv('APP_ENV=file');
+        $config = $this->object->build();
+
+        $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY10'));
+
+        $config->saveToCache("file", new NoCacheEngine());
+    }
+
     public function testMissingCustomParser()
     {
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
@@ -55,6 +78,7 @@ class EnvFileTest extends TestCase
             ->addConfig("file2");
 
         $config = $definition->build();
+        $config->get('KEY11');
     }
 
 }
