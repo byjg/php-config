@@ -98,7 +98,7 @@ class Container implements ContainerInterface
         return $this->config[$id];
     }
 
-    public function saveToCache($definitionName, $ttl, CacheInterface $cacheObject)
+    public function saveToCache($definitionName, CacheInterface $cacheObject)
     {
         $toCache = [];
         foreach ($this->config as $key => $value) {
@@ -110,7 +110,7 @@ class Container implements ContainerInterface
                 $toCache[$key] = $value;
             }
         }
-        return $cacheObject->set("container-cache-$definitionName", serialize($toCache), $ttl);
+        return $cacheObject->set("container-cache-$definitionName", serialize($toCache));
     }
 
     public static function createFromCache($definitionName, CacheInterface $cacheObject)

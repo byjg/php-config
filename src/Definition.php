@@ -25,11 +25,6 @@ class Definition
 
     private $allowCache = true;
 
-    /**
-     * @var DateInterval[]
-     */
-    private $cacheTTL = [];
-
     private $baseDir = "";
 
     private $loadOsEnv = false;
@@ -124,16 +119,10 @@ class Definition
      * @return $this
      * @throws InvalidDateException
      */
-    public function setCache($configName, CacheInterface $cache, DateInterval $ttl = null)
+    public function setCache($configName, CacheInterface $cache)
     {
         foreach ((array)$configName as $item) {
-            try {
-                $date = empty($ttl) ? new DateInterval('P7D') : $ttl;
-            } catch (Exception $ex) {
-                throw new InvalidDateException($ex->getMessage());
-            }
             $this->cache[$item] = $cache;
-            $this->cacheTTL[$item] = $date;
         }
         return $this;
     }
@@ -288,7 +277,7 @@ class Definition
 
         $container = new Container($config);
         if (isset($this->cache[$configName])) {
-            $this->allowCache = $container->saveToCache($configName, $this->cacheTTL[$configName], $this->cache[$configName]);
+            $this->allowCache = $container->saveToCache($configName, $this->cache[$configName]);
         }
         return $container;
     }
