@@ -274,8 +274,8 @@ class Definition
         if (isset($this->cache[$configName])) {
             $this->allowCache = $container->saveToCache($configName, $this->cache[$configName]);
         }
-        $container->processEagerSingleton();
         $container->initializeParsers();
+        $container->processEagerSingleton();
         return $container;
     }
 
