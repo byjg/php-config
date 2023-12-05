@@ -18,9 +18,12 @@ class Container implements ContainerInterface
 
     private $configChanged = [];
 
-    public function __construct($config)
+    public function __construct($config, $definitionName = null, $cacheObject = null)
     {
         $this->config = $config;
+        if (!is_null($definitionName) && !is_null($cacheObject)) {
+            $this->saveToCache($definitionName, $cacheObject);
+        }
         $this->initializeParsers();
         $this->processEagerSingleton();
     }

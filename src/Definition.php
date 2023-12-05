@@ -272,12 +272,7 @@ class Definition
             $config = array_merge($config, $_ENV);
         }
 
-        $container = new Container($config);
-        if (isset($this->cache[$configName])) {
-            $this->allowCache = $container->saveToCache($configName, $this->cache[$configName]);
-        }
-
-        return $container;
+        return new Container($config, $configName, $this->cache[$configName] ?? null);
     }
 
     public function getCacheCurrentEnvironment(CacheInterface $default = null)
