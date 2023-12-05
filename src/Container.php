@@ -21,6 +21,8 @@ class Container implements ContainerInterface
     public function __construct($config)
     {
         $this->config = $config;
+        $this->initializeParsers();
+        $this->processEagerSingleton();
     }
 
     /**
@@ -157,7 +159,7 @@ class Container implements ContainerInterface
         return empty($diff);
     }
 
-    public function processEagerSingleton()
+    protected function processEagerSingleton()
     {
         if ($this->processedEagers) {
             return;
@@ -172,7 +174,7 @@ class Container implements ContainerInterface
         }
     }
 
-    public function initializeParsers()
+    protected function initializeParsers()
     {
         if (ParamParser::isParserExists('initialized')) {
             return;

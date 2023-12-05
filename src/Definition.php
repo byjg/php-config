@@ -246,6 +246,7 @@ class Definition
             throw new ConfigException("Configuration '$configName' does not defined");
         }
 
+        // Check if container is saved in the cache
         if ($this->allowCache && isset($this->cache[$configName])) {
             $container = Container::createFromCache($configName, $this->cache[$configName]);
             if (!is_null($container)) {
@@ -253,6 +254,7 @@ class Definition
             }
         }
 
+        // Create from the Definition and configuration files
         $config = [];
         $config = $this->loadConfig($config, $configName);
         foreach ($this->configList[$configName] as $configData) {
@@ -274,8 +276,7 @@ class Definition
         if (isset($this->cache[$configName])) {
             $this->allowCache = $container->saveToCache($configName, $this->cache[$configName]);
         }
-        $container->initializeParsers();
-        $container->processEagerSingleton();
+
         return $container;
     }
 
