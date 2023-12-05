@@ -31,9 +31,7 @@ class DependencyInjection
 
     protected $methodCall = [];
 
-    protected static $eagerSingletons = [];
-
-    protected static $eagerSingletonProcessing = false;
+    protected $eager = false;
 
     /**
      * @param $containerInterface ContainerInterface
@@ -277,7 +275,7 @@ class DependencyInjection
      */
     public function toEagerSingleton()
     {
-        self::$eagerSingletons[$this->getClass()] = null;
+        $this->eager = true;
         return $this->toSingleton();
     }
 
@@ -379,19 +377,8 @@ class DependencyInjection
         return $this->instance;
     }
 
-    public static function startEagerSingletons(Container $container)
+    public function isEagerSingleton()
     {
-        // Avoid recursive calls
-        if (self::$eagerSingletonProcessing) {
-            return;
-        }
-
-        self::$eagerSingletonProcessing = true;
-
-        foreach (self::$eagerSingletons as $class => $instance) {
-            if (empty($instance)) {
-                self::$eagerSingletons[$class] = $container->get($class);
-            }
-        }
+        return $this->eager;
     }
 }

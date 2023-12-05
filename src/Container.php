@@ -13,10 +13,12 @@ class Container implements ContainerInterface
 {
     private $config = [];
 
+    private $processedEagers = false;
+
     public function __construct($config)
     {
         $this->config = $config;
-        DependencyInjection::startEagerSingletons($this);
+        $this->processEagerSingleton();
     }
 
     /**
@@ -146,5 +148,20 @@ class Container implements ContainerInterface
         );
 
         return empty($diff);
+    }
+
+    public function processEagerSingleton()
+    {
+        if ($this->processedEagers) {
+            return;
+        }
+
+        $this->processedEagers = true;
+
+        foreach ($this->config as $key => $value) {
+            if ($value instanceof DependencyInjection and $value->isEagerSingleton()) {
+                $this->get($key);
+            }
+        }
     }
 }
