@@ -262,9 +262,8 @@ class Definition
             throw new ConfigException("Configuration '$configName' does not defined");
         }
 
-        $container = null;
         if ($this->allowCache && isset($this->cache[$configName])) {
-            $container = $this->cache[$configName]->get("container-cache-$configName");
+            $container = Container::createFromCache($configName, $this->cache[$configName]);
             if (!is_null($container)) {
                 return $container;
             }
@@ -289,7 +288,7 @@ class Definition
 
         $container = new Container($config);
         if (isset($this->cache[$configName])) {
-            $this->allowCache = $this->cache[$configName]->set("container-cache-$configName", $container, $this->cacheTTL[$configName]);
+            $this->allowCache = $container->saveToCache($configName, $this->cacheTTL[$configName], $this->cache[$configName]);
         }
         return $container;
     }

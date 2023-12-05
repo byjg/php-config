@@ -3,9 +3,12 @@
 namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
+use ByJG\Cache\Psr16\FileSystemCacheEngine;
+use ByJG\Config\Container;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\RunTimeException;
+use DIClasses\Area;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -192,48 +195,23 @@ class ContainerTest extends TestCase
     public function testCache()
     {
         // With Cache!
-        $arrayCache = new ArrayCacheEngine();
+        $arrayCache = new FileSystemCacheEngine("x");
 
+        $arrayCache->delete('container-cache-test'); // Clean cache (if exists)
         $this->assertNull($arrayCache->get('container-cache-test'));
 
         $container = $this->object->setCache('test', $arrayCache)
             ->build('test');  // Expected build and set to cache
 
-        $this->assertInstanceOf(ArrayCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+        $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
 
-        $container2 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->setCache('test', $arrayCache)
-            ->build('test');   // Expected get from cache
+        // Get Container2 from cache and should match with the first one
+        $container2 = Container::createFromCache('test', $arrayCache);
+        $this->assertTrue($container->compare($container2)); // The exact object
 
-        $this->assertNotNull($arrayCache->get('container-cache-test'));
-        $this->assertSame($container, $container2); // The exact object
-
-        $container3 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->setCache('test2', $arrayCache)
-            ->build('test');   // Expected get a fresh new defintion
-
-        $this->assertNotSame($container, $container3); // Expected to be a different object
-
-        // Without cache
-        $container4 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->build('test');
-
-        $this->assertNotSame($container, $container4);  // There two different objects
+        $this->assertEquals('calculated', $container->get('property3'));
+        $this->assertEquals(4, $container->get('property6'));
+        $this->assertEquals(6, $container->get(Area::class)->calculate());
     }
 
     public function testChangeConfigVar()
