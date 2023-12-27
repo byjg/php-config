@@ -108,6 +108,24 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(20, $random->getNumber());
     }
 
+    public function testWithMethodCallSinglenton()
+    {
+        $config = $this->object->build('di-test3');
+
+        $random = $config->get('random2');
+        $this->assertInstanceOf(Random::class, $random);
+        $this->assertEquals(30, $random->getNumber());
+    }
+
+    public function testWithFactoryMethodSingleton()
+    {
+        $config = $this->object->build('di-test3');
+
+        $random = $config->get("factory2");
+        $this->assertInstanceOf(Random::class, $random);
+        $this->assertEquals(40, $random->getNumber());
+    }
+
     public function testGetInstancesWithParam()
     {
         $config = $this->object->build('di-test4');

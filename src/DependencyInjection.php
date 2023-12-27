@@ -301,7 +301,7 @@ class DependencyInjection
             throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
         }
 
-        return $this->callMethods($instance, !$this->use);
+        return $instance;
     }
 
     /**
@@ -326,20 +326,21 @@ class DependencyInjection
     protected function getNewInstance()
     {
         if ($this->use) {
-            return $this->getArgs([$this->class])[0];
+            $instance = $this->getArgs([$this->class])[0];
+        } else if (!empty($this->factory)) {
+            $instance = call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
+        } else {
+
+            $reflectionClass = new ReflectionClass($this->getClass());
+
+            if (is_null($this->args)) {
+                $instance = $reflectionClass->newInstanceWithoutConstructor();
+            } else {
+                $instance = $reflectionClass->newInstanceArgs($this->getArgs());
+            }
         }
 
-        if (!empty($this->factory)) {
-            return call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
-        }
-
-        $reflectionClass = new ReflectionClass($this->getClass());
-
-        if (is_null($this->args)) {
-            return $reflectionClass->newInstanceWithoutConstructor();
-        }
-
-        return $reflectionClass->newInstanceArgs($this->getArgs());
+        return $this->callMethods($instance, !$this->use);
     }
 
     /**
