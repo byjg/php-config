@@ -82,11 +82,14 @@ class Definition
 
         $config = [];
         foreach (file($filename) as $line) {
-            if (!preg_match("/^\s*(?<key>\w+)\s*=\s*(?<value>.*)$/", $line, $result)) {
+            $line = trim($line);
+            if (!preg_match("/^(?<key>\w+)\s*=\s*([\"'])?(?<value>.*?)([\"'])?$/", $line, $result)) {
                 continue;
             }
             $config[$result["key"]] = $result["value"];
         }
+
+
 
         return $config;
     }

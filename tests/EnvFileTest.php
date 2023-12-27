@@ -36,7 +36,7 @@ class EnvFileTest extends TestCase
         $this->assertEquals('ok', $config->get('GLOBAL_CONFIG'));
         $this->assertEquals('should replace', $config->get('KEY1'));
         $this->assertEquals('value2', $config->get('KEY_2'));
-        $this->assertEquals('value3', $config->get('KEY3'));
+        $this->assertEquals(' value3 ', $config->get('KEY3'));
         $this->assertEquals('', $config->get('KEY4'));
         $this->assertTrue($config->get('KEY5'));
         $this->assertSame(10, $config->get('KEY6'));
