@@ -51,5 +51,11 @@ composer require "byjg/config=4.9.*"
 ./vendor/bin/phpunit
 ```
 
+## Dependencies
+
+```mermaid
+flowchart TD
+    Config --> CacheEngine
+```
 ----
 [Open source ByJG](http://opensource.byjg.com)
