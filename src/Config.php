@@ -3,6 +3,7 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigException;
+use Psr\SimpleCache\CacheInterface;
 
 class Config
 {
@@ -14,12 +15,15 @@ class Config
 
     protected bool $final;
 
-    public function __construct(string $name, array $inheritFrom = [], bool $abstract = false, $final = false)
+    protected ?CacheInterface $cache;
+
+    public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false)
     {
         $this->name = $name;
         $this->abstract = $abstract;
         $this->final = $final;
         $this->inheritFrom = [];
+        $this->cache = $cache;
 
         foreach ($inheritFrom as $item) {
             if (!($item instanceof Config)) {
@@ -51,5 +55,10 @@ class Config
     public function isFinal(): bool
     {
         return $this->final;
+    }
+
+    public function getCacheInterface(): ?CacheInterface
+    {
+        return $this->cache;
     }
 }

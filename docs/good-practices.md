@@ -23,9 +23,11 @@ class Psr11
 
     public static function environment(): \ByJG\Config\Definition
     {
+        $devConfig = new \ByJG\Config\Config('dev');
+        
         if (is_null(self::$definition)) {
-            self::$definition = (new Definition())
-                ->addConfig('dev')
+            self::$definition = (new \ByJG\Config\Definition())
+                ->addConfig($devConfig)
             );
         }
 

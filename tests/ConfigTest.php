@@ -21,7 +21,7 @@ class ConfigTest extends TestCase
 
     public function testAbstract()
     {
-        $config = new Config('test', [], true);
+        $config = new Config('test', [], null, true);
 
         $this->assertEquals('test', $config->getName());
         $this->assertEquals([], $config->getInheritFrom());
@@ -31,7 +31,7 @@ class ConfigTest extends TestCase
 
     public function testFinal()
     {
-        $config = new Config('test', [], false, true);
+        $config = new Config('test', [], null, false, true);
 
         $this->assertEquals('test', $config->getName());
         $this->assertEquals([], $config->getInheritFrom());
@@ -66,7 +66,7 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is final and cannot be inherited");
 
-        $config = new Config('test', [], false, true);
+        $config = new Config('test', [], null, false, true);
         $config2 = new Config('test2', [$config]);
     }
 
@@ -75,7 +75,7 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is not a Config object");
 
-        $config = new Config('test', [], false, true);
+        $config = new Config('test', [], null, false, true);
         $config2 = new Config('test2', ['test']);
     }
 
@@ -84,7 +84,7 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("Configuration 'test' is abstract and cannot be instantiated");
 
-        $config = new Config('test', [], true);
+        $config = new Config('test', [], null, true);
 
         putenv('APP_ENV=test');
         $_ENV['APP_ENV'] = 'test';

@@ -112,20 +112,6 @@ class Definition
     }
 
     /**
-     * @param CacheInterface $cache
-     * @param string|array $configName
-     * @return $this
-     * @throws InvalidDateException
-     */
-    public function setCache($configName, CacheInterface $cache)
-    {
-        foreach ((array)$configName as $item) {
-            $this->cache[$item] = $cache;
-        }
-        return $this;
-    }
-
-    /**
      * @param string $configName
      * @return $this
      * @throws ConfigException
@@ -241,8 +227,8 @@ class Definition
         }
 
         // Check if container is saved in the cache
-        if ($this->allowCache && isset($this->cache[$configName])) {
-            $container = Container::createFromCache($configName, $this->cache[$configName]);
+        if ($this->allowCache && !empty($this->configList[$configName]->getCacheInterface())) {
+            $container = Container::createFromCache($configName, $this->configList[$configName]->getCacheInterface());
             if (!is_null($container)) {
                 return $container;
             }
@@ -264,7 +250,7 @@ class Definition
             $config = array_merge($config, $_ENV);
         }
 
-        return new Container($config, $configName, $this->cache[$configName] ?? null);
+        return new Container($config, $configName, $this->configList[$configName]->getCacheInterface() ?? null);
     }
 
     // Recursive function to load from Config
@@ -285,9 +271,18 @@ class Definition
             throw new RunTimeException("Environment isn't build yet");
         }
 
-        if (isset($this->cache[$this->configName])) {
-            return $this->cache[$this->configName];
+        if (!empty($this->configList[$this->configName]->getCacheInterface())) {
+            return $this->configList[$this->configName]->getCacheInterface();
         }
         return $default;
+    }
+
+    public function getConfigObject($configName): Config
+    {
+        if (isset($this->configList[$configName])) {
+            return $this->configList[$configName];
+        }
+
+        throw new \Exception('Config Definition not found');
     }
 }

@@ -8,11 +8,27 @@ The definition will specify how the configuration will be loaded, what environme
 
 ```php
 <?php
+$dev = new \ByJG\Config\Config('dev');
+$prod = new \ByJG\Config\Config('prod', ['dev'], $somePsr16Implementation);
+
 $definition = (new \ByJG\Config\Definition())
     ->withConfigVar('APP_ENV')     // Setup the environment var used to auto select the config. 'APP_ENV' is default.
-    ->addConfig('dev')             // Defining the 'dev' environment
-    ->addConfig('prod', ['dev'])   // Defining the `prod` environment that inherits from `dev`
-    ->setCache($somePsr16Implementation, 'prod'); // This will cache the "prod" configuration set.
+    ->addConfig($dev)             // Defining the 'dev' environment
+    ->addConfig($prod)            // Defining the `prod` environment that inherits from `dev`
+;
+```
+
+The `Config` constructor has the following parameters:
+
+```php
+<?php
+new \ByJG\Config\Config(
+    string $environment,                              // The environment name
+    array $inheritFrom = [],                          // The list of environments to inherit from
+    \Psr\SimpleCache\CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
+    bool $abstract = false                            // If true, the environment will not be used to load the configuration
+    bool $final = false                               // If true, the environment cannot be used to inherit from
+);
 ```
 
 ## Build the definition

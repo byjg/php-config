@@ -25,6 +25,7 @@ class ContainerTest extends TestCase
     public function setUp(): void
     {
         $test = new Config('test');
+        $testCache = new Config('test-cache', [$test], new FileSystemCacheEngine("x"));
         $test2 = new Config('test2', [$test]);
         $test3 = new Config('test3', [$test2, $test]);
         $test4 = new Config('test4', [$test3]); // Recursive Inheritance
@@ -34,6 +35,7 @@ class ContainerTest extends TestCase
 
         $this->object = (new Definition())
             ->addConfig($test)
+            ->addConfig($testCache)
             ->addConfig($test2)
             ->addConfig($test3)
             ->addConfig($test4)
@@ -220,18 +222,17 @@ class ContainerTest extends TestCase
     public function testCache()
     {
         // With Cache!
-        $arrayCache = new FileSystemCacheEngine("x");
+        $arrayCache = $this->object->getConfigObject('test-cache')->getCacheInterface();
 
-        $arrayCache->delete('container-cache-test'); // Clean cache (if exists)
-        $this->assertNull($arrayCache->get('container-cache-test'));
+        $arrayCache->delete('container-cache-test-cache'); // Clean cache (if exists)
+        $this->assertNull($arrayCache->get('container-cache-test-cache'));
 
-        $container = $this->object->setCache('test', $arrayCache)
-            ->build('test');  // Expected build and set to cache
+        $container = $this->object->build('test-cache');  // Expected build and set to cache
 
         $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
 
         // Get Container2 from cache and should match with the first one
-        $container2 = Container::createFromCache('test', $arrayCache);
+        $container2 = Container::createFromCache('test-cache', $arrayCache);
         $this->assertTrue($container->compare($container2)); // The exact object
 
         $this->assertEquals('calculated', $container2->get('property3'));
@@ -253,9 +254,6 @@ class ContainerTest extends TestCase
 
     public function testGetCacheNotSetYet()
     {
-        $this->object->setCache('test', new ArrayCacheEngine());
-
-        // Has to fail because isn't built yet.
         $this->expectException(RunTimeException::class);
         $this->expectExceptionMessage("Environment isn't build yet");
         $this->object->getCacheCurrentEnvironment();
