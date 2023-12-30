@@ -55,7 +55,7 @@ composer require "byjg/config=4.9.*"
 
 ```mermaid
 flowchart TD
-    Config --> CacheEngine
+    byjg/config --> byjg/cache-engine
 ```
 ----
 [Open source ByJG](http://opensource.byjg.com)
