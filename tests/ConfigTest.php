@@ -3,7 +3,7 @@
 
 namespace Test;
 
-use ByJG\Config\Config;
+use ByJG\Config\Environment;
 use ByJG\Config\Definition;
 use PHPUnit\Framework\TestCase;
 
@@ -11,54 +11,54 @@ class ConfigTest extends TestCase
 {
     public function testSimple()
     {
-        $config = new Config('test');
+        $environment = new Environment('test');
 
-        $this->assertEquals('test', $config->getName());
-        $this->assertEquals([], $config->getInheritFrom());
-        $this->assertFalse($config->isAbstract());
-        $this->assertFalse($config->isFinal());
+        $this->assertEquals('test', $environment->getName());
+        $this->assertEquals([], $environment->getInheritFrom());
+        $this->assertFalse($environment->isAbstract());
+        $this->assertFalse($environment->isFinal());
     }
 
     public function testAbstract()
     {
-        $config = new Config('test', [], null, true);
+        $environment = new Environment('test', [], null, true);
 
-        $this->assertEquals('test', $config->getName());
-        $this->assertEquals([], $config->getInheritFrom());
-        $this->assertTrue($config->isAbstract());
-        $this->assertFalse($config->isFinal());
+        $this->assertEquals('test', $environment->getName());
+        $this->assertEquals([], $environment->getInheritFrom());
+        $this->assertTrue($environment->isAbstract());
+        $this->assertFalse($environment->isFinal());
     }
 
     public function testFinal()
     {
-        $config = new Config('test', [], null, false, true);
+        $environment = new Environment('test', [], null, false, true);
 
-        $this->assertEquals('test', $config->getName());
-        $this->assertEquals([], $config->getInheritFrom());
-        $this->assertFalse($config->isAbstract());
-        $this->assertTrue($config->isFinal());
+        $this->assertEquals('test', $environment->getName());
+        $this->assertEquals([], $environment->getInheritFrom());
+        $this->assertFalse($environment->isAbstract());
+        $this->assertTrue($environment->isFinal());
     }
 
     public function testInheritance()
     {
-        $config = new Config('test');
-        $config2 = new Config('test2', [$config]);
-        $config3 = new Config('test3', [$config2]);
+        $environment = new Environment('test');
+        $environment2 = new Environment('test2', [$environment]);
+        $environment3 = new Environment('test3', [$environment2]);
 
-        $this->assertEquals('test', $config->getName());
-        $this->assertEquals('test2', $config2->getName());
-        $this->assertEquals('test3', $config3->getName());
+        $this->assertEquals('test', $environment->getName());
+        $this->assertEquals('test2', $environment2->getName());
+        $this->assertEquals('test3', $environment3->getName());
 
-        $this->assertEquals([], $config->getInheritFrom());
-        $this->assertEquals([$config], $config2->getInheritFrom());
-        $this->assertEquals([$config2], $config3->getInheritFrom());
+        $this->assertEquals([], $environment->getInheritFrom());
+        $this->assertEquals([$environment], $environment2->getInheritFrom());
+        $this->assertEquals([$environment2], $environment3->getInheritFrom());
 
-        $this->assertFalse($config->isAbstract());
-        $this->assertFalse($config->isFinal());
-        $this->assertFalse($config2->isAbstract());
-        $this->assertFalse($config2->isFinal());
-        $this->assertFalse($config3->isAbstract());
-        $this->assertFalse($config3->isFinal());
+        $this->assertFalse($environment->isAbstract());
+        $this->assertFalse($environment->isFinal());
+        $this->assertFalse($environment2->isAbstract());
+        $this->assertFalse($environment2->isFinal());
+        $this->assertFalse($environment3->isAbstract());
+        $this->assertFalse($environment3->isFinal());
     }
 
     public function testNotAllowInheritFinal()
@@ -66,8 +66,8 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is final and cannot be inherited");
 
-        $config = new Config('test', [], null, false, true);
-        $config2 = new Config('test2', [$config]);
+        $environment = new Environment('test', [], null, false, true);
+        $environment2 = new Environment('test2', [$environment]);
     }
 
     public function testNotAllowInheritNonConfig()
@@ -75,8 +75,8 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is not a Config object");
 
-        $config = new Config('test', [], null, false, true);
-        $config2 = new Config('test2', ['test']);
+        $environment = new Environment('test', [], null, false, true);
+        $environment2 = new Environment('test2', ['test']);
     }
 
     public function testNotAllowCreateDefinitionFromAbstract()
@@ -84,12 +84,12 @@ class ConfigTest extends TestCase
         $this->expectException(\ByJG\Config\Exception\ConfigException::class);
         $this->expectExceptionMessage("Configuration 'test' is abstract and cannot be instantiated");
 
-        $config = new Config('test', [], null, true);
+        $environment = new Environment('test', [], null, true);
 
         putenv('APP_ENV=test');
         $_ENV['APP_ENV'] = 'test';
         $defintion = (new Definition())
-            ->addConfig($config);
+            ->addEnvironment($environment);
 
         $defintion->build();
     }

@@ -4,7 +4,7 @@ namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
-use ByJG\Config\Config;
+use ByJG\Config\Environment;
 use ByJG\Config\Container;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
@@ -24,24 +24,24 @@ class ContainerTest extends TestCase
      */
     public function setUp(): void
     {
-        $test = new Config('test');
-        $testCache = new Config('test-cache', [$test], new FileSystemCacheEngine("x"));
-        $test2 = new Config('test2', [$test]);
-        $test3 = new Config('test3', [$test2, $test]);
-        $test4 = new Config('test4', [$test3]); // Recursive Inheritance
-        $closure = new Config('closure');
-        $notFound = new Config('notfound');
-        $folderEnv = new Config('folderenv');
+        $test = new Environment('test');
+        $testCache = new Environment('test-cache', [$test], new FileSystemCacheEngine("x"));
+        $test2 = new Environment('test2', [$test]);
+        $test3 = new Environment('test3', [$test2, $test]);
+        $test4 = new Environment('test4', [$test3]); // Recursive Inheritance
+        $closure = new Environment('closure');
+        $notFound = new Environment('notfound');
+        $folderEnv = new Environment('folderenv');
 
         $this->object = (new Definition())
-            ->addConfig($test)
-            ->addConfig($testCache)
-            ->addConfig($test2)
-            ->addConfig($test3)
-            ->addConfig($test4)
-            ->addConfig($closure)
-            ->addConfig($notFound)
-            ->addConfig($folderEnv)
+            ->addEnvironment($test)
+            ->addEnvironment($testCache)
+            ->addEnvironment($test2)
+            ->addEnvironment($test3)
+            ->addEnvironment($test4)
+            ->addEnvironment($closure)
+            ->addEnvironment($notFound)
+            ->addEnvironment($folderEnv)
         ;
     }
 
@@ -50,14 +50,14 @@ class ContainerTest extends TestCase
         putenv('APP_ENV');
     }
 
-    public function testgetCurrentConfig()
+    public function testgetCurrentEnvironment()
     {
         putenv('APP_ENV=test');
 
-        $this->assertEquals("test", $this->object->getCurrentConfig());
+        $this->assertEquals("test", $this->object->getCurrentEnvironment());
 
         putenv('APP_ENV=bla');
-        $this->assertEquals("bla", $this->object->getCurrentConfig());
+        $this->assertEquals("bla", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -65,10 +65,10 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig2()
+    public function testgetCurrentEnvironment2()
     {
         $this->object->build("test2");
-        $this->assertEquals("test2", $this->object->getCurrentConfig());
+        $this->assertEquals("test2", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -76,11 +76,11 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig3()
+    public function testgetCurrentEnvironment3()
     {
         putenv('APP_ENV=test');
         $this->object->build("test2");
-        $this->assertEquals("test2", $this->object->getCurrentConfig());
+        $this->assertEquals("test2", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -88,12 +88,12 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig4()
+    public function testgetCurrentEnvironment4()
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("The environment variable 'APP_ENV' is not set");
 
-        $this->object->getCurrentConfig();
+        $this->object->getCurrentEnvironment();
     }
 
     public function testLoadConfig()
@@ -246,7 +246,7 @@ class ContainerTest extends TestCase
 
         putenv('NEWENV=test');
         $this->object->withConfigVar('NEWENV');
-        $this->assertEquals("test", $this->object->getCurrentConfig());
+        $this->assertEquals("test", $this->object->getCurrentEnvironment());
 
         $container2 = $this->object->build();
         $this->assertEquals($container, $container2);

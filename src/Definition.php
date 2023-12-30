@@ -116,7 +116,7 @@ class Definition
      * @return $this
      * @throws ConfigException
      */
-    public function addConfig(Config $config)
+    public function addEnvironment(Environment $config)
     {
         if (isset($this->configList[$config->getName()])) {
             throw new ConfigException("Configuration '{$config->getName()}' already exists");
@@ -178,9 +178,9 @@ class Definition
      * @return array|false|string
      * @throws ConfigException
      */
-    public function getCurrentConfig()
+    public function getCurrentEnvironment()
     {
-        return $this->setCurrentConfig();
+        return $this->setCurrentEnvironment();
     }
 
     /**
@@ -188,7 +188,7 @@ class Definition
      * @return array|mixed|string
      * @throws ConfigException
      */
-    protected function setCurrentConfig($configName = null)
+    protected function setCurrentEnvironment($configName = null)
     {
         if (!empty($configName)) {
             $this->configName = $configName;
@@ -216,7 +216,7 @@ class Definition
      */
     public function build($configName = null)
     {
-        $configName = $this->setCurrentConfig($configName);
+        $configName = $this->setCurrentEnvironment($configName);
 
         if (!isset($this->configList[$configName])) {
             throw new ConfigException("Configuration '$configName' does not defined");
@@ -277,7 +277,7 @@ class Definition
         return $default;
     }
 
-    public function getConfigObject($configName): Config
+    public function getConfigObject($configName): Environment
     {
         if (isset($this->configList[$configName])) {
             return $this->configList[$configName];

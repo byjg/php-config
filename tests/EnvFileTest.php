@@ -4,7 +4,7 @@ namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\NoCacheEngine;
-use ByJG\Config\Config;
+use ByJG\Config\Environment;
 use ByJG\Config\Definition;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +21,7 @@ class EnvFileTest extends TestCase
     public function setUp(): void
     {
         $this->object = (new Definition())
-            ->addConfig(new Config('file'));
+            ->addEnvironment(new Environment('file'));
     }
 
     public function tearDown(): void
@@ -29,7 +29,7 @@ class EnvFileTest extends TestCase
         putenv('APP_ENV');
     }
 
-    public function testgetCurrentConfig()
+    public function testgetCurrentEnvironment()
     {
         putenv('APP_ENV=file');
         $config = $this->object->build();
@@ -76,7 +76,7 @@ class EnvFileTest extends TestCase
 
         putenv('APP_ENV=file2');
         $definition = (new Definition())
-            ->addConfig(new Config("file2"));
+            ->addEnvironment(new Environment("file2"));
 
         $config = $definition->build();
         $config->get('KEY11');

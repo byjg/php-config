@@ -5,7 +5,7 @@ namespace ByJG\Config;
 use ByJG\Config\Exception\ConfigException;
 use Psr\SimpleCache\CacheInterface;
 
-class Config
+class Environment
 {
     protected string $name;
 
@@ -26,7 +26,7 @@ class Config
         $this->cache = $cache;
 
         foreach ($inheritFrom as $item) {
-            if (!($item instanceof Config)) {
+            if (!($item instanceof Environment)) {
                 throw new ConfigException("The item '$item' is not a Config object");
             }
             if ($item->isFinal()) {
