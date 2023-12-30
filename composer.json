@@ -21,7 +21,7 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "DIClasses\\": "tests/DIClasses/"
+      "Test\\": "tests/"
     }
   }
 }

@@ -1,7 +1,7 @@
 <?php
 
 use ByJG\Config\DependencyInjection as DI;
-use DIClasses\Random;
+use Test\DIClasses\Random;
 
 return [
     Random::class => DI::bind(Random::class)

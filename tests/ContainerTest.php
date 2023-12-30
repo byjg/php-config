@@ -4,11 +4,12 @@ namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
+use ByJG\Config\Config;
 use ByJG\Config\Container;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\RunTimeException;
-use DIClasses\Area;
+use Test\DIClasses\Area;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -23,13 +24,22 @@ class ContainerTest extends TestCase
      */
     public function setUp(): void
     {
+        $test = new Config('test');
+        $test2 = new Config('test2', [$test]);
+        $test3 = new Config('test3', [$test2, $test]);
+        $test4 = new Config('test4', [$test3]); // Recursive Inheritance
+        $closure = new Config('closure');
+        $notFound = new Config('notfound');
+        $folderEnv = new Config('folderenv');
+
         $this->object = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2', ['test'])
-            ->addConfig('test3', ['test2', 'test'])
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->addConfig('folderenv')
+            ->addConfig($test)
+            ->addConfig($test2)
+            ->addConfig($test3)
+            ->addConfig($test4)
+            ->addConfig($closure)
+            ->addConfig($notFound)
+            ->addConfig($folderEnv)
         ;
     }
 
@@ -110,6 +120,21 @@ class ContainerTest extends TestCase
         $this->assertEquals('new', $config->get('property4'));
 
         $this->assertEquals('test2', $config->get('property5'));
+    }
+
+    public function testLoadConfigRecursiveInheritance()
+    {
+        $config = $this->object->build('test4');
+
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertFalse($config->get('property2'));
+
+        $closure = $config->raw('property3');
+        $this->assertEquals('calculated', $closure());
+
+        $this->assertEquals('new', $config->get('property4'));
+
+        $this->assertEquals('test3', $config->get('property5'));
     }
 
     public function testLoadConfigMultipleInherits()

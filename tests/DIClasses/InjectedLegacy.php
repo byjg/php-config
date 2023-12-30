@@ -1,9 +1,7 @@
 <?php
 
 
-namespace DIClasses;
-
-require_once __DIR__ . "/Area.php";
+namespace Test\DIClasses;
 
 class InjectedLegacy implements Area
 {
@@ -12,8 +10,8 @@ class InjectedLegacy implements Area
 
     /**
      * SumAreas constructor.
-     * @param \DIClasses\Area $area
-     * @param \DIClasses\Random $random
+     * @param Test\DIClasses\Area $area
+     * @param Test\DIClasses\Random $random
      */
     public function __construct($area, $random)
     {

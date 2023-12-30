@@ -2,9 +2,9 @@
 
 use ByJG\Config\DependencyInjection as DI;
 use ByJG\Config\Param;
-use DIClasses\Random;
-use DIClasses\Square;
-use DIClasses\TestParam;
+use Test\DIClasses\Random;
+use Test\DIClasses\Square;
+use Test\DIClasses\TestParam;
 
 return [
 

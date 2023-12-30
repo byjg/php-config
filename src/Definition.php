@@ -12,8 +12,6 @@ use Psr\SimpleCache\CacheInterface;
 
 class Definition
 {
-    private $lastConfig = null;
-
     private $configList = [];
 
     private $configVar = 'APP_ENV';
@@ -132,26 +130,15 @@ class Definition
      * @return $this
      * @throws ConfigException
      */
-    public function addConfig($configName, array $inheritFrom = [])
+    public function addConfig(Config $config)
     {
-        if (isset($this->configList[$configName])) {
-            throw new ConfigException("Configuration '$configName' already exists");
+        if (isset($this->configList[$config->getName()])) {
+            throw new ConfigException("Configuration '{$config->getName()}' already exists");
         }
-        $this->lastConfig = $configName;
-        $this->configList[$configName] = $inheritFrom;
+        $this->configList[$config->getName()] = $config;
         return $this;
     }
 
-    /**
-     * @param string $configName
-     * @return $this
-     * @deprecated Use addConfig($config, $inheritFrom) instead
-     */
-    public function inheritFrom($configName)
-    {
-        $this->configList[$this->lastConfig][] = $configName;
-        return $this;
-    }
 
     /**
      * @return $this
@@ -249,6 +236,10 @@ class Definition
             throw new ConfigException("Configuration '$configName' does not defined");
         }
 
+        if ($this->configList[$configName]->isAbstract()) {
+            throw new ConfigException("Configuration '$configName' is abstract and cannot be instantiated");
+        }
+
         // Check if container is saved in the cache
         if ($this->allowCache && isset($this->cache[$configName])) {
             $container = Container::createFromCache($configName, $this->cache[$configName]);
@@ -260,9 +251,7 @@ class Definition
         // Create from the Definition and configuration files
         $config = [];
         $config = $this->loadConfig($config, $configName);
-        foreach ($this->configList[$configName] as $configData) {
-            $config = $this->loadConfig($config, $configData);
-        }
+        $config = $this->loadConfigFromDefinition($config, $configName);
 
         foreach ($config as $key => $value) {
             $envValue = getenv($key);
@@ -276,6 +265,18 @@ class Definition
         }
 
         return new Container($config, $configName, $this->cache[$configName] ?? null);
+    }
+
+    // Recursive function to load from Config
+    protected function loadConfigFromDefinition($config, $configName)
+    {
+        foreach ($this->configList[$configName]->getInheritFrom() as $configData) {
+            $config = $this->loadConfig($config, $configData->getName());
+            if ($configData->getInheritFrom()) {
+                $config = $this->loadConfigFromDefinition($config, $configData->getName());
+            }
+        }
+        return $config;
     }
 
     public function getCacheCurrentEnvironment(CacheInterface $default = null)
