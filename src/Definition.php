@@ -12,8 +12,6 @@ use Psr\SimpleCache\CacheInterface;
 
 class Definition
 {
-    private $lastConfig = null;
-
     private $configList = [];
 
     private $configVar = 'APP_ENV';
@@ -25,11 +23,6 @@ class Definition
 
     private $allowCache = true;
 
-    /**
-     * @var DateInterval[]
-     */
-    private $cacheTTL = [];
-
     private $baseDir = "";
 
     private $loadOsEnv = false;
@@ -39,13 +32,19 @@ class Definition
     private function loadConfig($currentConfig, $configName)
     {
         $content1 = $this->loadConfigFile($configName);
-        $content2 = $this->loadEnvFile($configName);
+        $content2 = $this->loadDirectory($configName);
+        $content3 = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
 
         if (is_null($content1) && is_null($content2)) {
             throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not found at " . $this->getBaseDir());
         }
 
-        return array_merge(is_null($content1) ? [] : $content1, is_null($content2) ? [] : $content2, $currentConfig);
+        return array_merge(
+            is_null($content1) ? [] : $content1,
+            is_null($content2) ? [] : $content2,
+            is_null($content3) ? [] : $content3,
+            $currentConfig
+        );
     }
 
     /**
@@ -54,25 +53,23 @@ class Definition
      */
     private function loadConfigFile($configName)
     {
-        $file = $this->getBaseDir() . '/config-' . $configName .  '.php';
+        $phpConfig = $this->_loadPhp($this->getBaseDir() . '/config-' . $configName .  '.php');
+        $envFile = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
 
+        if (is_null($phpConfig) && is_null($envFile)) {
+            return null;
+        }
+
+        return array_merge((array)$phpConfig, (array)$envFile);
+    }
+
+    private function _loadPhp($file)
+    {
         if (!file_exists($file)) {
             return null;
         }
 
         return (include $file);
-    }
-
-    private function loadEnvFile($configName)
-    {
-        $global = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
-        $envSpecific = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
-
-        if (is_null($global) && is_null($envSpecific)) {
-            return null;
-        }
-
-        return array_merge((array)$global, (array)$envSpecific);
     }
 
     private function loadEnvFileContents($filename)
@@ -83,42 +80,35 @@ class Definition
 
         $config = [];
         foreach (file($filename) as $line) {
-            if (!preg_match("/^\s*(?<key>\w+)\s*=\s*(?<value>.*)$/", $line, $result)) {
+            $line = trim($line);
+            if (!preg_match("/^(?<key>\w+)\s*=\s*([\"'])?(?<value>.*?)([\"'])?$/", $line, $result)) {
                 continue;
-            }
-            if (preg_match("/^!bool\s+(?<value>true|false)$/", $result["value"], $parsed)) {
-                $result["value"] = boolval($parsed["value"]);
-            }
-            if (preg_match("/^!int\s+(?<value>.*)$/", $result["value"], $parsed)) {
-                $result["value"] = intval($parsed["value"]);
-            }
-            if (preg_match("/^!float\s+(?<value>.*)$/", $result["value"], $parsed)) {
-                $result["value"] = floatval($parsed["value"]);
             }
             $config[$result["key"]] = $result["value"];
         }
 
+
+
         return $config;
     }
 
-    /**
-     * @param CacheInterface $cache
-     * @param string|array $configName
-     * @return $this
-     * @throws InvalidDateException
-     */
-    public function setCache($configName, CacheInterface $cache, DateInterval $ttl = null)
+    private function loadDirectory($configName)
     {
-        foreach ((array)$configName as $item) {
-            try {
-                $date = empty($ttl) ? new DateInterval('P7D') : $ttl;
-            } catch (Exception $ex) {
-                throw new InvalidDateException($ex->getMessage());
-            }
-            $this->cache[$item] = $cache;
-            $this->cacheTTL[$item] = $date;
+        $dir = $this->getBaseDir() . '/' . $configName;
+
+        if (!file_exists($dir)) {
+            return [];
         }
-        return $this;
+
+        $config = [];
+        foreach (glob( "$dir/*.php") as $file) {
+            $config = array_merge($config, $this->_loadPhp($file));
+        }
+        foreach (glob("$dir/*.env") as $file) {
+            $config = array_merge($config, $this->loadEnvFileContents($file));
+        }
+
+        return $config;
     }
 
     /**
@@ -126,25 +116,15 @@ class Definition
      * @return $this
      * @throws ConfigException
      */
-    public function addConfig($configName)
+    public function addEnvironment(Environment $config)
     {
-        if (isset($this->configList[$configName])) {
-            throw new ConfigException("Configuration '$configName' already exists");
+        if (isset($this->configList[$config->getName()])) {
+            throw new ConfigException("Configuration '{$config->getName()}' already exists");
         }
-        $this->lastConfig = $configName;
-        $this->configList[$configName] = [];
+        $this->configList[$config->getName()] = $config;
         return $this;
     }
 
-    /**
-     * @param string $configName
-     * @return $this
-     */
-    public function inheritFrom($configName)
-    {
-        $this->configList[$this->lastConfig][] = $configName;
-        return $this;
-    }
 
     /**
      * @return $this
@@ -198,9 +178,9 @@ class Definition
      * @return array|false|string
      * @throws ConfigException
      */
-    public function getCurrentConfig()
+    public function getCurrentEnvironment()
     {
-        return $this->setCurrentConfig();
+        return $this->setCurrentEnvironment();
     }
 
     /**
@@ -208,7 +188,7 @@ class Definition
      * @return array|mixed|string
      * @throws ConfigException
      */
-    protected function setCurrentConfig($configName = null)
+    protected function setCurrentEnvironment($configName = null)
     {
         if (!empty($configName)) {
             $this->configName = $configName;
@@ -236,25 +216,28 @@ class Definition
      */
     public function build($configName = null)
     {
-        $configName = $this->setCurrentConfig($configName);
+        $configName = $this->setCurrentEnvironment($configName);
 
         if (!isset($this->configList[$configName])) {
             throw new ConfigException("Configuration '$configName' does not defined");
         }
 
-        $container = null;
-        if ($this->allowCache && isset($this->cache[$configName])) {
-            $container = $this->cache[$configName]->get("container-cache-$configName");
+        if ($this->configList[$configName]->isAbstract()) {
+            throw new ConfigException("Configuration '$configName' is abstract and cannot be instantiated");
+        }
+
+        // Check if container is saved in the cache
+        if ($this->allowCache && !empty($this->configList[$configName]->getCacheInterface())) {
+            $container = Container::createFromCache($configName, $this->configList[$configName]->getCacheInterface());
             if (!is_null($container)) {
                 return $container;
             }
         }
 
+        // Create from the Definition and configuration files
         $config = [];
         $config = $this->loadConfig($config, $configName);
-        foreach ($this->configList[$configName] as $configData) {
-            $config = $this->loadConfig($config, $configData);
-        }
+        $config = $this->loadConfigFromDefinition($config, $configName);
 
         foreach ($config as $key => $value) {
             $envValue = getenv($key);
@@ -267,11 +250,19 @@ class Definition
             $config = array_merge($config, $_ENV);
         }
 
-        $container = new Container($config);
-        if (isset($this->cache[$configName])) {
-            $this->allowCache = $this->cache[$configName]->set("container-cache-$configName", $container, $this->cacheTTL[$configName]);
+        return new Container($config, $configName, $this->configList[$configName]->getCacheInterface() ?? null);
+    }
+
+    // Recursive function to load from Config
+    protected function loadConfigFromDefinition($config, $configName)
+    {
+        foreach ($this->configList[$configName]->getInheritFrom() as $configData) {
+            $config = $this->loadConfig($config, $configData->getName());
+            if ($configData->getInheritFrom()) {
+                $config = $this->loadConfigFromDefinition($config, $configData->getName());
+            }
         }
-        return $container;
+        return $config;
     }
 
     public function getCacheCurrentEnvironment(CacheInterface $default = null)
@@ -280,9 +271,18 @@ class Definition
             throw new RunTimeException("Environment isn't build yet");
         }
 
-        if (isset($this->cache[$this->configName])) {
-            return $this->cache[$this->configName];
+        if (!empty($this->configList[$this->configName]->getCacheInterface())) {
+            return $this->configList[$this->configName]->getCacheInterface();
         }
         return $default;
+    }
+
+    public function getConfigObject($configName): Environment
+    {
+        if (isset($this->configList[$configName])) {
+            return $this->configList[$configName];
+        }
+
+        throw new \Exception('Config Definition not found');
     }
 }

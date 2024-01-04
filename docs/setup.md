@@ -71,11 +71,57 @@ return [
 ];
 ```
 
+## Advanced configuration
+
+It is possible instead of a single file, you can have a folder with multiple files. The files will be loaded in alphabetical order.
+
+Each folder inside the `config` directory will be the name of the environment. The example below will have two environments: `dev` and `prod`.
+
+The file names inside the folder doesn't matter and don't need to be same in the other environments. 
+The only thing that matters is the extension. It can be only `.env` or `.php`.
+
+```text
+<project root>
+   |
+   +-- config
+   |      |
+   |      +-- dev
+   |      |     |
+   |      |     + .env
+   |      |     + config.php
+   |      |     + config.env
+   |      +-- prod
+   |            |
+   |            + .env
+   |            + config.php
+   |            + config.env
+   +-- vendor
+   +-- composer.json
+```
+
+This option is useful when you have a lot of configuration files, and you want to split them into multiple files.
+
+You can combine both folder and standalone files. In that case the individual files will take precedence over folder files.
+
+
 ## Inheritance between environments
 
 One environment can inherit from another. This means that the environment that inherits will have all the variables of the inherited environment and can override them if the names matches.
 
 That's very important because you can have a common configuration for all environments and override only the variables that are different.
+
+## Load Priority
+
+If you have multiple files and the same variable is defined in more than one file, 
+the system will override the value with the value defined by the last file loaded with the same variable.
+
+The load order is:
+- config-<ENV>.php
+- config-<ENV>.env
+- <ENV>/*.php
+- <ENV>/*.env
+- .env
+
 
 ----
 [Open source ByJG](http://opensource.byjg.com)

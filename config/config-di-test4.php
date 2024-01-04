@@ -2,13 +2,11 @@
 
 use ByJG\Config\DependencyInjection as DI;
 use ByJG\Config\Param;
-use DIClasses\Random;
-use DIClasses\Square;
-use DIClasses\TestParam;
+use Test\DIClasses\Random;
+use Test\DIClasses\Square;
+use Test\DIClasses\TestParam;
 
 return [
-
-    "constnumber" => 4,
 
     Square::class => DI::bind(Square::class)
         ->withConstructorArgs([Param::get("constnumber")])
@@ -19,4 +17,5 @@ return [
     TestParam::class => DI::bind(TestParam::class)
         ->withConstructorArgs([Param::get(Random::class)])
         ->withMethodCall('someMethod', [Param::get(Random::class)])
+        ->toEagerSingleton()
 ];

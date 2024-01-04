@@ -100,8 +100,8 @@ class SumAreas implements Area
 {
      /**
      * SumAreas constructor.
-     * @param \DIClasses\RectangleTriangle $triangle 
-     * @param \DIClasses\Square $square 
+     * @param Test\DIClasses\RectangleTriangle $triangle 
+     * @param Test\DIClasses\Square $square 
      */
     public function __construct($triangle, $square)
     {

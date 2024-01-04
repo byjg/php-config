@@ -2,11 +2,11 @@
 
 use ByJG\Config\DependencyInjection as DI;
 use ByJG\Config\Param;
-use DIClasses\InjectedFail;
-use DIClasses\InjectedLegacy;
-use DIClasses\Random;
-use DIClasses\Square;
-use DIClasses\SumAreas;
+use Test\DIClasses\InjectedFail;
+use Test\DIClasses\InjectedLegacy;
+use Test\DIClasses\Random;
+use Test\DIClasses\Square;
+use Test\DIClasses\SumAreas;
 
 return [
     SumAreas::class => DI::bind(SumAreas::class)

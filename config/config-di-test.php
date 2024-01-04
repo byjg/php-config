@@ -1,11 +1,11 @@
 <?php
 
 use ByJG\Config\DependencyInjection as DI;
-use DIClasses\Area;
-use DIClasses\InjectedLegacy;
-use DIClasses\Random;
-use DIClasses\RectangleTriangle;
-use DIClasses\SumAreas;
+use Test\DIClasses\Area;
+use Test\DIClasses\InjectedLegacy;
+use Test\DIClasses\Random;
+use Test\DIClasses\RectangleTriangle;
+use Test\DIClasses\SumAreas;
 
 return [
     Random::class => DI::bind(Random::class)

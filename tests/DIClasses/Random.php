@@ -1,7 +1,7 @@
 <?php
 
 
-namespace DIClasses;
+namespace Test\DIClasses;
 
 class Random
 {

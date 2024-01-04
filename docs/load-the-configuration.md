@@ -2,18 +2,33 @@
 
 After [setup the configuration files](setup.md), you need to load them into the container.
 
-## Create the definition
+## Create the environment definition
 
 The definition will specify how the configuration will be loaded, what environments will be available and the inheritance between them.
 
 ```php
 <?php
+$dev = new \ByJG\Config\Environment('dev');
+$prod = new \ByJG\Config\Environment('prod', ['dev'], $somePsr16Implementation);
+
 $definition = (new \ByJG\Config\Definition())
     ->withConfigVar('APP_ENV')     // Setup the environment var used to auto select the config. 'APP_ENV' is default.
-    ->addConfig('dev')             // Defining the 'dev' environment
-    ->addConfig('prod')            // Defining the `prod` environment that inherits from `dev`
-        ->inheritFrom('dev')
-    ->setCache($somePsr16Implementation, 'prod'); // This will cache the "prod" configuration set.
+    ->addEnvironment($dev)             // Defining the 'dev' environment
+    ->addEnvironment($prod)            // Defining the `prod` environment that inherits from `dev`
+;
+```
+
+The `Environment` constructor has the following parameters:
+
+```php
+<?php
+new \ByJG\Config\Environment(
+    string $environment,                              // The environment name
+    array $inheritFrom = [],                          // The list of environments to inherit from
+    \Psr\SimpleCache\CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
+    bool $abstract = false                            // If true, the environment will not be used to load the configuration
+    bool $final = false                               // If true, the environment cannot be used to inherit from
+);
 ```
 
 ## Build the definition
@@ -57,7 +72,7 @@ $property = $container->raw('property3');
 
 ```php
 <?php
-$definition->getCurrentConfig();
+$definition->getCurrentEnvironment();
 ```
 
 ----

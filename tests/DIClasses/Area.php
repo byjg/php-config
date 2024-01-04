@@ -1,6 +1,6 @@
 <?php
 
-namespace DIClasses;
+namespace Test\DIClasses;
 
 interface Area
 {

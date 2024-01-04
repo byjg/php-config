@@ -1,11 +1,9 @@
 <?php
 
 
-namespace DIClasses;
+namespace Test\DIClasses;
 
 use Exception;
-
-require_once __DIR__ . "/Random.php";
 
 class TestParam
 {

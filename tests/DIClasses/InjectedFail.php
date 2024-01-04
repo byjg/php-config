@@ -1,9 +1,7 @@
 <?php
 
 
-namespace DIClasses;
-
-require_once __DIR__ . "/Area.php";
+namespace Test\DIClasses;
 
 class InjectedFail implements Area
 {
