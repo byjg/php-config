@@ -3,9 +3,13 @@
 namespace Test;
 
 use ByJG\Cache\Psr16\ArrayCacheEngine;
+use ByJG\Cache\Psr16\FileSystemCacheEngine;
+use ByJG\Config\Environment;
+use ByJG\Config\Container;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\RunTimeException;
+use Test\DIClasses\Area;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase
@@ -20,15 +24,24 @@ class ContainerTest extends TestCase
      */
     public function setUp(): void
     {
+        $test = new Environment('test');
+        $testCache = new Environment('test-cache', [$test], new FileSystemCacheEngine("x"));
+        $test2 = new Environment('test2', [$test]);
+        $test3 = new Environment('test3', [$test2, $test]);
+        $test4 = new Environment('test4', [$test3]); // Recursive Inheritance
+        $closure = new Environment('closure');
+        $notFound = new Environment('notfound');
+        $folderEnv = new Environment('folderenv');
+
         $this->object = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-                ->inheritFrom('test')
-            ->addConfig('test3')
-                ->inheritFrom('test2')
-                ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
+            ->addEnvironment($test)
+            ->addEnvironment($testCache)
+            ->addEnvironment($test2)
+            ->addEnvironment($test3)
+            ->addEnvironment($test4)
+            ->addEnvironment($closure)
+            ->addEnvironment($notFound)
+            ->addEnvironment($folderEnv)
         ;
     }
 
@@ -37,14 +50,14 @@ class ContainerTest extends TestCase
         putenv('APP_ENV');
     }
 
-    public function testgetCurrentConfig()
+    public function testgetCurrentEnvironment()
     {
         putenv('APP_ENV=test');
 
-        $this->assertEquals("test", $this->object->getCurrentConfig());
+        $this->assertEquals("test", $this->object->getCurrentEnvironment());
 
         putenv('APP_ENV=bla');
-        $this->assertEquals("bla", $this->object->getCurrentConfig());
+        $this->assertEquals("bla", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -52,10 +65,10 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig2()
+    public function testgetCurrentEnvironment2()
     {
         $this->object->build("test2");
-        $this->assertEquals("test2", $this->object->getCurrentConfig());
+        $this->assertEquals("test2", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -63,11 +76,11 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig3()
+    public function testgetCurrentEnvironment3()
     {
         putenv('APP_ENV=test');
         $this->object->build("test2");
-        $this->assertEquals("test2", $this->object->getCurrentConfig());
+        $this->assertEquals("test2", $this->object->getCurrentEnvironment());
     }
 
     /**
@@ -75,12 +88,12 @@ class ContainerTest extends TestCase
      * @throws \ByJG\Config\Exception\ConfigNotFoundException
      * @throws \Psr\SimpleCache\InvalidArgumentException
      */
-    public function testgetCurrentConfig4()
+    public function testgetCurrentEnvironment4()
     {
         $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("The environment variable 'APP_ENV' is not set");
 
-        $this->object->getCurrentConfig();
+        $this->object->getCurrentEnvironment();
     }
 
     public function testLoadConfig()
@@ -109,6 +122,21 @@ class ContainerTest extends TestCase
         $this->assertEquals('new', $config->get('property4'));
 
         $this->assertEquals('test2', $config->get('property5'));
+    }
+
+    public function testLoadConfigRecursiveInheritance()
+    {
+        $config = $this->object->build('test4');
+
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertFalse($config->get('property2'));
+
+        $closure = $config->raw('property3');
+        $this->assertEquals('calculated', $closure());
+
+        $this->assertEquals('new', $config->get('property4'));
+
+        $this->assertEquals('test3', $config->get('property5'));
     }
 
     public function testLoadConfigMultipleInherits()
@@ -194,48 +222,22 @@ class ContainerTest extends TestCase
     public function testCache()
     {
         // With Cache!
-        $arrayCache = new ArrayCacheEngine();
+        $arrayCache = $this->object->getConfigObject('test-cache')->getCacheInterface();
 
-        $this->assertNull($arrayCache->get('container-cache-test'));
+        $arrayCache->delete('container-cache-test-cache'); // Clean cache (if exists)
+        $this->assertNull($arrayCache->get('container-cache-test-cache'));
 
-        $container = $this->object->setCache('test', $arrayCache)
-            ->build('test');  // Expected build and set to cache
+        $container = $this->object->build('test-cache');  // Expected build and set to cache
 
-        $this->assertInstanceOf(ArrayCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+        $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
 
-        $container2 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->setCache('test', $arrayCache)
-            ->build('test');   // Expected get from cache
+        // Get Container2 from cache and should match with the first one
+        $container2 = Container::createFromCache('test-cache', $arrayCache);
+        $this->assertTrue($container->compare($container2)); // The exact object
 
-        $this->assertNotNull($arrayCache->get('container-cache-test'));
-        $this->assertSame($container, $container2); // The exact object
-
-        $container3 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->setCache('test2', $arrayCache)
-            ->build('test');   // Expected get a fresh new defintion
-
-        $this->assertNotSame($container, $container3); // Expected to be a different object
-
-        // Without cache
-        $container4 = (new Definition())
-            ->addConfig('test')
-            ->addConfig('test2')
-            ->inheritFrom('test')
-            ->addConfig('closure')
-            ->addConfig('notfound')
-            ->build('test');
-
-        $this->assertNotSame($container, $container4);  // There two different objects
+        $this->assertEquals('calculated', $container2->get('property3'));
+        $this->assertEquals(4, $container2->get('property6'));
+        $this->assertEquals(6, $container2->get(Area::class)->calculate());
     }
 
     public function testChangeConfigVar()
@@ -244,7 +246,7 @@ class ContainerTest extends TestCase
 
         putenv('NEWENV=test');
         $this->object->withConfigVar('NEWENV');
-        $this->assertEquals("test", $this->object->getCurrentConfig());
+        $this->assertEquals("test", $this->object->getCurrentEnvironment());
 
         $container2 = $this->object->build();
         $this->assertEquals($container, $container2);
@@ -252,12 +254,18 @@ class ContainerTest extends TestCase
 
     public function testGetCacheNotSetYet()
     {
-        $this->object->setCache('test', new ArrayCacheEngine());
-
-        // Has to fail because isn't built yet.
         $this->expectException(RunTimeException::class);
         $this->expectExceptionMessage("Environment isn't build yet");
         $this->object->getCacheCurrentEnvironment();
 
+    }
+
+    public function testConfigDirectory()
+    {
+        $config = $this->object->build('folderenv');
+
+        $this->assertEquals('string', $config->get('property1'));
+        $this->assertFalse($config->get('property2'));
+        $this->assertEquals('other_value3', $config->get('property3'));
     }
 }

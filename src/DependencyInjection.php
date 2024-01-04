@@ -31,6 +31,8 @@ class DependencyInjection
 
     protected $methodCall = [];
 
+    protected $eager = false;
+
     /**
      * @param $containerInterface ContainerInterface
      * @return DependencyInjection
@@ -87,7 +89,7 @@ class DependencyInjection
     public function withConstructorArgs($args)
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         if (!is_null($args) && !is_array($args)) {
@@ -106,7 +108,7 @@ class DependencyInjection
     public function withFactoryMethod($method, $args = [])
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         if (!is_null($args) && !is_array($args)) {
@@ -162,7 +164,7 @@ class DependencyInjection
     public function withInjectedConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
@@ -195,7 +197,7 @@ class DependencyInjection
     public function withInjectedLegacyConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $reflection = new ReflectionMethod($this->getClass(), "__construct");
@@ -228,7 +230,7 @@ class DependencyInjection
     public function withNoConstructor()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $this->args = null;
@@ -241,7 +243,7 @@ class DependencyInjection
     public function withConstructorNoArgs()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot set constructor on a already set object (DI::use())');
+            throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
         $this->args = [];
@@ -260,7 +262,7 @@ class DependencyInjection
     public function toSingleton()
     {
         if ($this->use) {
-            throw new DependencyInjection('You cannot get a singleton over an existent object (DI::use())');
+            throw new DependencyInjectionException('You cannot get a singleton over an existent object (DI::use())');
         }
         $this->singleton = true;
         return $this;
@@ -273,13 +275,8 @@ class DependencyInjection
      */
     public function toEagerSingleton()
     {
-        if ($this->use) {
-            throw new DependencyInjection('You cannot get an eager singleton over an existent object (DI::use()');
-        }
-
-        $this->singleton = true;
-        $this->getInstance();
-        return $this;
+        $this->eager = true;
+        return $this->toSingleton();
     }
 
     /**
@@ -304,7 +301,7 @@ class DependencyInjection
             throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
         }
 
-        return $this->callMethods($instance, !$this->use);
+        return $instance;
     }
 
     /**
@@ -329,20 +326,21 @@ class DependencyInjection
     protected function getNewInstance()
     {
         if ($this->use) {
-            return $this->getArgs([$this->class])[0];
+            $instance = $this->getArgs([$this->class])[0];
+        } else if (!empty($this->factory)) {
+            $instance = call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
+        } else {
+
+            $reflectionClass = new ReflectionClass($this->getClass());
+
+            if (is_null($this->args)) {
+                $instance = $reflectionClass->newInstanceWithoutConstructor();
+            } else {
+                $instance = $reflectionClass->newInstanceArgs($this->getArgs());
+            }
         }
 
-        if (!empty($this->factory)) {
-            return call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
-        }
-
-        $reflectionClass = new ReflectionClass($this->getClass());
-
-        if (is_null($this->args)) {
-            return $reflectionClass->newInstanceWithoutConstructor();
-        }
-
-        return $reflectionClass->newInstanceArgs($this->getArgs());
+        return $this->callMethods($instance, !$this->use);
     }
 
     /**
@@ -378,5 +376,10 @@ class DependencyInjection
             $this->instance = $this->getNewInstance();
         }
         return $this->instance;
+    }
+
+    public function isEagerSingleton()
+    {
+        return $this->eager;
     }
 }
