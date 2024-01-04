@@ -1,10 +1,10 @@
 # Config: Container PSR-11 and Dependency Injection
 
-[![Build Status](https://github.com/byjg/config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/config/actions/workflows/phpunit.yml)
+[![Build Status](https://github.com/byjg/php-config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-config/actions/workflows/phpunit.yml)
 [![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
-[![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/config/)
-[![GitHub license](https://img.shields.io/github/license/byjg/config.svg)](https://opensource.byjg.com/opensource/licensing.html)
-[![GitHub release](https://img.shields.io/github/release/byjg/config.svg)](https://github.com/byjg/config/releases/)
+[![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-config/)
+[![GitHub license](https://img.shields.io/github/license/byjg/php-config.svg)](https://opensource.byjg.com/opensource/licensing.html)
+[![GitHub release](https://img.shields.io/github/release/byjg/php-config.svg)](https://github.com/byjg/php-config/releases/)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/config/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/config/?branch=master)
 
 A very basic and minimalist PSR-11 implementation for config management and dependency injection.
@@ -42,7 +42,7 @@ Follow the steps below:
 ## Install
 
 ```bash
-composer require "byjg/config=4.9.*"
+composer require "byjg/config"
 ```
 
 ## Tests
