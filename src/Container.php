@@ -187,7 +187,7 @@ class Container implements ContainerInterface
             return true;
         });
         ParamParser::addParser('bool', function ($value) {
-            return boolval($value);
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         });
         ParamParser::addParser('int', function ($value) {
             return intval($value);

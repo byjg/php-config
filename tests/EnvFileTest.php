@@ -45,6 +45,7 @@ class EnvFileTest extends TestCase
         $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY8'));
         $this->assertSame(['1', '2', '3', '4', '5'], $config->get('KEY9'));
         $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY10'));
+        $this->assertFalse($config->get('KEY11'));
     }
 
     public function testSaveToCacheBeforeChange()
