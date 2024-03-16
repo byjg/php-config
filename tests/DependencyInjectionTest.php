@@ -2,19 +2,9 @@
 
 namespace Test;
 
-require_once (__DIR__ . "/DIClasses/Square.php");
-require_once (__DIR__ . "/DIClasses/RectangleTriangle.php");
-require_once (__DIR__ . "/DIClasses/SumAreas.php");
-require_once (__DIR__ . "/DIClasses/Random.php");
-require_once (__DIR__ . "/DIClasses/InjectedLegacy.php");
-require_once (__DIR__ . "/DIClasses/InjectedFail.php");
-require_once (__DIR__ . "/DIClasses/TestParam.php");
-
-use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
 use Test\DIClasses\Area;
-use Test\DIClasses\InjectedFail;
 use Test\DIClasses\InjectedLegacy;
 use Test\DIClasses\Random;
 use Test\DIClasses\RectangleTriangle;

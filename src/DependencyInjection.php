@@ -5,7 +5,9 @@ namespace ByJG\Config;
 
 use ByJG\Config\Exception\DependencyInjectionException;
 use ByJG\Config\Exception\KeyNotFoundException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -15,38 +17,38 @@ class DependencyInjection
     /**
      * @var ContainerInterface
      */
-    protected $containerInterface;
+    protected ContainerInterface $containerInterface;
 
-    protected $class;
+    protected Param|string $class;
 
-    protected $args = [];
+    protected ?array $args = [];
 
-    protected $instance;
+    protected object $instance;
 
-    protected $singleton = false;
+    protected bool $singleton = false;
 
-    protected $use = false;
+    protected bool $use = false;
 
-    protected $factory = null;
+    protected ?string $factory = null;
 
-    protected $methodCall = [];
+    protected array $methodCall = [];
 
-    protected $eager = false;
+    protected bool $eager = false;
 
     /**
      * @param $containerInterface ContainerInterface
      * @return DependencyInjection
      */
-    public function injectContainer($containerInterface)
+    public function injectContainer(ContainerInterface $containerInterface): static
     {
         $this->containerInterface = $containerInterface;
         return $this;
     }
 
     /**
-     * @return mixed
+     * @return Param|string
      */
-    protected function getClass()
+    protected function getClass(): Param|string
     {
         return $this->class;
     }
@@ -55,7 +57,7 @@ class DependencyInjection
      * @param mixed $class
      * @throws DependencyInjectionException
      */
-    protected function setClass($class)
+    protected function setClass(Param|string $class): void
     {
         if (!class_exists($class)) {
             throw new DependencyInjectionException("Class $class does not exists");
@@ -64,10 +66,13 @@ class DependencyInjection
     }
 
     /**
-     * @return mixed
+     * @param null $argsToParse
+     * @return array
      * @throws KeyNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    protected function getArgs($argsToParse = null)
+    protected function getArgs($argsToParse = null): array
     {
             return array_map(function ($value) {
                 if ($value instanceof Param) {
@@ -86,26 +91,24 @@ class DependencyInjection
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public function withConstructorArgs($args)
+    public function withConstructorArgs(array $args): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
-        if (!is_null($args) && !is_array($args)) {
-            throw new DependencyInjectionException("Arguments should be an array");
-        }
         $this->args = $args;
 
         return $this;
     }
 
     /**
+     * @param string $method
      * @param mixed $args
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public function withFactoryMethod($method, $args = [])
+    public function withFactoryMethod(string $method, array $args = []): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -123,10 +126,11 @@ class DependencyInjection
 
     /**
      * DependencyInjection constructor.
-     * @param $class
+     * @param string $class
+     * @param bool $use
      * @throws DependencyInjectionException
      */
-    protected function __construct($class, $use = false)
+    protected function __construct(string $class, bool $use = false)
     {
         if ($use) {
             $this->class = Param::get($class);
@@ -137,21 +141,21 @@ class DependencyInjection
     }
 
     /**
-     * @param $class
+     * @param string $class
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function bind($class)
+    public static function bind(string $class): DependencyInjection
     {
         return new DependencyInjection($class);
     }
 
     /**
-     * @param $class
+     * @param string $class
      * @return DependencyInjection
      * @throws DependencyInjectionException
      */
-    public static function use($class)
+    public static function use(string $class): DependencyInjection
     {
         return new DependencyInjection($class, true);
     }
@@ -161,7 +165,7 @@ class DependencyInjection
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
-    public function withInjectedConstructor()
+    public function withInjectedConstructor(): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -194,7 +198,7 @@ class DependencyInjection
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
-    public function withInjectedLegacyConstructor()
+    public function withInjectedLegacyConstructor(): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -207,7 +211,7 @@ class DependencyInjection
         $methodParams = $reflection->getParameters();
 
         $params = [];
-        $result = preg_match_all('/@param\s+([\d\w_\\\\]+)\s+\$[\w_\d]+/', $docComments, $params);
+        $result = preg_match_all('/@param\s+([\w_\\\\]+)\s+\$[\w_]+/', $docComments, $params);
 
         if (count($methodParams) <> $result) {
             throw new DependencyInjectionException("The class " . $this->getClass() . " does not have annotations with the param type.");
@@ -226,8 +230,9 @@ class DependencyInjection
 
     /**
      * @return DependencyInjection
+     * @throws DependencyInjectionException
      */
-    public function withNoConstructor()
+    public function withNoConstructor(): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -239,8 +244,9 @@ class DependencyInjection
 
     /**
      * @return DependencyInjection
+     * @throws DependencyInjectionException
      */
-    public function withConstructorNoArgs()
+    public function withConstructorNoArgs(): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -250,7 +256,7 @@ class DependencyInjection
         return $this;
     }
 
-    public function withMethodCall($method, $args = [])
+    public function withMethodCall(string $method, array $args = []): static
     {
         $this->methodCall[] = [$method, $args];
         return $this;
@@ -258,8 +264,9 @@ class DependencyInjection
 
     /**
      * @return DependencyInjection
+     * @throws DependencyInjectionException
      */
-    public function toSingleton()
+    public function toSingleton(): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot get a singleton over an existent object (DI::use())');
@@ -271,9 +278,8 @@ class DependencyInjection
     /**
      * @return DependencyInjection
      * @throws DependencyInjectionException
-     * @throws ReflectionException
      */
-    public function toEagerSingleton()
+    public function toEagerSingleton(): static
     {
         $this->eager = true;
         return $this->toSingleton();
@@ -282,7 +288,7 @@ class DependencyInjection
     /**
      * @return DependencyInjection
      */
-    public function toInstance()
+    public function toInstance(): static
     {
         $this->singleton = false;
         return $this;
@@ -290,10 +296,13 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws ContainerExceptionInterface
      * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public function getInstance()
+    public function getInstance(): mixed
     {
         $instance = $this->getInternalInstance();
 
@@ -306,10 +315,12 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws ContainerExceptionInterface
      * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected function getInternalInstance()
+    protected function getInternalInstance(): mixed
     {
         if ($this->singleton) {
             return $this->getSingletonInstace();
@@ -319,11 +330,13 @@ class DependencyInjection
     }
 
     /**
-     * @return object
+     * @return mixed
+     * @throws ContainerExceptionInterface
      * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected function getNewInstance()
+    protected function getNewInstance(): mixed
     {
         if ($this->use) {
             $instance = $this->getArgs([$this->class])[0];
@@ -344,10 +357,14 @@ class DependencyInjection
     }
 
     /**
-     * @param $instance
+     * @param mixed $instance
+     * @param bool $returnInstance
      * @return mixed
+     * @throws ContainerExceptionInterface
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      */
-    protected function callMethods($instance, $returnInstance = true)
+    protected function callMethods(mixed $instance, bool $returnInstance = true): mixed
     {
         $result = null;
         foreach ($this->methodCall as $methodDefinition) {
@@ -367,10 +384,12 @@ class DependencyInjection
 
     /**
      * @return object
+     * @throws ContainerExceptionInterface
      * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    protected function getSingletonInstace()
+    protected function getSingletonInstace(): mixed
     {
         if (empty($this->instance)) {
             $this->instance = $this->getNewInstance();
@@ -378,7 +397,7 @@ class DependencyInjection
         return $this->instance;
     }
 
-    public function isEagerSingleton()
+    public function isEagerSingleton(): bool
     {
         return $this->eager;
     }
