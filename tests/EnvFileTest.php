@@ -2,7 +2,6 @@
 
 namespace Test;
 
-use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\NoCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
@@ -45,6 +44,7 @@ class EnvFileTest extends TestCase
         $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY8'));
         $this->assertSame(['1', '2', '3', '4', '5'], $config->get('KEY9'));
         $this->assertSame(["key1" => "value1", "key2" => "value2"], $config->get('KEY10'));
+        $this->assertFalse($config->get('KEY11'));
     }
 
     public function testSaveToCacheBeforeChange()
@@ -52,7 +52,6 @@ class EnvFileTest extends TestCase
         putenv('APP_ENV=file');
         $config = $this->object->build();
 
-        ;
         $this->assertTrue($config->saveToCache("file", new NoCacheEngine()));
     }
 

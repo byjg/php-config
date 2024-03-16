@@ -3,21 +3,28 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigException;
+use Exception;
+use ByJG\Config\Exception\DependencyInjectionException;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use ByJG\Config\Exception\KeyNotFoundException;
 use Closure;
 use Psr\Container\ContainerInterface;
 use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 
 class Container implements ContainerInterface
 {
-    private $config = [];
+    private array $config;
 
-    private $processedEagers = false;
+    private bool $processedEagers = false;
 
-    private $configChanged = [];
+    private bool $configChanged = false;
 
+    /**
+     * @throws Exception
+     */
     public function __construct($config, $definitionName = null, $cacheObject = null)
     {
         $this->config = $config;
@@ -33,11 +40,12 @@ class Container implements ContainerInterface
      *
      * @param string $id Identifier of the entry to look for.
      * @return mixed Entry.
-     * @throws Exception\DependencyInjectionException
+     * @throws ConfigException
+     * @throws DependencyInjectionException
      * @throws KeyNotFoundException
      * @throws ReflectionException
      */
-    public function get(string $id)
+    public function get(string $id): mixed
     {
         $value = $this->raw($id);
 
@@ -74,9 +82,9 @@ class Container implements ContainerInterface
         return call_user_func_array($value, $args);
     }
 
-    protected function set($key, $value)
+    protected function set(string $id, mixed $value): void
     {
-        $this->config[$key] = $value;
+        $this->config[$id] = $value;
         $this->configChanged = true;
     }
 
@@ -99,7 +107,7 @@ class Container implements ContainerInterface
      * @return mixed
      * @throws KeyNotFoundException
      */
-    public function raw($id)
+    public function raw($id): mixed
     {
         if (!$this->has($id)) {
             throw new KeyNotFoundException("The key '$id' does not exists");
@@ -108,10 +116,15 @@ class Container implements ContainerInterface
         return $this->config[$id];
     }
 
-    public function saveToCache($definitionName, CacheInterface $cacheObject)
+    /**
+     * @throws InvalidArgumentException
+     * @throws PhpVersionNotSupportedException
+     * @throws Exception
+     */
+    public function saveToCache($definitionName, CacheInterface $cacheObject): bool
     {
         if ($this->configChanged) {
-            throw new \Exception("The configuration was changed. Can't save to cache.");
+            throw new Exception("The configuration was changed. Can't save to cache.");
         }
 
         $toCache = [];
@@ -127,7 +140,11 @@ class Container implements ContainerInterface
         return $cacheObject->set("container-cache-$definitionName", serialize($toCache));
     }
 
-    public static function createFromCache($definitionName, CacheInterface $cacheObject)
+    /**
+     * @throws InvalidArgumentException
+     * @throws Exception
+     */
+    public static function createFromCache($definitionName, CacheInterface $cacheObject): ?Container
     {
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {
@@ -138,7 +155,7 @@ class Container implements ContainerInterface
         return null;
     }
 
-    public function compare(?Container $container)
+    public function compare(?Container $container): bool
     {
         if (is_null($container)) {
             return false;
@@ -162,7 +179,13 @@ class Container implements ContainerInterface
         return empty($diff);
     }
 
-    protected function processEagerSingleton()
+    /**
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws ReflectionException
+     * @throws ConfigException
+     */
+    protected function processEagerSingleton(): void
     {
         if ($this->processedEagers) {
             return;
@@ -177,7 +200,7 @@ class Container implements ContainerInterface
         }
     }
 
-    protected function initializeParsers()
+    protected function initializeParsers(): void
     {
         if (ParamParser::isParserExists('initialized')) {
             return;
@@ -187,7 +210,7 @@ class Container implements ContainerInterface
             return true;
         });
         ParamParser::addParser('bool', function ($value) {
-            return boolval($value);
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         });
         ParamParser::addParser('int', function ($value) {
             return intval($value);
@@ -208,7 +231,7 @@ class Container implements ContainerInterface
                     $item = explode('=', $item);
                     $result[trim($item[0])] = trim($item[1]);
                 }
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 throw new ConfigException("Invalid dict format '$value'");
             }
             return $result;

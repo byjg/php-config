@@ -5,6 +5,7 @@ namespace Test;
 
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\Exception\ConfigException;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase
@@ -63,7 +64,7 @@ class ConfigTest extends TestCase
 
     public function testNotAllowInheritFinal()
     {
-        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is final and cannot be inherited");
 
         $environment = new Environment('test', [], null, false, true);
@@ -72,7 +73,7 @@ class ConfigTest extends TestCase
 
     public function testNotAllowInheritNonConfig()
     {
-        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("The item 'test' is not a Config object");
 
         $environment = new Environment('test', [], null, false, true);
@@ -81,7 +82,7 @@ class ConfigTest extends TestCase
 
     public function testNotAllowCreateDefinitionFromAbstract()
     {
-        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("Configuration 'test' is abstract and cannot be instantiated");
 
         $environment = new Environment('test', [], null, true);

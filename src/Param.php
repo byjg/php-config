@@ -6,18 +6,18 @@ namespace ByJG\Config;
 
 class Param
 {
-    protected $param;
+    protected string $param;
 
     /**
      * Param constructor.
-     * @param $param
+     * @param string $param
      */
-    protected function __construct($param)
+    protected function __construct(string $param)
     {
         $this->param = $param;
     }
 
-    public static function get($param)
+    public static function get(string $param): Param
     {
         return new Param($param);
     }
@@ -25,7 +25,7 @@ class Param
     /**
      * @return mixed
      */
-    public function getParam()
+    public function getParam(): string
     {
         return $this->param;
     }

@@ -17,6 +17,9 @@ class Environment
 
     protected ?CacheInterface $cache;
 
+    /**
+     * @throws ConfigException
+     */
     public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false)
     {
         $this->name = $name;

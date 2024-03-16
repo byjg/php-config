@@ -2,13 +2,15 @@
 
 namespace Test;
 
-use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Container;
 use ByJG\Config\Definition;
 use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\ConfigNotFoundException;
+use ByJG\Config\Exception\KeyNotFoundException;
 use ByJG\Config\Exception\RunTimeException;
+use Psr\SimpleCache\InvalidArgumentException;
 use Test\DIClasses\Area;
 use PHPUnit\Framework\TestCase;
 
@@ -62,8 +64,8 @@ class ContainerTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      */
     public function testgetCurrentEnvironment2()
     {
@@ -73,8 +75,8 @@ class ContainerTest extends TestCase
 
     /**
      * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      */
     public function testgetCurrentEnvironment3()
     {
@@ -84,9 +86,7 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @throws ConfigException
      */
     public function testgetCurrentEnvironment4()
     {
@@ -195,7 +195,7 @@ class ContainerTest extends TestCase
 
     public function testLoadConfigNotExistant()
     {
-        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectException(KeyNotFoundException::class);
         $this->expectExceptionMessage("The key 'property4' does not exists");
 
         $config = $this->object->build('test');
