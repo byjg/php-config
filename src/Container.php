@@ -221,5 +221,20 @@ class Container implements ContainerInterface
         ParamParser::addParser('unserialize', function ($value) {
             return unserialize(base64_decode($value));
         });
+
+        ParamParser::addParser('unesc', function ($value) {
+            return htmlspecialchars_decode(stripcslashes($value));
+        });
+
+        ParamParser::addParser('file', function ($value) {
+            if ($value[0] !== '/') {
+                $value = __DIR__ . '/' . $value;
+            }
+
+            if (!file_exists($value)) {
+                throw new ConfigException("File '$value' not found");
+            }
+            return file_get_contents($value);
+        });
     }
 }
