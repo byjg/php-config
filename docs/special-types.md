@@ -12,15 +12,16 @@ PARAM1=!parser VALUE
 
 Where `!parser` is one of the pre-defined parsers:
 
-| Parser      | Description                             | Example                     |
-|-------------|-----------------------------------------|-----------------------------|
-| !bool       | Parse to boolean                        | PARAM=!bool true            |
-| !int        | Parse to integer                        | PARAM=!int 10               |
-| !float      | Parse to float                          | PARAM=!float 3.5            |
-| !jsondecode | Parse to JSON and transform to an array | PARAM=!jsondecode {"a":"b"} |
-| !array      | Parse to array                          | PARAM=!array 1,2,3,4        |
-| !dict       | Parse to dictionary (associative array) | PARAM=!dict a=1,b=2         |
-
+| Parser      | Description                             | Example                       |
+|-------------|-----------------------------------------|-------------------------------|
+| !bool       | Parse to boolean                        | `PARAM=!bool true`            |
+| !int        | Parse to integer                        | `PARAM=!int 10`               |
+| !float      | Parse to float                          | `PARAM=!float 3.5`            |
+| !jsondecode | Parse to JSON and transform to an array | `PARAM=!jsondecode {"a":"b"}` |
+| !array      | Parse to array                          | `PARAM=!array 1,2,3,4`        |
+| !dict       | Parse to dictionary (associative array) | `PARAM=!dict a=1,b=2`         |
+| !unesc      | Unescape the value                      | `PARAM=!unesc a\nb`           |
+| !file       | Load the content of a file              | `PARAM=!file /path/to/file`   |
 
 ## Adding a new Parser
 
