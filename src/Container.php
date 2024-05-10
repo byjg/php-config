@@ -200,10 +200,10 @@ class Container implements ContainerInterface
         }
     }
 
-    public function releaseSingletons(): void
+    public function releaseSingletons($exceptList = []): void
     {
         foreach ($this->config as $key => $value) {
-            if ($value instanceof DependencyInjection) {
+            if ($value instanceof DependencyInjection and !in_array($key, $exceptList)) {
                 $value->releaseInstance();
             }
         }
