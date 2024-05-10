@@ -401,4 +401,11 @@ class DependencyInjection
     {
         return $this->eager;
     }
+
+    public function releaseInstance(): void
+    {
+        if (!empty($this->instance) && !$this->isEagerSingleton()) {
+            unset($this->instance);
+        }
+    }
 }

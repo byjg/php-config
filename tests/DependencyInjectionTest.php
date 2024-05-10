@@ -122,6 +122,40 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(40, $random->getNumber());
     }
 
+    public function testReleaseSingleton()
+    {
+        $config = $this->object->build('di-test3');
+
+        // Sanity check to verify if a non-singleton always return a new object
+        $instance1 = $config->get("factory");
+        $this->assertInstanceOf(Random::class, $instance1);
+
+        $instance2 = $config->get("factory");
+        $this->assertInstanceOf(Random::class, $instance2);
+
+        $this->assertNotSame($instance1, $instance2);
+
+        // Check if Singleton is returning the same object
+        $singleton1 = $config->get("factory2");
+        $this->assertInstanceOf(Random::class, $singleton1);
+
+        $singleton2 = $config->get("factory2");
+        $this->assertInstanceOf(Random::class, $singleton2);
+
+        $this->assertSame($singleton1, $singleton2);
+
+        // Release the singleton and check if a new is created
+        $config->releaseSingletons();
+
+        $this->assertEquals(40, $singleton1->getNumber()); // Make sure the local variable is running
+
+        $singleton3 = $config->get("factory2");
+        $this->assertInstanceOf(Random::class, $singleton3);
+
+        $this->assertNotSame($singleton1, $singleton3);
+    }
+
+
     public function testGetInstancesWithParam()
     {
         $config = $this->object->build('di-test4');

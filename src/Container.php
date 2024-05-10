@@ -200,6 +200,15 @@ class Container implements ContainerInterface
         }
     }
 
+    public function releaseSingletons(): void
+    {
+        foreach ($this->config as $key => $value) {
+            if ($value instanceof DependencyInjection) {
+                $value->releaseInstance();
+            }
+        }
+    }
+
     protected function initializeParsers(): void
     {
         if (ParamParser::isParserExists('initialized')) {

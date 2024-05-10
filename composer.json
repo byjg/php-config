@@ -10,7 +10,8 @@
   },
   "require-dev": {
     "byjg/cache-engine": "^5.0",
-    "phpunit/phpunit": "^9.6"
+    "phpunit/phpunit": "^9.6",
+    "ext-json": "*"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",
@@ -18,6 +19,9 @@
     "psr-4": {
       "ByJG\\Config\\": "src/"
     }
+  },
+  "suggest": {
+    "ext-json": "*"
   },
   "autoload-dev": {
     "psr-4": {
