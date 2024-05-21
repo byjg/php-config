@@ -25,6 +25,9 @@ class Definition
 
     private $baseDir = "";
 
+    /**
+     * @var bool|array
+     */
     private $loadOsEnv = false;
 
     private $configName = null;
@@ -129,9 +132,9 @@ class Definition
     /**
      * @return $this
      */
-    public function withOSEnvironment()
+    public function withOSEnvironment($keys = [])
     {
-        $this->loadOsEnv = true;
+        $this->loadOsEnv = is_array($keys) && empty($keys) ? true : $keys;
         return $this;
     }
 
@@ -246,8 +249,12 @@ class Definition
             }
         }
 
-        if ($this->loadOsEnv) {
+        if ($this->loadOsEnv === true) {
             $config = array_merge($config, $_ENV);
+        } elseif (is_array($this->loadOsEnv)) {
+            foreach ($this->loadOsEnv as $key) {
+                $config[$key] = $_ENV[$key] ?? "";
+            }
         }
 
         return new Container($config, $configName, $this->configList[$configName]->getCacheInterface() ?? null);
