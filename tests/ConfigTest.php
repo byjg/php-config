@@ -95,4 +95,57 @@ class ConfigTest extends TestCase
         $defintion->build();
     }
 
+    public function testLoadFromOSAllEnv()
+    {
+        $environment = new Environment('test');
+
+        putenv('APP_ENV=test');
+        $_ENV['APP_ENV'] = 'test';
+        $_ENV['X'] = 'abc';
+        $_ENV['Y'] = 'def';
+        $defintion = (new Definition())
+            ->addEnvironment($environment)
+            ->withOSEnvironment();
+
+        $container = $defintion->build();
+
+        $this->assertEquals('abc', $container->get('X'));
+        $this->assertEquals('def', $container->get('Y'));
+    }
+
+    public function testLoadFromOSPartialEnv()
+    {
+        $environment = new Environment('test');
+
+        putenv('APP_ENV=test');
+        $_ENV['APP_ENV'] = 'test';
+        $_ENV['X'] = 'abc';
+        $_ENV['Y'] = 'def';
+        $defintion = (new Definition())
+            ->addEnvironment($environment)
+            ->withOSEnvironment(['X']);
+
+        $container = $defintion->build();
+
+        $this->assertEquals('abc', $container->get('X'));
+        $this->assertFalse($container->has('Y'));
+    }
+
+    public function testLoadFromOSNoEnv()
+    {
+        $environment = new Environment('test');
+
+        putenv('APP_ENV=test');
+        $_ENV['APP_ENV'] = 'test';
+        $_ENV['X'] = 'abc';
+        $_ENV['Y'] = 'def';
+        $defintion = (new Definition())
+            ->addEnvironment($environment);
+
+        $container = $defintion->build();
+
+        $this->assertFalse($container->has('X'));
+        $this->assertFalse($container->has('Y'));
+    }
+
 }
