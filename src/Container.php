@@ -177,6 +177,15 @@ class Container implements ContainerInterface
         }
     }
 
+    public function releaseSingletons($exceptList = [])
+    {
+        foreach ($this->config as $key => $value) {
+            if ($value instanceof DependencyInjection and !in_array($key, $exceptList)) {
+                $value->releaseInstance();
+            }
+        }
+    }
+
     protected function initializeParsers()
     {
         if (ParamParser::isParserExists('initialized')) {
@@ -187,7 +196,7 @@ class Container implements ContainerInterface
             return true;
         });
         ParamParser::addParser('bool', function ($value) {
-            return boolval($value);
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN);
         });
         ParamParser::addParser('int', function ($value) {
             return intval($value);
@@ -220,6 +229,21 @@ class Container implements ContainerInterface
 
         ParamParser::addParser('unserialize', function ($value) {
             return unserialize(base64_decode($value));
+        });
+
+        ParamParser::addParser('unesc', function ($value) {
+            return htmlspecialchars_decode(stripcslashes($value));
+        });
+
+        ParamParser::addParser('file', function ($value) {
+            if ($value[0] !== '/') {
+                $value = __DIR__ . '/' . $value;
+            }
+
+            if (!file_exists($value)) {
+                throw new ConfigException("File '$value' not found");
+            }
+            return file_get_contents($value);
         });
     }
 }

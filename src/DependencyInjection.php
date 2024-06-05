@@ -382,4 +382,11 @@ class DependencyInjection
     {
         return $this->eager;
     }
+
+    public function releaseInstance()
+    {
+        if (!empty($this->instance) && !$this->isEagerSingleton()) {
+            $this->instance = null;
+        }
+    }
 }
