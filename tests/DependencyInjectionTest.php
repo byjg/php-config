@@ -260,5 +260,4 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(24, $injectedLegacy->calculate());
     }
 
-
 }

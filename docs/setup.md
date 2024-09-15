@@ -116,11 +116,11 @@ If you have multiple files and the same variable is defined in more than one fil
 the system will override the value with the value defined by the last file loaded with the same variable.
 
 The load order is:
-- config-<ENV>.php
-- config-<ENV>.env
-- <ENV>/*.php
-- <ENV>/*.env
-- .env
+- `config-<ENV>.php`
+- `config-<ENV>.env`
+- `<ENV>/*.php`
+- `<ENV>/*.env`
+- `.env`
 
 
 ----

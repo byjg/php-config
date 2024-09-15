@@ -23,7 +23,7 @@ class DependencyInjection
 
     protected ?array $args = [];
 
-    protected object $instance;
+    protected ?object $instance;
 
     protected bool $singleton = false;
 
@@ -402,10 +402,10 @@ class DependencyInjection
         return $this->eager;
     }
 
-    public function releaseInstance(): void
+    public function releaseInstance()
     {
         if (!empty($this->instance) && !$this->isEagerSingleton()) {
-            unset($this->instance);
+            $this->instance = null;
         }
     }
 }
