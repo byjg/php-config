@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Test;
+namespace Tests;
 
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;

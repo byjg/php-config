@@ -1,6 +1,6 @@
 <?php
 
-namespace Test;
+namespace Tests;
 
 use ByJG\Cache\Psr16\NoCacheEngine;
 use ByJG\Config\Environment;

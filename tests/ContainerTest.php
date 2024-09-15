@@ -1,6 +1,6 @@
 <?php
 
-namespace Test;
+namespace Tests;
 
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 use ByJG\Config\Environment;
@@ -11,7 +11,7 @@ use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\KeyNotFoundException;
 use ByJG\Config\Exception\RunTimeException;
 use Psr\SimpleCache\InvalidArgumentException;
-use Test\DIClasses\Area;
+use Tests\DIClasses\Area;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase

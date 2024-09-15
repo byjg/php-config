@@ -1,7 +1,7 @@
 <?php
 
 use ByJG\Config\DependencyInjection as DI;
-use Test\DIClasses\InjectedFail;
+use Tests\DIClasses\InjectedFail;
 
 return [
 

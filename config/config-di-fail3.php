@@ -1,8 +1,8 @@
 <?php
 
 use ByJG\Config\DependencyInjection as DI;
-use Test\DIClasses\InjectedLegacy;
-use Test\DIClasses\SumAreas;
+use Tests\DIClasses\InjectedLegacy;
+use Tests\DIClasses\SumAreas;
 
 return [
     SumAreas::class => DI::bind(SumAreas::class)
