@@ -10,8 +10,8 @@ class InjectedLegacy implements Area
 
     /**
      * SumAreas constructor.
-     * @param Tests\DIClasses\Area $area
-     * @param Tests\DIClasses\Random $random
+     * @param \Tests\DIClasses\Area $area
+     * @param \Tests\DIClasses\Random $random
      */
     public function __construct($area, $random)
     {

@@ -37,7 +37,7 @@ class DependencyInjection
 
     /**
      * @param $containerInterface ContainerInterface
-     * @return DependencyInjection
+     * @return $this
      */
     public function injectContainer(ContainerInterface $containerInterface): static
     {
@@ -66,13 +66,13 @@ class DependencyInjection
     }
 
     /**
-     * @param null $argsToParse
+     * @param array|null $argsToParse
      * @return array
      * @throws KeyNotFoundException
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    protected function getArgs($argsToParse = null): array
+    protected function getArgs(?array $argsToParse = null): array
     {
             return array_map(function ($value) {
                 if ($value instanceof Param) {
@@ -88,7 +88,7 @@ class DependencyInjection
 
     /**
      * @param mixed $args
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function withConstructorArgs(array $args): static
@@ -105,7 +105,7 @@ class DependencyInjection
     /**
      * @param string $method
      * @param mixed $args
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function withFactoryMethod(string $method, array $args = []): static
@@ -161,7 +161,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
@@ -184,7 +184,7 @@ class DependencyInjection
                 if (method_exists($type, "getName")) {
                     $args[] = Param::get(ltrim($type->getName(), "\\"));
                 } else {
-                    $args[] = Param::get(ltrim($type, "\\"));
+                    $args[] = Param::get(ltrim($type->__toString(), "\\"));
                 }
             }
             return $this->withConstructorArgs($args);
@@ -194,7 +194,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
@@ -229,7 +229,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function withNoConstructor(): static
@@ -243,7 +243,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function withConstructorNoArgs(): static
@@ -263,7 +263,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function toSingleton(): static
@@ -276,7 +276,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      * @throws DependencyInjectionException
      */
     public function toEagerSingleton(): static
@@ -286,7 +286,7 @@ class DependencyInjection
     }
 
     /**
-     * @return DependencyInjection
+     * @return $this
      */
     public function toInstance(): static
     {
