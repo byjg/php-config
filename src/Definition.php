@@ -232,6 +232,11 @@ class Definition
             }
         }
 
+        // Delete all files started with sys_get_temp_dir() . '/config-*'
+        foreach (glob(sys_get_temp_dir() . '/config-*') as $file) {
+            unlink($file);
+        }
+
         // Create from the Definition and configuration files
         $config = [];
         $config = $this->loadConfig($config, $configName);

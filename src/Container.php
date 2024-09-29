@@ -3,6 +3,7 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\RunTimeException;
 use Exception;
 use ByJG\Config\Exception\DependencyInjectionException;
 use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
@@ -14,7 +15,7 @@ use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 
-class Container implements ContainerInterface
+class Container implements ContainerInterface, ContainerInterfaceExtended
 {
     private array $config;
 
@@ -103,17 +104,33 @@ class Container implements ContainerInterface
     }
 
     /**
-     * @param $id
+     * @param string $id
      * @return mixed
      * @throws KeyNotFoundException
      */
-    public function raw($id): mixed
+    public function raw(string $id): mixed
     {
         if (!$this->has($id)) {
             throw new KeyNotFoundException("The key '$id' does not exists");
         }
 
         return $this->config[$id];
+    }
+
+    public function getAsFilename(string $id): string
+    {
+        # Transform ID into a valid filename
+        $id = preg_replace('/[^a-zA-Z0-9]/', '_', $id);
+
+        $filename = sys_get_temp_dir() . "/config-$id.php";
+        if (!file_exists($filename)) {
+            $contents = $this->get($id);
+            if (!is_string($contents)) {
+                throw new RunTimeException("The content of '$id' is not a string");
+            }
+            file_put_contents($filename, $contents);
+        }
+        return $filename;
     }
 
     /**

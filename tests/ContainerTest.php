@@ -268,4 +268,34 @@ class ContainerTest extends TestCase
         $this->assertFalse($config->get('property2'));
         $this->assertEquals('other_value3', $config->get('property3'));
     }
+
+    public function testGetAsFilename()
+    {
+        $config = $this->object->build('folderenv');
+
+        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-property1.php');
+
+        // Test if get the proper result
+        $filename = $config->getAsFilename('property1');
+        $this->assertStringContainsString(sys_get_temp_dir() . '/config-property1.php', $filename);
+        $this->assertFileExists($filename);
+        $this->assertEquals('string', file_get_contents($filename));
+
+
+        // After a new build the cached files should be cleared
+        $config = $this->object->build('folderenv');
+
+        // The build should clear filenames cache
+        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-property1.php');
+    }
+
+    public function testGetAsFilenameNonString()
+    {
+        $this->expectException(RunTimeException::class);
+        $this->expectExceptionMessage("The content of 'property2' is not a string");
+
+        $config = $this->object->build('folderenv');
+        $filename = $config->getAsFilename('property2');
+    }
+
 }
