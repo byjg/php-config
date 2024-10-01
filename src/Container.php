@@ -23,14 +23,18 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 
     private bool $configChanged = false;
 
+    private ?CacheInterface $cacheObject = null;
+    private ?string $cacheKey = null;
+    private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
+
     /**
      * @throws Exception
      */
-    public function __construct($config, $definitionName = null, $cacheObject = null)
+    public function __construct(array $config, string $definitionName = null, CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
-            $this->saveToCache($definitionName, $cacheObject);
+            $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
         $this->initializeParsers();
         $this->processEagerSingleton();
@@ -114,6 +118,10 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             throw new KeyNotFoundException("The key '$id' does not exists");
         }
 
+        if ($this->config[$id] === hex2bin("FF")) {
+            $this->config[$id] = $this->cacheObject->get($this->cacheKey . "-" . $this->fixCacheKeyName($id));
+        }
+
         return $this->config[$id];
     }
 
@@ -138,35 +146,55 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws Exception
      */
-    public function saveToCache($definitionName, CacheInterface $cacheObject): bool
+    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): bool
     {
         if ($this->configChanged) {
             throw new Exception("The configuration was changed. Can't save to cache.");
         }
 
+        $this->cacheObject = $cacheObject;
+        $this->cacheKey = "container-cache-$definitionName";
+        $this->cacheMode = $cacheModeEnum;
+
         $toCache = [];
         foreach ($this->config as $key => $value) {
+            $valueSerialized = null;
             if ($value instanceof Closure) {
-                $toCache[$key] = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
+                $valueSerialized = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
             } else if ($value instanceof DependencyInjection) {
-                $toCache[$key] = "!unserialize " . base64_encode(serialize($value));
+                $valueSerialized = "!unserialize " . base64_encode(serialize($value));
+            }
+
+            if ($this->cacheMode === CacheModeEnum::multipleFiles && !is_null($valueSerialized)) {
+                $this->cacheObject->set($this->cacheKey . "-" . $this->fixCacheKeyName($key), $valueSerialized);
+                $toCache[$key] = hex2bin("FF");
             } else {
-                $toCache[$key] = $value;
+                $toCache[$key] = $valueSerialized ?? $value;
             }
         }
-        return $cacheObject->set("container-cache-$definitionName", serialize($toCache));
+
+        return $this->cacheObject->set($this->cacheKey, serialize($toCache));
+    }
+
+    protected function fixCacheKeyName(string $key): string
+    {
+        return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $key));
     }
 
     /**
      * @throws InvalidArgumentException
      * @throws Exception
      */
-    public static function createFromCache($definitionName, CacheInterface $cacheObject): ?Container
+    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): ?Container
     {
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {
             $fromCache = unserialize($fromCache);
-            return new Container($fromCache);
+            $container = new Container($fromCache);
+            $container->cacheObject = $cacheObject;
+            $container->cacheKey = "container-cache-$definitionName";
+            $container->cacheMode = $cacheModeEnum;
+            return $container;
         }
 
         return null;
@@ -217,7 +245,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         }
     }
 
-    public function releaseSingletons($exceptList = []): void
+    public function releaseSingletons(array $exceptList = []): void
     {
         foreach ($this->config as $key => $value) {
             if ($value instanceof DependencyInjection and !in_array($key, $exceptList)) {

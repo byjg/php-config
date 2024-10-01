@@ -3,6 +3,7 @@
 namespace Tests;
 
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
+use ByJG\Config\CacheModeEnum;
 use ByJG\Config\Environment;
 use ByJG\Config\Container;
 use ByJG\Config\Definition;
@@ -27,7 +28,8 @@ class ContainerTest extends TestCase
     public function setUp(): void
     {
         $test = new Environment('test');
-        $testCache = new Environment('test-cache', [$test], new FileSystemCacheEngine("x"));
+        $testCache = new Environment('test-cache', [$test], new FileSystemCacheEngine("multiple"));
+        $testCacheSingle = new Environment('test-cache-single', [$test], new FileSystemCacheEngine("single"), cacheMode: CacheModeEnum::singleFile);
         $test2 = new Environment('test2', [$test]);
         $test3 = new Environment('test3', [$test2, $test]);
         $test4 = new Environment('test4', [$test3]); // Recursive Inheritance
@@ -38,6 +40,7 @@ class ContainerTest extends TestCase
         $this->object = (new Definition())
             ->addEnvironment($test)
             ->addEnvironment($testCache)
+            ->addEnvironment($testCacheSingle)
             ->addEnvironment($test2)
             ->addEnvironment($test3)
             ->addEnvironment($test4)
@@ -219,37 +222,123 @@ class ContainerTest extends TestCase
     //     $this->object->build('notfound');
     // }
 
+    protected function deleteCache()
+    {
+        // delete all files *.cache
+        $files = glob(sys_get_temp_dir() . '/*.cache');
+        foreach ($files as $file) {
+            unlink($file);
+        }
+    }
+
     public function testCache()
     {
         // With Cache!
-        $arrayCache = $this->object->getConfigObject('test-cache')->getCacheInterface();
+        $cacheObject = $this->object->getConfigObject('test-cache')->getCacheInterface();
 
-        $arrayCache->delete('container-cache-test-cache'); // Clean cache (if exists)
-        $this->assertNull($arrayCache->get('container-cache-test-cache'));
+        $this->deleteCache();
+        $this->assertNull($cacheObject->get('container-cache-test-cache'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-property3'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-property6'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-tests_diclasses_area'));
 
-        $container = $this->object->build('test-cache');  // Expected build and set to cache
+        // First Step, create a fresh object
+        // Second Step, get the object from cache
+        for ($i = 0; $i < 2; $i++) {
+            if ($i == 1) {
+                $this->assertNotNull($cacheObject->get('container-cache-test-cache'));
+                $this->assertNotNull($cacheObject->get('container-cache-test-cache-property3'));
+                $this->assertNotNull($cacheObject->get('container-cache-test-cache-property6'));
+                $this->assertNotNull($cacheObject->get('container-cache-test-cache-tests_diclasses_area'));
+            }
+            $container = $this->object->build('test-cache');  // Expected build and set to cache
+            $this->assertNotNull($cacheObject->get('container-cache-test-cache'));
+            $this->assertNotNull($cacheObject->get('container-cache-test-cache-property3'));
+            $this->assertNotNull($cacheObject->get('container-cache-test-cache-property6'));
+            $this->assertNotNull($cacheObject->get('container-cache-test-cache-tests_diclasses_area'));
 
-        $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+            $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+            $this->assertEquals(CacheModeEnum::multipleFiles, $this->object->getCacheModeCurrentEnvironment());
 
-        // Get Container2 from cache and should match with the first one
-        $container2 = Container::createFromCache('test-cache', $arrayCache);
-        $this->assertTrue($container->compare($container2)); // The exact object
+            // Get Container2 from cache and should match with the first one
+            $container2 = Container::createFromCache('test-cache', $cacheObject);
+            $this->assertTrue($container->compare($container2)); // The exact object
 
-        $this->assertEquals('calculated', $container2->get('property3'));
-        $this->assertEquals(4, $container2->get('property6'));
-        $this->assertEquals(6, $container2->get(Area::class)->calculate());
+            $this->assertEquals('calculated', $container2->get('property3'));
+            $this->assertEquals(4, $container2->get('property6'));
+            $this->assertEquals(6, $container2->get(Area::class)->calculate());
+        }
+    }
+
+    public function testCacheSingle()
+    {
+        // With Cache!
+        $cacheObject = $this->object->getConfigObject('test-cache-single')->getCacheInterface();
+
+        $this->deleteCache();
+        $this->assertNull($cacheObject->get('container-cache-test-cache-single'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-single-property3'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-single-property6'));
+        $this->assertNull($cacheObject->get('container-cache-test-cache-single-tests_diclasses_area'));
+
+        for ($i = 0; $i < 2; $i++) {
+            if ($i == 1) {
+                $this->assertNotNull($cacheObject->get('container-cache-test-cache-single'));
+                $this->assertNull($cacheObject->get('container-cache-test-cache-single-property3'));
+                $this->assertNull($cacheObject->get('container-cache-test-cache-single-property6'));
+                $this->assertNull($cacheObject->get('container-cache-test-cache-single-tests_diclasses_area'));
+            }
+            $container = $this->object->build('test-cache-single');  // Expected build and set to cache
+            $this->assertNotNull($cacheObject->get('container-cache-test-cache-single'));
+            $this->assertNull($cacheObject->get('container-cache-test-cache-single-property3'));
+            $this->assertNull($cacheObject->get('container-cache-test-cache-single-property6'));
+            $this->assertNull($cacheObject->get('container-cache-test-cache-single-tests_diclasses_area'));
+
+            $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
+            $this->assertEquals(CacheModeEnum::singleFile, $this->object->getCacheModeCurrentEnvironment());
+
+            // Get Container2 from cache and should match with the first one
+            $container2 = Container::createFromCache('test-cache-single', $cacheObject);
+            $this->assertTrue($container->compare($container2)); // The exact object
+
+            $this->assertEquals('calculated', $container2->get('property3'));
+            $this->assertEquals(4, $container2->get('property6'));
+            $this->assertEquals(6, $container2->get(Area::class)->calculate());
+        }
     }
 
     public function testChangeConfigVar()
     {
-        $container = $this->object->build('test');
+        $test = new Environment('test');
+        $test2 = new Environment('test2', [$test]);
 
         putenv('NEWENV=test');
+        $object = (new Definition())
+            ->withConfigVar('NEWENV')
+            ->addEnvironment($test)
+            ->addEnvironment($test2)
+        ;
         $this->object->withConfigVar('NEWENV');
         $this->assertEquals("test", $this->object->getCurrentEnvironment());
 
-        $container2 = $this->object->build();
-        $this->assertEquals($container, $container2);
+        $container = $this->object->build();
+        $this->assertEquals('string', $container->get('property1'));
+    }
+
+    public function testChangeConfigVarNotSet()
+    {
+        $test = new Environment('test');
+        $test2 = new Environment('test2', [$test]);
+
+        $object = (new Definition())
+            ->withConfigVar('SETUP')
+            ->addEnvironment($test)
+            ->addEnvironment($test2)
+        ;
+
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("The environment variable 'SETUP' is not set");
+        $object->build();
     }
 
     public function testGetCacheNotSetYet()
@@ -297,5 +386,4 @@ class ContainerTest extends TestCase
         $config = $this->object->build('folderenv');
         $filename = $config->getAsFilename('property2');
     }
-
 }

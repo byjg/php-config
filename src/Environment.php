@@ -17,16 +17,19 @@ class Environment
 
     protected ?CacheInterface $cache;
 
+    protected CacheModeEnum $cacheMode;
+
     /**
      * @throws ConfigException
      */
-    public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false)
+    public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
     {
         $this->name = $name;
         $this->abstract = $abstract;
         $this->final = $final;
         $this->inheritFrom = [];
         $this->cache = $cache;
+        $this->cacheMode = $cacheMode;
 
         foreach ($inheritFrom as $item) {
             if (!($item instanceof Environment)) {
@@ -63,5 +66,10 @@ class Environment
     public function getCacheInterface(): ?CacheInterface
     {
         return $this->cache;
+    }
+
+    public function getCacheMode(): CacheModeEnum
+    {
+        return $this->cacheMode;
     }
 }

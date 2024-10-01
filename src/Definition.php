@@ -11,6 +11,9 @@ use Psr\SimpleCache\InvalidArgumentException;
 
 class Definition
 {
+    /**
+     * @var Environment[]
+     */
     private array $configList = [];
 
     private string $configVar = 'APP_ENV';
@@ -226,7 +229,7 @@ class Definition
 
         // Check if container is saved in the cache
         if ($this->allowCache && !empty($this->configList[$configName]->getCacheInterface())) {
-            $container = Container::createFromCache($configName, $this->configList[$configName]->getCacheInterface());
+            $container = Container::createFromCache($configName, $this->configList[$configName]->getCacheInterface(), $this->configList[$configName]->getCacheMode());
             if (!is_null($container)) {
                 return $container;
             }
@@ -257,7 +260,7 @@ class Definition
             }
         }
 
-        return new Container($config, $configName, $this->configList[$configName]->getCacheInterface() ?? null);
+        return new Container($config, $configName, $this->configList[$configName]->getCacheInterface() ?? null, $this->configList[$configName]->getCacheMode());
     }
 
     // Recursive function to load from Config
@@ -279,17 +282,24 @@ class Definition
     /**
      * @throws RunTimeException
      */
-    public function getCacheCurrentEnvironment(CacheInterface $default = null): ?CacheInterface
+    public function getCacheCurrentEnvironment(): ?CacheInterface
     {
         if (empty($this->configName)) {
             throw new RunTimeException("Environment isn't build yet");
         }
 
-        if (!empty($this->configList[$this->configName]->getCacheInterface())) {
-            return $this->configList[$this->configName]->getCacheInterface();
-        }
-        return $default;
+        return $this->configList[$this->configName]->getCacheInterface();
     }
+
+    public function getCacheModeCurrentEnvironment(): ?CacheModeEnum
+    {
+        if (empty($this->configName)) {
+            throw new RunTimeException("Environment isn't build yet");
+        }
+
+        return $this->configList[$this->configName]->getCacheMode();
+    }
+
 
     /**
      * @throws Exception

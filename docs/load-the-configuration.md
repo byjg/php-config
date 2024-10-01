@@ -8,13 +8,16 @@ The definition will specify how the configuration will be loaded, what environme
 
 ```php
 <?php
-$dev = new \ByJG\Config\Environment('dev');
-$prod = new \ByJG\Config\Environment('prod', ['dev'], $somePsr16Implementation);
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
 
-$definition = (new \ByJG\Config\Definition())
-    ->withConfigVar('APP_ENV')     // Setup the environment var used to auto select the config. 'APP_ENV' is default.
-    ->addEnvironment($dev)             // Defining the 'dev' environment
-    ->addEnvironment($prod)            // Defining the `prod` environment that inherits from `dev`
+$dev = new Environment('dev');
+$prod = new Environment('prod', ['dev'], $somePsr16Implementation);
+
+$definition = (new Definition())
+    ->withConfigVar('APP_ENV')    // Set up the environment var used to auto select the config. 'APP_ENV' is default.
+    ->addEnvironment($dev)        // Defining the 'dev' environment
+    ->addEnvironment($prod)       // Defining the `prod` environment that inherits from `dev`
 ;
 ```
 
@@ -22,12 +25,17 @@ The `Environment` constructor has the following parameters:
 
 ```php
 <?php
-new \ByJG\Config\Environment(
-    string $environment,                              // The environment name
-    array $inheritFrom = [],                          // The list of environments to inherit from
-    \Psr\SimpleCache\CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
-    bool $abstract = false                            // If true, the environment will not be used to load the configuration
-    bool $final = false                               // If true, the environment cannot be used to inherit from
+use ByJG\Config\CacheModeEnum;
+use ByJG\Config\Environment;
+use Psr\SimpleCache\CacheInterface;
+
+new Environment(
+    string $environment,             // The environment name
+    array $inheritFrom = [],         // The list of environments to inherit from
+    CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
+    bool $abstract = false,          // If true, the environment will not be used to load the configuration
+    bool $final = false,             // If true, the environment cannot be used to inherit from
+    CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles  // How the cache will be stored, in a single key or multiple keys
 );
 ```
 
@@ -39,7 +47,13 @@ new \ByJG\Config\Environment(
 $container = $definition->build();
 ```
 
-If `APP_ENV` is not set or it values doesn't exist at least one of the files `config-<APP_ENV>.php` or `config-<APP_ENV>.env` and error will be thrown.
+This method requires the environment var `APP_ENV` to be set, otherwise will throw an exception. 
+
+Also, if at least of the files doesn´t exists:
+- `config-<APP_ENV>.php`
+- `config-<APP_ENV>.env`
+- `<APP_ENV>/*.php`
+- `<APP_ENV>/*.env`
 
 ## Get the Values from the container
 
@@ -68,7 +82,7 @@ Also, it is possible to get **raw** value without any parse:
 $property = $container->raw('property3');
 ```
 
-## Get the configuration set is active
+## Get the environment name is being used
 
 ```php
 <?php
