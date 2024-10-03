@@ -236,7 +236,7 @@ class Definition
         }
 
         // Delete all files started with sys_get_temp_dir() . '/config-*'
-        foreach (glob(sys_get_temp_dir() . '/config-*') as $file) {
+        foreach (glob(sys_get_temp_dir() . "/config-$configName*") as $file) {
             unlink($file);
         }
 

@@ -19,6 +19,8 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 {
     private array $config;
 
+    private string $definitionName;
+
     private bool $processedEagers = false;
 
     private bool $configChanged = false;
@@ -36,6 +38,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         if (!is_null($definitionName) && !is_null($cacheObject)) {
             $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
+        $this->definitionName = $definitionName ?? 'default';
         $this->initializeParsers();
         $this->processEagerSingleton();
     }
@@ -130,7 +133,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         # Transform ID into a valid filename
         $id = preg_replace('/[^a-zA-Z0-9]/', '_', $id);
 
-        $filename = sys_get_temp_dir() . "/config-$id.php";
+        $filename = sys_get_temp_dir() . "/config-{$this->definitionName}-$id.php";
         if (!file_exists($filename)) {
             $contents = $this->get($id);
             if (!is_string($contents)) {
@@ -190,7 +193,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {
             $fromCache = unserialize($fromCache);
-            $container = new Container($fromCache);
+            $container = new Container($fromCache, $definitionName);
             $container->cacheObject = $cacheObject;
             $container->cacheKey = "container-cache-$definitionName";
             $container->cacheMode = $cacheModeEnum;

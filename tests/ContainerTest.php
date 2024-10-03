@@ -362,11 +362,11 @@ class ContainerTest extends TestCase
     {
         $config = $this->object->build('folderenv');
 
-        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-property1.php');
+        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-folderenv-property1.php');
 
         // Test if get the proper result
         $filename = $config->getAsFilename('property1');
-        $this->assertStringContainsString(sys_get_temp_dir() . '/config-property1.php', $filename);
+        $this->assertStringContainsString(sys_get_temp_dir() . '/config-folderenv-property1.php', $filename);
         $this->assertFileExists($filename);
         $this->assertEquals('string', file_get_contents($filename));
 
@@ -375,7 +375,7 @@ class ContainerTest extends TestCase
         $config = $this->object->build('folderenv');
 
         // The build should clear filenames cache
-        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-property1.php');
+        $this->assertFileDoesNotExist(sys_get_temp_dir() . '/config-folderenv-property1.php');
     }
 
     public function testGetAsFilenameNonString()
