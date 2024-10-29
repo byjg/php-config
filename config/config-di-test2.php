@@ -1,11 +1,7 @@
 <?php
 
 use ByJG\Config\DependencyInjection as DI;
-use ByJG\Config\Param;
-use Test\DIClasses\Area;
-use Test\DIClasses\Random;
-use Test\DIClasses\Square;
-use Test\DIClasses\SumAreas;
+use Tests\DIClasses\Random;
 
 return [
     Random::class => DI::bind(Random::class)->toSingleton(),

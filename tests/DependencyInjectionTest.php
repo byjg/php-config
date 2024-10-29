@@ -1,26 +1,16 @@
 <?php
 
-namespace Test;
+namespace Tests;
 
-require_once (__DIR__ . "/DIClasses/Square.php");
-require_once (__DIR__ . "/DIClasses/RectangleTriangle.php");
-require_once (__DIR__ . "/DIClasses/SumAreas.php");
-require_once (__DIR__ . "/DIClasses/Random.php");
-require_once (__DIR__ . "/DIClasses/InjectedLegacy.php");
-require_once (__DIR__ . "/DIClasses/InjectedFail.php");
-require_once (__DIR__ . "/DIClasses/TestParam.php");
-
-use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
-use Test\DIClasses\Area;
-use Test\DIClasses\InjectedFail;
-use Test\DIClasses\InjectedLegacy;
-use Test\DIClasses\Random;
-use Test\DIClasses\RectangleTriangle;
-use Test\DIClasses\Square;
-use Test\DIClasses\SumAreas;
-use Test\DIClasses\TestParam;
+use Tests\DIClasses\Area;
+use Tests\DIClasses\InjectedLegacy;
+use Tests\DIClasses\Random;
+use Tests\DIClasses\RectangleTriangle;
+use Tests\DIClasses\Square;
+use Tests\DIClasses\SumAreas;
+use Tests\DIClasses\TestParam;
 use PHPUnit\Framework\TestCase;
 
 class DependencyInjectionTest extends TestCase
@@ -198,7 +188,7 @@ class DependencyInjectionTest extends TestCase
     public function testInjectConstructorFail()
     {
         $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
-        $this->expectExceptionMessage("The class Test\DIClasses\InjectedFail does not have annotations with the param type");
+        $this->expectExceptionMessage("The class Tests\DIClasses\InjectedFail does not have annotations with the param type");
 
         $this->object = (new Definition())
             ->addEnvironment(new Environment('di-fail'))
@@ -215,7 +205,7 @@ class DependencyInjectionTest extends TestCase
     public function testInjectConstructorFail2()
     {
         $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
-        $this->expectExceptionMessage("The parameter '\$area' has no type defined in class 'Test\DIClasses\InjectedFail'");
+        $this->expectExceptionMessage("The parameter '\$area' has no type defined in class 'Tests\DIClasses\InjectedFail'");
 
         $this->object = (new Definition())
             ->addEnvironment(new Environment('di-fail2'))
@@ -235,7 +225,7 @@ class DependencyInjectionTest extends TestCase
     public function testGetInstancesFail3_1()
     {
         $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
-        $this->expectExceptionMessage("The key 'Test\DIClasses\Area' does not exists injected from 'Test\DIClasses\SumAreas'");
+        $this->expectExceptionMessage("The key 'Tests\DIClasses\Area' does not exists injected from 'Tests\DIClasses\SumAreas'");
 
         $this->object = (new Definition())
             ->addEnvironment(new Environment('di-fail3'))
@@ -258,7 +248,7 @@ class DependencyInjectionTest extends TestCase
     public function testGetInstancesFail3_2()
     {
         $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
-        $this->expectExceptionMessage("The key 'Test\DIClasses\Area' does not exists injected from 'Test\DIClasses\InjectedLegacy'");
+        $this->expectExceptionMessage("The key 'Tests\DIClasses\Area' does not exists injected from 'Tests\DIClasses\InjectedLegacy'");
 
         $this->object = (new Definition())
             ->addEnvironment(new Environment('di-fail3'))

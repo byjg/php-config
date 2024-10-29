@@ -3,27 +3,42 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\RunTimeException;
+use Exception;
+use ByJG\Config\Exception\DependencyInjectionException;
+use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use ByJG\Config\Exception\KeyNotFoundException;
 use Closure;
 use Psr\Container\ContainerInterface;
 use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 
-class Container implements ContainerInterface
+class Container implements ContainerInterface, ContainerInterfaceExtended
 {
-    private $config = [];
+    private array $config;
 
-    private $processedEagers = false;
+    private string $definitionName;
 
-    private $configChanged = [];
+    private bool $processedEagers = false;
 
-    public function __construct($config, $definitionName = null, $cacheObject = null)
+    private bool $configChanged = false;
+
+    private ?CacheInterface $cacheObject = null;
+    private ?string $cacheKey = null;
+    private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
+
+    /**
+     * @throws Exception
+     */
+    public function __construct(array $config, string $definitionName = null, CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
-            $this->saveToCache($definitionName, $cacheObject);
+            $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
+        $this->definitionName = $definitionName ?? 'default';
         $this->initializeParsers();
         $this->processEagerSingleton();
     }
@@ -33,11 +48,12 @@ class Container implements ContainerInterface
      *
      * @param string $id Identifier of the entry to look for.
      * @return mixed Entry.
-     * @throws Exception\DependencyInjectionException
+     * @throws ConfigException
+     * @throws DependencyInjectionException
      * @throws KeyNotFoundException
      * @throws ReflectionException
      */
-    public function get(string $id)
+    public function get(string $id): mixed
     {
         $value = $this->raw($id);
 
@@ -74,9 +90,9 @@ class Container implements ContainerInterface
         return call_user_func_array($value, $args);
     }
 
-    protected function set($key, $value)
+    protected function set(string $id, mixed $value): void
     {
-        $this->config[$key] = $value;
+        $this->config[$id] = $value;
         $this->configChanged = true;
     }
 
@@ -95,50 +111,99 @@ class Container implements ContainerInterface
     }
 
     /**
-     * @param $id
+     * @param string $id
      * @return mixed
      * @throws KeyNotFoundException
      */
-    public function raw($id)
+    public function raw(string $id): mixed
     {
         if (!$this->has($id)) {
             throw new KeyNotFoundException("The key '$id' does not exists");
         }
 
+        if ($this->config[$id] === hex2bin("FF")) {
+            $this->config[$id] = $this->cacheObject->get($this->cacheKey . "-" . $this->fixCacheKeyName($id));
+        }
+
         return $this->config[$id];
     }
 
-    public function saveToCache($definitionName, CacheInterface $cacheObject)
+    public function getAsFilename(string $id): string
+    {
+        # Transform ID into a valid filename
+        $id = preg_replace('/[^a-zA-Z0-9]/', '_', $id);
+
+        $filename = sys_get_temp_dir() . "/config-{$this->definitionName}-$id.php";
+        if (!file_exists($filename)) {
+            $contents = $this->get($id);
+            if (!is_string($contents)) {
+                throw new RunTimeException("The content of '$id' is not a string");
+            }
+            file_put_contents($filename, $contents);
+        }
+        return $filename;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * @throws PhpVersionNotSupportedException
+     * @throws Exception
+     */
+    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): bool
     {
         if ($this->configChanged) {
-            throw new \Exception("The configuration was changed. Can't save to cache.");
+            throw new Exception("The configuration was changed. Can't save to cache.");
         }
+
+        $this->cacheObject = $cacheObject;
+        $this->cacheKey = "container-cache-$definitionName";
+        $this->cacheMode = $cacheModeEnum;
 
         $toCache = [];
         foreach ($this->config as $key => $value) {
+            $valueSerialized = null;
             if ($value instanceof Closure) {
-                $toCache[$key] = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
+                $valueSerialized = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
             } else if ($value instanceof DependencyInjection) {
-                $toCache[$key] = "!unserialize " . base64_encode(serialize($value));
+                $valueSerialized = "!unserialize " . base64_encode(serialize($value));
+            }
+
+            if ($this->cacheMode === CacheModeEnum::multipleFiles && !is_null($valueSerialized)) {
+                $this->cacheObject->set($this->cacheKey . "-" . $this->fixCacheKeyName($key), $valueSerialized);
+                $toCache[$key] = hex2bin("FF");
             } else {
-                $toCache[$key] = $value;
+                $toCache[$key] = $valueSerialized ?? $value;
             }
         }
-        return $cacheObject->set("container-cache-$definitionName", serialize($toCache));
+
+        return $this->cacheObject->set($this->cacheKey, serialize($toCache));
     }
 
-    public static function createFromCache($definitionName, CacheInterface $cacheObject)
+    protected function fixCacheKeyName(string $key): string
+    {
+        return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $key));
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     * @throws Exception
+     */
+    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): ?Container
     {
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {
             $fromCache = unserialize($fromCache);
-            return new Container($fromCache);
+            $container = new Container($fromCache, $definitionName);
+            $container->cacheObject = $cacheObject;
+            $container->cacheKey = "container-cache-$definitionName";
+            $container->cacheMode = $cacheModeEnum;
+            return $container;
         }
 
         return null;
     }
 
-    public function compare(?Container $container)
+    public function compare(?Container $container): bool
     {
         if (is_null($container)) {
             return false;
@@ -162,7 +227,13 @@ class Container implements ContainerInterface
         return empty($diff);
     }
 
-    protected function processEagerSingleton()
+    /**
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws ReflectionException
+     * @throws ConfigException
+     */
+    protected function processEagerSingleton(): void
     {
         if ($this->processedEagers) {
             return;
@@ -177,7 +248,7 @@ class Container implements ContainerInterface
         }
     }
 
-    public function releaseSingletons($exceptList = [])
+    public function releaseSingletons(array $exceptList = []): void
     {
         foreach ($this->config as $key => $value) {
             if ($value instanceof DependencyInjection and !in_array($key, $exceptList)) {
@@ -186,7 +257,7 @@ class Container implements ContainerInterface
         }
     }
 
-    protected function initializeParsers()
+    protected function initializeParsers(): void
     {
         if (ParamParser::isParserExists('initialized')) {
             return;
@@ -217,7 +288,7 @@ class Container implements ContainerInterface
                     $item = explode('=', $item);
                     $result[trim($item[0])] = trim($item[1]);
                 }
-            } catch (\Exception $ex) {
+            } catch (Exception $ex) {
                 throw new ConfigException("Invalid dict format '$value'");
             }
             return $result;

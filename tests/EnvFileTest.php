@@ -1,8 +1,7 @@
 <?php
 
-namespace Test;
+namespace Tests;
 
-use ByJG\Cache\Psr16\ArrayCacheEngine;
 use ByJG\Cache\Psr16\NoCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
@@ -56,7 +55,6 @@ class EnvFileTest extends TestCase
         putenv('APP_ENV=file');
         $config = $this->object->build();
 
-        ;
         $this->assertTrue($config->saveToCache("file", new NoCacheEngine()));
     }
 

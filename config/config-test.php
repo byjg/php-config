@@ -2,8 +2,8 @@
 
 use ByJG\Config\DependencyInjection as DI;
 use ByJG\Config\Param;
-use Test\DIClasses\Area;
-use Test\DIClasses\RectangleTriangle;
+use Tests\DIClasses\Area;
+use Tests\DIClasses\RectangleTriangle;
 
 return [
     'property1' => 'string',
@@ -14,7 +14,7 @@ return [
     'property5' => 'test',
 
     'property6' => function () {
-        $x = new Test\DIClasses\Square(2);
+        $x = new Tests\DIClasses\Square(2);
         return $x->calculate();
     },
 

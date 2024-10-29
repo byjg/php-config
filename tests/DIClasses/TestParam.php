@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Test\DIClasses;
+namespace Tests\DIClasses;
 
 use Exception;
 
