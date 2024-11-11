@@ -4,6 +4,7 @@ namespace Tests;
 
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\KeyStatusEnum;
 use Tests\DIClasses\Area;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\Random;
@@ -29,12 +30,16 @@ class DependencyInjectionTest extends TestCase
         $diTest2 = new Environment('di-test2');
         $diTest3 = new Environment('di-test3');
         $diTest4 = new Environment('di-test4');
+        $diTest5 = new Environment('di-test5', inheritFrom: [$diTest4]);
+        $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
             ->addEnvironment($diTest2)
             ->addEnvironment($diTest3)
             ->addEnvironment($diTest4)
+            ->addEnvironment($diTest5)
+            ->addEnvironment($diTest6)
         ;
     }
 
@@ -153,6 +158,48 @@ class DependencyInjectionTest extends TestCase
         $this->assertInstanceOf(Random::class, $singleton3);
 
         $this->assertNotSame($singleton1, $singleton3);
+    }
+
+    public function testEagerSingleton()
+    {
+        $config = $this->object->build('di-test4');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(Square::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+    }
+
+    public function testEagerSingletonInherit()
+    {
+        $config = $this->object->build('di-test5');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(Square::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+    }
+
+    public function testEagerSingletonInheritDisabling()
+    {
+        $config = $this->object->build('di-test6');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(TestParam::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(TestParam::class));
     }
 
 

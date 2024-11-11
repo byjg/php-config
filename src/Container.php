@@ -21,7 +21,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 
     private string $definitionName;
 
-    private bool $processedEagers = false;
+    private static array $eagerSingleton = [];
 
     private bool $configChanged = false;
 
@@ -108,6 +108,28 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     public function has(string $id): bool
     {
         return isset($this->config[$id]);
+    }
+
+    /**
+     * @param string $id
+     * @return KeyStatusEnum|null
+     */
+    public function keyStatus(string $id): ?KeyStatusEnum
+    {
+        if (!$this->has($id)) {
+            return KeyStatusEnum::NOT_FOUND;
+        }
+
+        if ($this->config[$id] instanceof DependencyInjection) {
+            if ($this->config[$id]->isLoaded()) {
+                return KeyStatusEnum::IN_MEMORY;
+            } else if ($this->config[$id]->wasUsed()) {
+                return KeyStatusEnum::WAS_USED;
+            } else {
+                return KeyStatusEnum::NOT_USED;
+            }
+        }
+        return KeyStatusEnum::STATIC;
     }
 
     /**
@@ -235,17 +257,22 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      */
     protected function processEagerSingleton(): void
     {
-        if ($this->processedEagers) {
+        if (count(self::$eagerSingleton) === 0) {
             return;
         }
 
-        $this->processedEagers = true;
-
-        foreach ($this->config as $key => $value) {
-            if ($value instanceof DependencyInjection and $value->isEagerSingleton()) {
-                $this->get($key);
+        foreach (self::$eagerSingleton as $value) {
+            if ($this->has($value)) {
+                $this->get($value);
             }
         }
+
+        self::$eagerSingleton = [];
+    }
+
+    public static function addEagerSingleton(string $id): void
+    {
+        self::$eagerSingleton[] = $id;
     }
 
     public function releaseSingletons(array $exceptList = []): void

@@ -23,7 +23,7 @@ class DependencyInjection
 
     protected ?array $args = [];
 
-    protected ?object $instance;
+    protected ?object $instance = null;
 
     protected bool $singleton = false;
 
@@ -34,6 +34,8 @@ class DependencyInjection
     protected array $methodCall = [];
 
     protected bool $eager = false;
+
+    protected bool $processed = false;
 
     /**
      * @param $containerInterface ContainerInterface
@@ -310,6 +312,8 @@ class DependencyInjection
             throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
         }
 
+        $this->processed = true;
+
         return $instance;
     }
 
@@ -400,6 +404,16 @@ class DependencyInjection
     public function isEagerSingleton(): bool
     {
         return $this->eager;
+    }
+
+    public function isLoaded(): bool
+    {
+        return (!is_null($this->instance));
+    }
+
+    public function wasUsed(): bool
+    {
+        return $this->processed;
     }
 
     public function releaseInstance()

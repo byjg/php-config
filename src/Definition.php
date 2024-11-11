@@ -249,6 +249,8 @@ class Definition
             $envValue = getenv($key);
             if (!empty($envValue)) {
                 $config[$key] = $envValue;
+            } elseif ($config[$key] instanceof DependencyInjection && $config[$key]->isEagerSingleton()) {
+                Container::addEagerSingleton($key);
             }
         }
 

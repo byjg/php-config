@@ -9,4 +9,6 @@ interface ContainerInterfaceExtended
     public function raw(string $id): mixed;
 
     public function getAsFilename(string $id): string;
+
+    public function keyStatus(string $id): ?KeyStatusEnum;
 }
