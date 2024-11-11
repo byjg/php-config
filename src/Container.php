@@ -36,6 +36,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
+            $this->config["__eager_singleton"] = Container::$eagerSingleton;
             $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
         $this->definitionName = $definitionName ?? 'default';
@@ -120,6 +121,14 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             return KeyStatusEnum::NOT_FOUND;
         }
 
+        if ($this->isCachedDependencyInjection($id)) {
+            return KeyStatusEnum::NOT_USED;
+        }
+
+        if (is_string($this->config[$id]) && str_starts_with($this->config[$id], '!dicached')) {
+            return KeyStatusEnum::NOT_USED;
+        }
+
         if ($this->config[$id] instanceof DependencyInjection) {
             if ($this->config[$id]->isLoaded()) {
                 return KeyStatusEnum::IN_MEMORY;
@@ -143,11 +152,16 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             throw new KeyNotFoundException("The key '$id' does not exists");
         }
 
-        if ($this->config[$id] === hex2bin("FF")) {
+        if ($this->isCachedDependencyInjection($id)) {
             $this->config[$id] = $this->cacheObject->get($this->cacheKey . "-" . $this->fixCacheKeyName($id));
         }
 
         return $this->config[$id];
+    }
+
+    protected function isCachedDependencyInjection($id): bool
+    {
+        return $this->config[$id] === hex2bin("FF");
     }
 
     public function getAsFilename(string $id): string
@@ -187,7 +201,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             if ($value instanceof Closure) {
                 $valueSerialized = "!unserclosure " . base64_encode(serialize(new SerializableClosure($value)));
             } else if ($value instanceof DependencyInjection) {
-                $valueSerialized = "!unserialize " . base64_encode(serialize($value));
+                $valueSerialized = "!dicached " . base64_encode(serialize($value));
             }
 
             if ($this->cacheMode === CacheModeEnum::multipleFiles && !is_null($valueSerialized)) {
@@ -219,6 +233,8 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             $container->cacheObject = $cacheObject;
             $container->cacheKey = "container-cache-$definitionName";
             $container->cacheMode = $cacheModeEnum;
+            Container::$eagerSingleton = $container->get("__eager_singleton");
+            $container->processEagerSingleton();
             return $container;
         }
 
@@ -326,6 +342,10 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         });
 
         ParamParser::addParser('unserialize', function ($value) {
+            return unserialize(base64_decode($value));
+        });
+
+        ParamParser::addParser('dicached', function ($value) {
             return unserialize(base64_decode($value));
         });
 
