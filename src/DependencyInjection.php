@@ -37,6 +37,8 @@ class DependencyInjection
 
     protected bool $processed = false;
 
+    protected bool $delayedInstance = false;
+
     /**
      * @param $containerInterface ContainerInterface
      * @return $this
@@ -296,6 +298,12 @@ class DependencyInjection
         return $this;
     }
 
+    public function toDelayedInstance(): static
+    {
+        $this->delayedInstance = true;
+        return $this;
+    }
+
     /**
      * @return object
      * @throws ContainerExceptionInterface
@@ -304,8 +312,12 @@ class DependencyInjection
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public function getInstance(): mixed
+    public function getInstance(mixed ...$args): mixed
     {
+        if (!empty($args)) {
+            $this->args = $args;
+        }
+
         $instance = $this->getInternalInstance();
 
         if (is_null($instance)) {
@@ -409,6 +421,11 @@ class DependencyInjection
     public function isLoaded(): bool
     {
         return (!is_null($this->instance));
+    }
+
+    public function isDelayedInstance(): bool
+    {
+        return $this->delayedInstance;
     }
 
     public function wasUsed(): bool

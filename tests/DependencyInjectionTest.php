@@ -4,6 +4,7 @@ namespace Tests;
 
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 use ByJG\Config\CacheModeEnum;
+use ByJG\Config\DependencyInjection;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
 use ByJG\Config\KeyStatusEnum;
@@ -73,6 +74,27 @@ class DependencyInjectionTest extends TestCase
         $injectedLegacy = $config->get(InjectedLegacy::class);
         $this->assertInstanceOf(InjectedLegacy::class, $injectedLegacy);
         $this->assertEquals(24, $injectedLegacy->calculate());
+    }
+
+    public function testGetLazyInstance()
+    {
+        $config = $this->object->build('di-test');
+
+        $random = $config->get("Random2");
+        $this->assertInstanceOf(DependencyInjection::class, $random);
+        $random2 = $random->getInstance(10);
+        $this->assertInstanceOf(Random::class, $random2);
+        $this->assertEquals(10, $random2->getNumber());
+        $random3 = $random->getInstance(30);
+        $this->assertInstanceOf(Random::class, $random3);
+        $this->assertEquals(30, $random3->getNumber());
+
+        $random4 = $config->get("Random2")->getInstance(10);
+        $this->assertInstanceOf(Random::class, $random4);
+        $this->assertEquals(10, $random4->getNumber());
+
+        $this->assertNotSame($random2, $random3);
+        $this->assertNotSame($random2, $random4);
     }
 
     public function testGetInstancesControl()

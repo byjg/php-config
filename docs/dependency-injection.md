@@ -90,7 +90,7 @@ $config = $definition->build();
 $square = $config->get(\Example\Square::class);
 ```
 
-## Injecting automatically the Objects
+## Injecting automatically the constructor arguments
 
 Let's figure it out this class:
 
@@ -126,7 +126,7 @@ return [
 ];
 ```
 
-When use use the method `withInjectedConstructor()` the container will try to inject the constructor automatically based on
+When use the method `withInjectedConstructor()` the container will try to inject the constructor automatically based on
 its type. Since we previously defined the classes `Square` and `RectangleTriangle` the container will inject the instances
 automatically.
 
@@ -134,7 +134,62 @@ This component uses the PHP Document to determine the classed are required.
 
 ## Get a singleton object
 
-The `DependencyInjection` class will return a new instance every time you require a new object. However, you can return always the same object by adding `toSingleton()` instead of `toInstance()`.
+The `DependencyInjection` class with the parameter `toInstance()` will return a new instance 
+every time you require a new object. 
+
+However, you can return always the same object by adding `toSingleton()` instead of `toInstance()`.
+
+## Eager Singleton
+
+Eager Singleton looks like a Singleton, but it creates the instance immediately after the definition.
+
+It is useful when you need a specific object to be created before the application starts.
+
+## Delayed Instance
+
+The delayed instance will not return the object immediately. 
+Instead, it will return the DependencyInjection object, and then you can get the instance with
+customized constructor arguments.
+
+You should prefer to use `toInstance()` or `toSingleton()` instead of `toDelayedInstance()`.
+
+Only use `toDelayedInstance()` when you need to pass custom arguments to the constructor for every
+instance you get from the container.
+
+```php
+<?php
+return [
+    // ....
+
+    Square::class => DI::bind(Square::class)
+        ->toDelayedInstance(),
+ ];
+```
+
+And then you can get the instance with custom arguments:
+
+```php
+<?php
+
+$square1 = $config->get(Square::class)->getInstance(5);
+$square2 = $config->get(Square::class)->getInstance(7);
+```
+
+Delayed Instances cannot be used with:
+
+- `withFactoryMethod()`.
+- `withInjectedConstructor()`.
+- `withInjectedLegacyConstructor()`.
+- `withConstructorNoArgs()`.
+
+Delayed Instances also cannot be:
+
+- Injected automatically to the constructor. 
+  This means class have `withInjectedConstructor()` or `withInjectedLegacyConstructor()` pointing to a delayed instance
+  will fail.
+
+
+
 
 ## All options (bind)
 
@@ -157,9 +212,11 @@ The `DependencyInjection` class will return a new instance every time you requir
 
     // How will you get a instance?
     // ----------------------------
-    ->toInstance()                   // get a new instance for every every time you get from the container
+    ->toInstance()                   // get a new instance for every time you get from the container
     ->toSingleton()                  // get the same instance for every time you get from the container
     ->toEagerSingleton()             // same as singleton however get a new instance immediately after the definition.
+    ->toDelayedInstance()            // get a new instance for every time you get from the container,
+                                     // however you can force the constructor parameters
 ;
 ```
 
