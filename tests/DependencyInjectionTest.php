@@ -2,8 +2,13 @@
 
 namespace Tests;
 
+use ByJG\Cache\Psr16\FileSystemCacheEngine;
+use ByJG\Config\CacheModeEnum;
+use ByJG\Config\DependencyInjection;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\KeyStatusEnum;
+use Psr\SimpleCache\CacheInterface;
 use Tests\DIClasses\Area;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\Random;
@@ -20,21 +25,33 @@ class DependencyInjectionTest extends TestCase
      */
     protected $object;
 
+    protected ?CacheInterface $cache = null;
+
     /**
      * @throws \ByJG\Config\Exception\ConfigException
      */
     public function setUp(): void
     {
+        $this->cache = new FileSystemCacheEngine('cache-test');
+
         $diTest = new Environment('di-test');
         $diTest2 = new Environment('di-test2');
         $diTest3 = new Environment('di-test3');
         $diTest4 = new Environment('di-test4');
+        $diTest5 = new Environment('di-test5', inheritFrom: [$diTest4]);
+        $diTest5CacheMultiple = new Environment('di-test5-cache-multiple', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
+        $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::singleFile);
+        $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
             ->addEnvironment($diTest2)
             ->addEnvironment($diTest3)
             ->addEnvironment($diTest4)
+            ->addEnvironment($diTest5)
+            ->addEnvironment($diTest5CacheMultiple)
+            ->addEnvironment($diTest5CacheSingle)
+            ->addEnvironment($diTest6)
         ;
     }
 
@@ -57,6 +74,27 @@ class DependencyInjectionTest extends TestCase
         $injectedLegacy = $config->get(InjectedLegacy::class);
         $this->assertInstanceOf(InjectedLegacy::class, $injectedLegacy);
         $this->assertEquals(24, $injectedLegacy->calculate());
+    }
+
+    public function testGetLazyInstance()
+    {
+        $config = $this->object->build('di-test');
+
+        $random = $config->get("Random2");
+        $this->assertInstanceOf(DependencyInjection::class, $random);
+        $random2 = $random->getInstance(10);
+        $this->assertInstanceOf(Random::class, $random2);
+        $this->assertEquals(10, $random2->getNumber());
+        $random3 = $random->getInstance(30);
+        $this->assertInstanceOf(Random::class, $random3);
+        $this->assertEquals(30, $random3->getNumber());
+
+        $random4 = $config->get("Random2")->getInstance(10);
+        $this->assertInstanceOf(Random::class, $random4);
+        $this->assertEquals(10, $random4->getNumber());
+
+        $this->assertNotSame($random2, $random3);
+        $this->assertNotSame($random2, $random4);
     }
 
     public function testGetInstancesControl()
@@ -155,6 +193,84 @@ class DependencyInjectionTest extends TestCase
         $this->assertNotSame($singleton1, $singleton3);
     }
 
+    public function testEagerSingleton()
+    {
+        $config = $this->object->build('di-test4');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(Square::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+    }
+
+    public function testEagerSingletonInherit()
+    {
+        $config = $this->object->build('di-test5');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(Square::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+    }
+
+    public function testEagerSingletonInheritDisabling()
+    {
+        $config = $this->object->build('di-test6');
+
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(TestParam::class));
+
+        $square = $config->get(TestParam::class);
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(TestParam::class));
+    }
+
+
+    public function testEagerSingletonAndCacheMultipleFiles()
+    {
+        $this->cache->clear();
+
+        // Needs to run twice - one to create the cache and another to use the cache
+        for ($i = 0; $i < 10; $i++) {
+            $config = $this->object->build('di-test5-cache-multiple');
+
+            $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+            $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+            $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+            $square = $config->get(Square::class);
+            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+        }
+    }
+
+    public function testEagerSingletonAndCacheSingleFile()
+    {
+        $this->cache->clear();
+
+        // Needs to run twice - one to create the cache and another to use the cache
+        for ($i = 0; $i < 10; $i++) {
+            $config = $this->object->build('di-test5-cache-single');
+
+            $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
+            $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
+            $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+
+            $square = $config->get(Square::class);
+            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+        }
+    }
 
     public function testGetInstancesWithParam()
     {

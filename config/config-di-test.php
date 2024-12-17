@@ -27,4 +27,7 @@ return [
     InjectedLegacy::class => DI::bind(InjectedLegacy::class)
         ->withInjectedLegacyConstructor()
         ->toInstance(),
+
+    "Random2" => DI::bind(Random::class)
+        ->toDelayedInstance(),
 ];

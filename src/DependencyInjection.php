@@ -23,7 +23,7 @@ class DependencyInjection
 
     protected ?array $args = [];
 
-    protected ?object $instance;
+    protected ?object $instance = null;
 
     protected bool $singleton = false;
 
@@ -34,6 +34,10 @@ class DependencyInjection
     protected array $methodCall = [];
 
     protected bool $eager = false;
+
+    protected bool $processed = false;
+
+    protected bool $delayedInstance = false;
 
     /**
      * @param $containerInterface ContainerInterface
@@ -294,6 +298,12 @@ class DependencyInjection
         return $this;
     }
 
+    public function toDelayedInstance(): static
+    {
+        $this->delayedInstance = true;
+        return $this;
+    }
+
     /**
      * @return object
      * @throws ContainerExceptionInterface
@@ -302,13 +312,19 @@ class DependencyInjection
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public function getInstance(): mixed
+    public function getInstance(mixed ...$args): mixed
     {
+        if (!empty($args)) {
+            $this->args = $args;
+        }
+
         $instance = $this->getInternalInstance();
 
         if (is_null($instance)) {
             throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
         }
+
+        $this->processed = true;
 
         return $instance;
     }
@@ -400,6 +416,21 @@ class DependencyInjection
     public function isEagerSingleton(): bool
     {
         return $this->eager;
+    }
+
+    public function isLoaded(): bool
+    {
+        return (!is_null($this->instance));
+    }
+
+    public function isDelayedInstance(): bool
+    {
+        return $this->delayedInstance;
+    }
+
+    public function wasUsed(): bool
+    {
+        return $this->processed;
     }
 
     public function releaseInstance()
