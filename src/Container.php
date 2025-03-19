@@ -10,7 +10,10 @@ use Laravel\SerializableClosure\Exceptions\PhpVersionNotSupportedException;
 use Laravel\SerializableClosure\SerializableClosure;
 use ByJG\Config\Exception\KeyNotFoundException;
 use Closure;
+use Override;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
@@ -48,13 +51,18 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * Finds an entry of the container by its identifier and returns it.
      *
      * @param string $id Identifier of the entry to look for.
+     * @param mixed ...$args
      * @return mixed Entry.
      * @throws ConfigException
+     * @throws ContainerExceptionInterface
      * @throws DependencyInjectionException
+     * @throws InvalidArgumentException
      * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public function get(string $id): mixed
+    #[Override]
+    public function get(string $id, mixed ...$args): mixed
     {
         $value = $this->raw($id);
 
@@ -80,8 +88,6 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         if (!($value instanceof Closure)) {
             return $value;
         }
-
-        $args = array_slice(func_get_args(), 1);
 
         if (count($args) === 1 && is_array($args[0])) {
             $args = $args[0];
@@ -109,6 +115,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @param string $id Identifier of the entry to look for.
      * @return bool
      */
+    #[Override]
     public function has(string $id): bool
     {
         return isset($this->config[$id]);
@@ -118,6 +125,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @param string $id
      * @return KeyStatusEnum|null
      */
+    #[Override]
     public function keyStatus(string $id): ?KeyStatusEnum
     {
         if (!$this->has($id)) {
@@ -147,8 +155,10 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     /**
      * @param string $id
      * @return mixed
+     * @throws InvalidArgumentException
      * @throws KeyNotFoundException
      */
+    #[Override]
     public function raw(string $id): mixed
     {
         if (!$this->has($id)) {
@@ -167,6 +177,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         return $this->config[$id] === hex2bin("FF");
     }
 
+    #[Override]
     public function getAsFilename(string $id): string
     {
         # Transform ID into a valid filename

@@ -11,6 +11,7 @@ use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\KeyNotFoundException;
 use ByJG\Config\Exception\RunTimeException;
+use Override;
 use Psr\SimpleCache\InvalidArgumentException;
 use Tests\DIClasses\Area;
 use PHPUnit\Framework\TestCase;
@@ -23,8 +24,9 @@ class ContainerTest extends TestCase
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws ConfigException
      */
+    #[Override]
     public function setUp(): void
     {
         $test = new Environment('test');
@@ -50,6 +52,7 @@ class ContainerTest extends TestCase
         ;
     }
 
+    #[Override]
     public function tearDown(): void
     {
         putenv('APP_ENV');
@@ -66,7 +69,7 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws ConfigException
      * @throws ConfigNotFoundException
      * @throws InvalidArgumentException
      */
@@ -77,7 +80,7 @@ class ContainerTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws ConfigException
      * @throws ConfigNotFoundException
      * @throws InvalidArgumentException
      */
@@ -208,7 +211,7 @@ class ContainerTest extends TestCase
 
     public function testLoadConfigNotExistant2()
     {
-        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("Configuration 'notset' does not defined");
 
         $this->object->build('notset');

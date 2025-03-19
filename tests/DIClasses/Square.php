@@ -3,6 +3,8 @@
 
 namespace Tests\DIClasses;
 
+use Override;
+
 class Square implements Area
 {
     protected $side;
@@ -12,7 +14,8 @@ class Square implements Area
         $this->side = $side;
     }
 
-    public function calculate()
+    #[Override]
+    public function calculate(): float|int
     {
         return $this->side * $this->side;
     }

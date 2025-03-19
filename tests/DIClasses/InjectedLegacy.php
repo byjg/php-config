@@ -3,6 +3,8 @@
 
 namespace Tests\DIClasses;
 
+use Override;
+
 class InjectedLegacy implements Area
 {
     protected $triangle;
@@ -19,7 +21,8 @@ class InjectedLegacy implements Area
         $this->random = $random;
     }
 
-    public function calculate()
+    #[Override]
+    public function calculate(): float|int
     {
         return $this->random->getNumber() * $this->triangle->calculate();
     }
