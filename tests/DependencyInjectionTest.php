@@ -7,8 +7,17 @@ use ByJG\Config\CacheModeEnum;
 use ByJG\Config\DependencyInjection;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\Exception\ConfigException;
+use ByJG\Config\Exception\ConfigNotFoundException;
+use ByJG\Config\Exception\DependencyInjectionException;
+use ByJG\Config\Exception\KeyNotFoundException;
 use ByJG\Config\KeyStatusEnum;
+use Override;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\SimpleCache\CacheInterface;
+use Psr\SimpleCache\InvalidArgumentException;
+use ReflectionException;
 use Tests\DIClasses\Area;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\Random;
@@ -21,15 +30,16 @@ use PHPUnit\Framework\TestCase;
 class DependencyInjectionTest extends TestCase
 {
     /**
-     * @var \ByJG\Config\Definition
+     * @var Definition
      */
     protected $object;
 
     protected ?CacheInterface $cache = null;
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws ConfigException
      */
+    #[Override]
     public function setUp(): void
     {
         $this->cache = new FileSystemCacheEngine('cache-test');
@@ -297,13 +307,13 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(6, $config->get('Value'));
     }
     /**
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws InvalidArgumentException
      */
     public function testInjectConstructorFail()
     {
-        $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
+        $this->expectException(DependencyInjectionException::class);
         $this->expectExceptionMessage("The class Tests\DIClasses\InjectedFail does not have annotations with the param type");
 
         $this->object = (new Definition())
@@ -314,13 +324,13 @@ class DependencyInjectionTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws InvalidArgumentException
      */
     public function testInjectConstructorFail2()
     {
-        $this->expectException(\ByJG\Config\Exception\DependencyInjectionException::class);
+        $this->expectException(DependencyInjectionException::class);
         $this->expectExceptionMessage("The parameter '\$area' has no type defined in class 'Tests\DIClasses\InjectedFail'");
 
         $this->object = (new Definition())
@@ -331,16 +341,18 @@ class DependencyInjectionTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \ByJG\Config\Exception\KeyNotFoundException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @throws \ReflectionException
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     public function testGetInstancesFail3_1()
     {
-        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectException(KeyNotFoundException::class);
         $this->expectExceptionMessage("The key 'Tests\DIClasses\Area' does not exists injected from 'Tests\DIClasses\SumAreas'");
 
         $this->object = (new Definition())
@@ -354,16 +366,18 @@ class DependencyInjectionTest extends TestCase
     }
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigNotFoundException
-     * @throws \ByJG\Config\Exception\DependencyInjectionException
-     * @throws \ByJG\Config\Exception\ConfigException
-     * @throws \ByJG\Config\Exception\KeyNotFoundException
-     * @throws \Psr\SimpleCache\InvalidArgumentException
-     * @throws \ReflectionException
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws DependencyInjectionException
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     * @throws ReflectionException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function testGetInstancesFail3_2()
     {
-        $this->expectException(\ByJG\Config\Exception\KeyNotFoundException::class);
+        $this->expectException(KeyNotFoundException::class);
         $this->expectExceptionMessage("The key 'Tests\DIClasses\Area' does not exists injected from 'Tests\DIClasses\InjectedLegacy'");
 
         $this->object = (new Definition())

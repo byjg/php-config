@@ -4,5 +4,5 @@ namespace Tests\DIClasses;
 
 interface Area
 {
-    public function calculate();
+    public function calculate(): float|int;
 }

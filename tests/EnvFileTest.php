@@ -5,24 +5,29 @@ namespace Tests;
 use ByJG\Cache\Psr16\NoCacheEngine;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\Exception\ConfigException;
+use Exception;
+use Override;
 use PHPUnit\Framework\TestCase;
 
 class EnvFileTest extends TestCase
 {
     /**
-     * @var \ByJG\Config\Definition
+     * @var Definition
      */
     protected $object;
 
     /**
-     * @throws \ByJG\Config\Exception\ConfigException
+     * @throws ConfigException
      */
+    #[Override]
     public function setUp(): void
     {
         $this->object = (new Definition())
             ->addEnvironment(new Environment('file'));
     }
 
+    #[Override]
     public function tearDown(): void
     {
         putenv('APP_ENV');
@@ -60,7 +65,7 @@ class EnvFileTest extends TestCase
 
     public function testCannotSaveToCacheAfterChange()
     {
-        $this->expectException(\Exception::class);
+        $this->expectException(Exception::class);
         $this->expectExceptionMessage("The configuration was changed. Can't save to cache.");
 
         putenv('APP_ENV=file');
@@ -73,7 +78,7 @@ class EnvFileTest extends TestCase
 
     public function testMissingCustomParser()
     {
-        $this->expectException(\ByJG\Config\Exception\ConfigException::class);
+        $this->expectException(ConfigException::class);
         $this->expectExceptionMessage("Parser for 'nonexistent' not found");
 
         putenv('APP_ENV=file2');
