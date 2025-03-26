@@ -280,10 +280,13 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     }
 
     /**
-     * @throws DependencyInjectionException
-     * @throws KeyNotFoundException
-     * @throws ReflectionException
      * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     protected function processEagerSingleton(): void
     {

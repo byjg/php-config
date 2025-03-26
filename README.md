@@ -18,6 +18,8 @@ This is a basic and minimalist implementation of PSR-11 for config management an
 - **Type Conversion**: Built-in parsers for converting configuration values to specific types
 - **Caching Support**: Optional caching of configuration values for improved performance
 - **Environment Inheritance**: Environments can inherit from one another to reduce configuration duplication
+- **Abstract & Final Environments**: Design flexible environment hierarchies with constraints
+- **Performance Optimizations**: Configure caching modes for different use cases
 
 ## Simple Example
 
@@ -121,6 +123,7 @@ Follow the steps below:
 - [Learn about special types](docs/special-types.md);
 - [Configure your webserver](docs/configure-webserver.md);
 - [Follow good practices](docs/good-practices.md);
+- [Explore advanced features](docs/advanced-features.md);
 
 ## Installation
 
