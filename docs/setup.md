@@ -1,3 +1,7 @@
+---
+sidebar_position: 1
+---
+
 # Setup
 
 ## Configuration files
@@ -8,9 +12,9 @@ Let's say we want to work with a development environment and a production enviro
 
 Let's call development as `dev` and production as `prod`. You need to create a folder called `config` in your project root at the same level of the vendor directory.
 
-Inside these folders create files called "config-dev.php", "config-test.php" where dev, test, live, etc are your configuration sets.
+Inside these folders create files called "config-dev.php", "config-prod.php" where dev, prod, etc. are your configuration sets.
 
-Your folder will look like to:
+Your folder will look like this:
 
 ```text
 <project root>
@@ -48,13 +52,17 @@ The file named `.env` will be loaded to ALL ENVIRONMENTS.
 
 ### The .php file
 
-The `*.php` needs to return an associative with the configuration values. It can return:
+The `*.php` file needs to return an associative array with the configuration values. It can return:
 
 - A single value
 - A closure - It will process the value only when it is requested
 - A dependency injection definition
 
 ```php
+<?php
+
+use ByJG\Config\DependencyInjection as DI;
+use Example\SumAreas;
 
 return [
     'property1' => 'string',
@@ -63,7 +71,7 @@ return [
         return 'xxxxxx';
     },
     'propertyWithArgs' => function ($p1, $p2) {
-        return 'xxxxxx';
+        return "Result with $p1 and $p2";
     },
     SumAreas::class => DI::bind(SumAreas::class)
         ->withInjectedConstructor()
@@ -73,11 +81,11 @@ return [
 
 ## Advanced configuration
 
-It is possible instead of a single file, you can have a folder with multiple files. The files will be loaded in alphabetical order.
+It is possible instead of a single file, to have a folder with multiple files. The files will be loaded in alphabetical order.
 
 Each folder inside the `config` directory will be the name of the environment. The example below will have two environments: `dev` and `prod`.
 
-The file names inside the folder doesn't matter and don't need to be same in the other environments. 
+The file names inside the folder don't matter and don't need to be the same in the other environments. 
 The only thing that matters is the extension. It can be only `.env` or `.php`.
 
 ```text
@@ -101,14 +109,24 @@ The only thing that matters is the extension. It can be only `.env` or `.php`.
 
 This option is useful when you have a lot of configuration files, and you want to split them into multiple files.
 
-You can combine both folder and standalone files. In that case the individual files will take precedence over folder files.
+You can combine both folder and standalone files. In that case, the individual files will take precedence over folder files.
 
 
 ## Inheritance between environments
 
-One environment can inherit from another. This means that the environment that inherits will have all the variables of the inherited environment and can override them if the names matches.
+One environment can inherit from another. This means that the environment that inherits will have all the variables of the inherited environment and can override them if the names match.
 
 That's very important because you can have a common configuration for all environments and override only the variables that are different.
+
+To configure inheritance, you can specify it when creating the Environment object:
+
+```php
+<?php
+use ByJG\Config\Environment;
+
+$dev = new Environment('dev');
+$prod = new Environment('prod', ['dev']); // 'prod' inherits from 'dev'
+```
 
 ## Load Priority
 
@@ -116,11 +134,11 @@ If you have multiple files and the same variable is defined in more than one fil
 the system will override the value with the value defined by the last file loaded with the same variable.
 
 The load order is:
-- `config-<ENV>.php`
-- `config-<ENV>.env`
-- `<ENV>/*.php`
-- `<ENV>/*.env`
-- `.env`
+1. `config-<ENV>.php`
+2. `config-<ENV>.env`
+3. `<ENV>/*.php` (in alphabetical order)
+4. `<ENV>/*.env` (in alphabetical order)
+5. `.env`
 
 
 ----
