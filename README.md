@@ -124,6 +124,7 @@ Follow the steps below:
 - [Configure your webserver](docs/configure-webserver.md);
 - [Follow good practices](docs/good-practices.md);
 - [Explore advanced features](docs/advanced-features.md);
+- [Using a PSR-11 Facade](docs/psr11-container.md);
 
 ## Installation
 

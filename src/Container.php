@@ -33,7 +33,18 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
 
     /**
-     * @throws Exception
+     * @param array $config
+     * @param string|null $definitionName
+     * @param CacheInterface|null $cacheObject
+     * @param CacheModeEnum $cacheMode
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws PhpVersionNotSupportedException
+     * @throws ReflectionException
      */
     public function __construct(array $config, string $definitionName = null, CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
     {
@@ -235,8 +246,17 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     }
 
     /**
+     * @param string $definitionName
+     * @param CacheInterface $cacheObject
+     * @param CacheModeEnum $cacheModeEnum
+     * @return Container|null
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
      * @throws InvalidArgumentException
-     * @throws Exception
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): ?Container
     {
