@@ -58,6 +58,15 @@ class DependencyInjection
     }
 
     /**
+     * @return string
+     */
+    public function getClassName(): string
+    {
+        $class = $this->getClass();
+        return ($class instanceof Param) ? $class->getParam() : $class;
+    }
+
+    /**
      * @param mixed $class
      * @throws DependencyInjectionException
      */
