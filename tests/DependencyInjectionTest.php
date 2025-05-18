@@ -390,4 +390,29 @@ class DependencyInjectionTest extends TestCase
         $this->assertEquals(24, $injectedLegacy->calculate());
     }
 
+    /**
+     * Test for the getClassName() method
+     * 
+     * @throws DependencyInjectionException
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws KeyNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function testGetClassName()
+    {
+        $config = $this->object->build('di-test');
+
+        // Test when $use is false (using bind)
+        $di = $config->get("Random2");
+        $this->assertInstanceOf(DependencyInjection::class, $di);
+        $this->assertEquals(Random::class, $di->getClassName());
+
+        // Test when $use is true (using use)
+        // The 'Value' key is defined with DI::use(Area::class)
+        $value = $config->raw('Value');
+        $this->assertInstanceOf(DependencyInjection::class, $value);
+        $this->assertEquals(Area::class, $value->getClassName());
+    }
 }
