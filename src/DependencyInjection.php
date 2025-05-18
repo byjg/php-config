@@ -62,17 +62,8 @@ class DependencyInjection
      */
     public function getClassName(): string
     {
-        if ($this->use) {
-            if ($this->class instanceof Param) {
-                return $this->class->getParam();
-            }
-            return $this->class;
-        }
         $class = $this->getClass();
-        if ($class instanceof Param) {
-            return $class->getParam();
-        }
-        return $class;
+        return ($class instanceof Param) ? $class->getParam() : $class;
     }
 
     /**
