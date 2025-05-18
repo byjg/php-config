@@ -46,7 +46,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws ReflectionException
      */
-    public function __construct(array $config, string $definitionName = null, CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
+    public function __construct(array $config, ?string $definitionName = null, ?CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
