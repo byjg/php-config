@@ -1,19 +1,26 @@
+---
+sidebar_position: 2
+---
+
 # Loading the configuration
 
-After [setup the configuration files](setup.md), you need to load them into the container.
+After [setting up the configuration files](setup.md), you need to load them into the container.
 
 ## Create the environment definition
 
-The definition will specify how the configuration will be loaded, what environments will be available and the inheritance between them.
+The definition will specify how the configuration will be loaded, what environments will be available, and the inheritance between them.
 
 ```php
 <?php
 use ByJG\Config\Definition;
 use ByJG\Config\Environment;
+use ByJG\Cache\Psr16\ArrayCacheEngine;
 
+// Create environments
 $dev = new Environment('dev');
-$prod = new Environment('prod', ['dev'], $somePsr16Implementation);
+$prod = new Environment('prod', ['dev'], new ArrayCacheEngine());
 
+// Create the definition with environments
 $definition = (new Definition())
     ->withConfigVar('APP_ENV')    // Set up the environment var used to auto select the config. 'APP_ENV' is default.
     ->addEnvironment($dev)        // Defining the 'dev' environment
@@ -43,13 +50,14 @@ new Environment(
 
 ```php
 <?php
-// This will check the config var 'APP_ENV' and load the configuration from the file config-<APP_ENV>.php and config-<APP_ENV>.env and create the instance `$container`
+// This will check the config var 'APP_ENV' and load the configuration
+// from the appropriate environment files, creating the container instance
 $container = $definition->build();
 ```
 
-This method requires the environment var `APP_ENV` to be set, otherwise will throw an exception. 
+This method requires the environment var `APP_ENV` to be set, otherwise it will throw an exception. 
 
-Also, if at least of the files doesn´t exists:
+Also, it will check that at least one of the following files exists for the specified environment:
 - `config-<APP_ENV>.php`
 - `config-<APP_ENV>.env`
 - `<APP_ENV>/*.php`
@@ -57,14 +65,18 @@ Also, if at least of the files doesn´t exists:
 
 ## Get the Values from the container
 
-After build the definition you can get the values from the container:
+After building the definition, you can get the values from the container:
 
 ```php
 <?php
+// Get a simple value
 $property = $container->get('property1');
+
+// Get a value from dependency injection
+$instance = $container->get(\Example\Square::class);
 ```
 
-If value is a closure, it will return the closure execution result:
+If a value is a closure, it will return the closure execution result:
 
 ```php
 <?php
@@ -75,18 +87,44 @@ $property = $container->get('property3');
 $property = $container->get('propertyWithArgs', 1, 2);
 ```
 
-Also, it is possible to get **raw** value without any parse:
+Also, it is possible to get the **raw** value without any parsing:
 
 ```php
 <?php
-$property = $container->raw('property3');
+// Get the raw value (returns the closure itself, not its execution result)
+$closure = $container->raw('property3');
 ```
 
-## Get the environment name is being used
+## Get the environment name currently in use
 
 ```php
 <?php
-$definition->getCurrentEnvironment();
+// Get the current environment name (e.g., 'dev', 'prod', etc.)
+$currentEnv = $definition->getCurrentEnvironment();
+```
+
+## Check key status in container
+
+You can check the status of a key in the container:
+
+```php
+<?php
+use ByJG\Config\KeyStatusEnum;
+
+// Check if a key exists and its status
+$status = $container->keyStatus('myKey');
+
+if ($status === KeyStatusEnum::NOT_FOUND) {
+    echo "Key not found";
+} elseif ($status === KeyStatusEnum::STATIC) {
+    echo "Static value";
+} elseif ($status === KeyStatusEnum::IN_MEMORY) {
+    echo "Instance is loaded and in memory";
+} elseif ($status === KeyStatusEnum::WAS_USED) {
+    echo "Instance was used but is no longer in memory";
+} elseif ($status === KeyStatusEnum::NOT_USED) {
+    echo "Instance is defined but not yet used";
+}
 ```
 
 ----

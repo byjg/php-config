@@ -11,6 +11,7 @@ use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\KeyNotFoundException;
 use ByJG\Config\Exception\RunTimeException;
+use ByJG\Config\Psr11;
 use Override;
 use Psr\SimpleCache\InvalidArgumentException;
 use Tests\DIClasses\Area;
@@ -56,6 +57,7 @@ class ContainerTest extends TestCase
     public function tearDown(): void
     {
         putenv('APP_ENV');
+        Psr11::reset();
     }
 
     public function testgetCurrentEnvironment()
@@ -113,6 +115,28 @@ class ContainerTest extends TestCase
         $this->assertEquals('calculated', $closure());
 
         $this->assertEquals('test', $config->get('property5'));
+    }
+
+    public function testLoadConfigStatic()
+    {
+        Psr11::initialize($this->object, 'test');
+
+        $this->assertEquals('string', Psr11::get('property1'));
+        $this->assertTrue(Psr11::get('property2'));
+
+        $closure = Psr11::raw('property3');
+        $this->assertEquals('calculated', $closure());
+
+        $this->assertEquals('test', Psr11::get('property5'));
+    }
+
+
+    public function testLoadConfigStaticNotInitialized()
+    {
+        $this->expectException(RunTimeException::class);
+        $this->expectExceptionMessage("Environment isn't build yet");
+
+        Psr11::get('property2');
     }
 
     public function testLoadConfig2()
@@ -173,6 +197,19 @@ class ContainerTest extends TestCase
         $this->assertFalse($config2->get('property2'));
     }
 
+    public function testLoadConfig3Static()
+    {
+        putenv('APP_ENV=test');
+        Psr11::initialize($this->object);
+        $this->assertEquals('string', Psr11::get('property1'));
+        $this->assertTrue(Psr11::get('property2'));
+
+        putenv('APP_ENV=test2');
+        Psr11::initialize($this->object);
+        $this->assertEquals('string', Psr11::get('property1'));
+        $this->assertFalse(Psr11::get('property2'));
+    }
+
     public function testLoadConfigArgs()
     {
         $config = $this->object->build('closure');
@@ -196,6 +233,32 @@ class ContainerTest extends TestCase
         $this->assertFalse($result5);
 
         $result6 = $config->get('closureWithoutArgs');
+        $this->assertTrue($result6);
+    }
+
+    public function testLoadConfigArgsStatic()
+    {
+        Psr11::initialize($this->object, 'closure');
+
+        $result = Psr11::get('closureProp', 'value1', 'value2');
+        $this->assertEquals('value1:value2', $result);
+
+        $result2 = Psr11::get('closureProp', ['valueA', 'valueB']);
+        $this->assertEquals('valueA:valueB', $result2);
+
+        $result3 = Psr11::get('closureProp2', null);
+        $this->assertEquals('No Param', $result3);
+
+        $result4 = Psr11::get('closureProp2', []);
+        $this->assertEquals('No Param', $result4);
+
+        $result5 = Psr11::get('closureArray', [['a', 'b']]);
+        $this->assertTrue($result5);
+
+        $result5 = Psr11::get('closureArray', 'string');
+        $this->assertFalse($result5);
+
+        $result6 = Psr11::get('closureWithoutArgs');
         $this->assertTrue($result6);
     }
 
