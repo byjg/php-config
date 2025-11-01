@@ -11,6 +11,8 @@ use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionUnionType;
 
 class DependencyInjection
 {
@@ -194,7 +196,13 @@ class DependencyInjection
                 if (is_null($type)) {
                     throw new DependencyInjectionException("The parameter '$" . $param->getName() . "' has no type defined in class '" . $this->getClass() . "'");
                 }
-                if (method_exists($type, "getName")) {
+
+                // Handle union types (e.g., Class1|Class2)
+                if ($type instanceof ReflectionUnionType) {
+                    $types = $type->getTypes();
+                    $typeName = $this->getFirstNonBuiltinType($types, $param);
+                    $args[] = Param::get(ltrim($typeName, "\\"));
+                } elseif ($type instanceof ReflectionNamedType) {
                     $args[] = Param::get(ltrim($type->getName(), "\\"));
                 } else {
                     $args[] = Param::get(ltrim($type->__toString(), "\\"));
@@ -204,6 +212,27 @@ class DependencyInjection
         }
 
         return $this->withNoConstructor();
+    }
+
+    /**
+     * Get the first non-builtin type from a list of types (for union types)
+     *
+     * @param array $types
+     * @param \ReflectionParameter $param
+     * @return string
+     * @throws DependencyInjectionException
+     */
+    private function getFirstNonBuiltinType(array $types, \ReflectionParameter $param): string
+    {
+        foreach ($types as $type) {
+            if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
+                return $type->getName();
+            }
+        }
+
+        throw new DependencyInjectionException(
+            "The parameter '$" . $param->getName() . "' has no non-builtin type in union type in class '" . $this->getClass() . "'"
+        );
     }
 
     /**

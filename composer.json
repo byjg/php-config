@@ -12,7 +12,7 @@
     "ext-json": "*",
     "byjg/cache-engine": "^6.0",
     "phpunit/phpunit": "^10.5|^11.5",
-    "vimeo/psalm": "^5.9|^6.2"
+    "vimeo/psalm": "^5.9|^6"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",
@@ -28,5 +28,9 @@
     "psr-4": {
       "Tests\\": "tests/"
     }
+  },
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "psalm": "vendor/bin/psalm"
   }
 }

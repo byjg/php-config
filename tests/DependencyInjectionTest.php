@@ -19,12 +19,16 @@ use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 use Tests\DIClasses\Area;
+use Tests\DIClasses\ClassWithUnionType;
+use Tests\DIClasses\ClassWithUnionType2;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\Random;
 use Tests\DIClasses\RectangleTriangle;
 use Tests\DIClasses\Square;
 use Tests\DIClasses\SumAreas;
 use Tests\DIClasses\TestParam;
+use Tests\DIClasses\UnionTypeClass1;
+use Tests\DIClasses\UnionTypeClass2;
 use PHPUnit\Framework\TestCase;
 
 class DependencyInjectionTest extends TestCase
@@ -52,6 +56,7 @@ class DependencyInjectionTest extends TestCase
         $diTest5CacheMultiple = new Environment('di-test5-cache-multiple', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
         $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::singleFile);
         $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
+        $diUnionType = new Environment('di-uniontype');
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
@@ -62,6 +67,7 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment($diTest5CacheMultiple)
             ->addEnvironment($diTest5CacheSingle)
             ->addEnvironment($diTest6)
+            ->addEnvironment($diUnionType)
         ;
     }
 
@@ -392,7 +398,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * Test for the getClassName() method
-     * 
+     *
      * @throws DependencyInjectionException
      * @throws ConfigNotFoundException
      * @throws ConfigException
@@ -414,5 +420,41 @@ class DependencyInjectionTest extends TestCase
         $value = $config->raw('Value');
         $this->assertInstanceOf(DependencyInjection::class, $value);
         $this->assertEquals(Area::class, $value->getClassName());
+    }
+
+    /**
+     * Test for union types in constructor parameters
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
+     * @throws InvalidArgumentException
+     */
+    public function testUnionTypeConstructor()
+    {
+        $config = $this->object->build('di-uniontype');
+
+        // Get the dependencies
+        $class1 = $config->get(UnionTypeClass1::class);
+        $this->assertInstanceOf(UnionTypeClass1::class, $class1);
+        $this->assertEquals("Class1", $class1->getName());
+
+        $class2 = $config->get(UnionTypeClass2::class);
+        $this->assertInstanceOf(UnionTypeClass2::class, $class2);
+        $this->assertEquals("Class2", $class2->getName());
+
+        // Get the class with union type
+        // It should inject UnionTypeClass1 since it's the first non-builtin type in the union
+        $classWithUnion = $config->get(ClassWithUnionType::class);
+        $this->assertInstanceOf(ClassWithUnionType::class, $classWithUnion);
+        $this->assertEquals("Class1", $classWithUnion->getDependencyName());
+
+        $classWithUnion2 = $config->get(ClassWithUnionType2::class);
+        $this->assertInstanceOf(ClassWithUnionType2::class, $classWithUnion2);
+        $this->assertEquals("Class2", $classWithUnion2->getDependencyName());
     }
 }
