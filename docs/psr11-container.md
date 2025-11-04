@@ -1,5 +1,7 @@
 ---
 sidebar_position: 8
+title: PSR-11 Container Interface
+description: Using the Psr11 static facade for convenient container access
 ---
 
 # PSR-11 Container Interface

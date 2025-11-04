@@ -1,5 +1,7 @@
 ---
 sidebar_position: 3
+title: Dependency Injection
+description: Learn how to use dependency injection to manage object creation and dependencies
 ---
 
 # Dependency Injection
@@ -121,9 +123,9 @@ When use the method `withInjectedConstructor()` the container will try to inject
 its type declaration. Since we previously defined the classes `Square` and `RectangleTriangle` the container will inject the instances
 automatically.
 
-Note that this component uses type hinting and PHP reflection to determine the classes that are required, not PHP Doc.
-If you're using older PHP versions or code without type declarations, you can use `withInjectedLegacyConstructor()` which
-uses PHPDoc comments to determine the types.
+:::note
+This component uses type hinting and PHP reflection to determine the classes that are required, not PHPDoc. If you're using older PHP versions or code without type declarations, you can use `withInjectedLegacyConstructor()` which uses PHPDoc comments to determine the types.
+:::
 
 ## Get a singleton object
 
@@ -191,18 +193,16 @@ $square1 = $config->get(Square::class)->getInstance(5);
 $square2 = $config->get(Square::class)->getInstance(7);
 ```
 
-Delayed Instances cannot be used with:
+:::warning Delayed Instance Limitations
+Delayed Instances **cannot** be used with:
+- `withFactoryMethod()`
+- `withInjectedConstructor()`
+- `withInjectedLegacyConstructor()`
+- `withConstructorNoArgs()`
 
-- `withFactoryMethod()`.
-- `withInjectedConstructor()`.
-- `withInjectedLegacyConstructor()`.
-- `withConstructorNoArgs()`.
-
-Delayed Instances also cannot be:
-
-- Injected automatically to the constructor. 
-  This means class have `withInjectedConstructor()` or `withInjectedLegacyConstructor()` pointing to a delayed instance
-  will fail.
+Delayed Instances also **cannot** be:
+- Injected automatically to the constructor (classes with `withInjectedConstructor()` or `withInjectedLegacyConstructor()` pointing to a delayed instance will fail)
+:::
 
 ## All options (bind)
 

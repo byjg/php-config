@@ -1,5 +1,7 @@
 ---
 sidebar_position: 1
+title: Setup
+description: Learn how to set up configuration files and environments for your PHP project
 ---
 
 # Setup
@@ -48,7 +50,9 @@ PARAM2=!int 20
 PARAM3=!float 3.14
 ```
 
-The file named `.env` will be loaded to ALL ENVIRONMENTS.
+:::info
+The file named `.env` will be loaded to **ALL ENVIRONMENTS**.
+:::
 
 ### The .php file
 
@@ -116,7 +120,9 @@ You can combine both folder and standalone files. In that case, the individual f
 
 One environment can inherit from another. This means that the environment that inherits will have all the variables of the inherited environment and can override them if the names match.
 
-That's very important because you can have a common configuration for all environments and override only the variables that are different.
+:::tip
+This is very important because you can have a common configuration for all environments and override only the variables that are different.
+:::
 
 To configure inheritance, you can specify it when creating the Environment object:
 

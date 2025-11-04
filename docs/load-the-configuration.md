@@ -1,8 +1,10 @@
 ---
 sidebar_position: 2
+title: Loading the Configuration
+description: Learn how to load and use configuration values in your application
 ---
 
-# Loading the configuration
+# Loading the Configuration
 
 After [setting up the configuration files](setup.md), you need to load them into the container.
 
@@ -55,9 +57,11 @@ new Environment(
 $container = $definition->build();
 ```
 
-This method requires the environment var `APP_ENV` to be set, otherwise it will throw an exception. 
+:::caution
+This method requires the environment var `APP_ENV` to be set, otherwise it will throw an exception.
+:::
 
-Also, it will check that at least one of the following files exists for the specified environment:
+The build process will verify that at least one of the following files exists for the specified environment:
 - `config-<APP_ENV>.php`
 - `config-<APP_ENV>.env`
 - `<APP_ENV>/*.php`

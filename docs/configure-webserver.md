@@ -1,5 +1,7 @@
 ---
 sidebar_position: 5
+title: Configure the Environment Variables
+description: Learn how to set up environment variables in different web servers and deployment environments
 ---
 
 # Configure the Environment Variables
@@ -42,7 +44,9 @@ This is commonly used in:
 1. **Nginx configuration files** (like `nginx.conf` or site configuration files in `/etc/nginx/sites-available/`)
 2. **Within a server or location block** that handles PHP processing
 
-**Note**: After modifying Nginx configuration, remember to test the configuration (`nginx -t`) and reload Nginx (`systemctl reload nginx` or `service nginx reload`).
+:::tip
+After modifying Nginx configuration, remember to test the configuration (`nginx -t`) and reload Nginx (`systemctl reload nginx` or `service nginx reload`).
+:::
 
 ## Apache
 
@@ -74,11 +78,13 @@ This configuration can be placed in:
 - `.htaccess` files
 - Apache's main configuration file (`httpd.conf` or `apache2.conf`)
 
-**Note**: Make sure the `mod_env` module is enabled in Apache for this to work. You can enable it with:
+:::tip
+Make sure the `mod_env` module is enabled in Apache for this to work. You can enable it with:
 ```bash
 sudo a2enmod env
 sudo systemctl restart apache2
 ```
+:::
 
 ## PHP Built-in Server
 
@@ -235,7 +241,9 @@ This approach is useful when:
 - You need different settings for different directories
 - You want to keep environment-specific settings with your application code
 
-**Note**: Make sure `.htaccess` files are enabled in your Apache configuration (`AllowOverride All`).
+:::tip
+Make sure `.htaccess` files are enabled in your Apache configuration (`AllowOverride All`).
+:::
 
 ## PHP Script (Not Recommended)
 
@@ -256,11 +264,13 @@ $_ENV['DB_NAME'] = 'myapp';
 // Your application code here
 ```
 
+:::warning
 This approach is discouraged because:
 - It can lead to inconsistent behavior across different environments
 - It makes it harder to manage environment-specific configurations
 - It may not work in all server configurations
 - It can be overridden by server-level settings
+:::
 
 ## Best Practices
 

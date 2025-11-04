@@ -1,5 +1,7 @@
 ---
 sidebar_position: 6
+title: Good Practices
+description: Best practices for using the configuration library effectively
 ---
 
 # Good Practices

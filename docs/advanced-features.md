@@ -1,5 +1,7 @@
 ---
 sidebar_position: 7
+title: Advanced Features
+description: Explore caching, abstract/final environments, and advanced configuration techniques
 ---
 
 # Advanced Features
@@ -68,13 +70,17 @@ $secureConfig = new Environment('secure', [], null, false, true);
 
 Abstract environments (`$abstract = true`) cannot be loaded directly but can be inherited by other environments. This is useful for creating base configurations that should never be used on their own.
 
+:::warning
 If you try to build a container with an abstract environment, it will throw an exception.
+:::
 
 ### Final Environments
 
 Final environments (`$final = true`) cannot be inherited by other environments. This is useful for sensitive configurations that should not be extended.
 
+:::warning
 If you try to create an environment that inherits from a final environment, it will throw an exception.
+:::
 
 ## Extended Container Features
 
@@ -107,26 +113,34 @@ The `keyStatus()` method returns a `KeyStatusEnum` value that provides informati
 
 The library uses exceptions to handle error conditions:
 
-| Exception                     | When it occurs                                 |
-|-------------------------------|------------------------------------------------|
-| `NotFoundException`           | When a key is not found in the container       |
-| `ContainerException`          | General container errors                       |
-| `InvalidDefinitionException`  | When a definition is invalid                   |
-| `InvalidEnvironmentException` | When an environment is not properly configured |
+| Exception                         | When it occurs                                        |
+|-----------------------------------|-------------------------------------------------------|
+| `KeyNotFoundException`            | When a key is not found in the container              |
+| `ContainerException`              | General container errors                              |
+| `ConfigException`                 | General configuration errors                          |
+| `ConfigNotFoundException`         | When a configuration file is not found                |
+| `DependencyInjectionException`    | When there's an error in dependency injection         |
+| `RunTimeException`                | Runtime errors during container operations            |
+| `InvalidDateException`            | When a date parsing error occurs                      |
 
 Example of handling container exceptions:
 
 ```php
 <?php
+use ByJG\Config\Exception\KeyNotFoundException;
+use ByJG\Config\Exception\ContainerException;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Container\ContainerExceptionInterface;
 
 try {
     $value = $container->get('non_existent_key');
-} catch (NotFoundExceptionInterface $e) {
+} catch (KeyNotFoundException $e) {
     // Handle key not found
     error_log("Configuration key not found: " . $e->getMessage());
-} catch (ContainerExceptionInterface $e) {
+} catch (NotFoundExceptionInterface $e) {
+    // Handle PSR-11 not found exception
+    error_log("PSR-11 key not found: " . $e->getMessage());
+} catch (ContainerException | ContainerExceptionInterface $e) {
     // Handle other container errors
     error_log("Container error: " . $e->getMessage());
 }
