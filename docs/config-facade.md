@@ -1,14 +1,14 @@
 ---
 sidebar_position: 8
-title: PSR-11 Container Interface
-description: Using the Psr11 static facade for convenient container access
+title: Config Facade
+description: Using the Config static facade for convenient container access
 ---
 
-# PSR-11 Container Interface
+# Config Facade
 
-The `Psr11` class provides a convenient static interface to access the container functionality without the need to pass 
-around the container instance. It acts as a facade for the Container class, implementing methods similar to 
-the PSR-11 Container Interface standard but with additional functionality specific to the ByJG Config implementation.
+The `Config` class provides a convenient static interface to access the container functionality without the need to pass
+around the container instance. It acts as a facade for the Container class, providing a clean and familiar API
+for accessing configuration values and resolving dependencies.
 
 ## Initializing the Container
 
@@ -17,14 +17,14 @@ Before using any of the static methods, you must initialize the container with a
 ```php
 <?php
 use ByJG\Config\Definition;
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 // Create and configure the definition as needed
 $definition = new Definition();
 // ... configure definition ...
 
-// Initialize the Psr11 static container with your definition
-Psr11::initialize($definition, 'prod'); // The second parameter is optional
+// Initialize the Config static facade with your definition
+Config::initialize($definition, 'prod'); // The second parameter is optional
 ```
 
 ## Accessing Container Values
@@ -33,16 +33,16 @@ Once initialized, you can access values from anywhere in your application:
 
 ```php
 <?php
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 // Get a configured value
-$dbHost = Psr11::get('database.host');
+$dbHost = Config::get('database.host');
 
 // Get a class instance (with dependency injection)
-$service = Psr11::get(\App\Service\MyService::class);
+$service = Config::get(\App\Service\MyService::class);
 
 // Get a value with constructor parameters
-$calculator = Psr11::get(\App\Calculator::class, 10, 20);
+$calculator = Config::get(\App\Calculator::class, 10, 20);
 ```
 
 ## Getting Raw Values
@@ -51,13 +51,13 @@ Unlike `get()`, the `raw()` method returns the raw value without attempting to i
 
 ```php
 <?php
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 // Get the raw value of a closure without executing it
-$closureValue = Psr11::raw('my.closure');
+$closureValue = Config::raw('my.closure');
 
 // Get the raw configuration value
-$rawValue = Psr11::raw('my.config.key');
+$rawValue = Config::raw('my.config.key');
 ```
 
 ## Checking Value Existence
@@ -66,11 +66,11 @@ You can check if a specific key exists in the container:
 
 ```php
 <?php
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
-if (Psr11::has('api.key')) {
+if (Config::has('api.key')) {
     // The key exists in the container
-    $apiKey = Psr11::get('api.key');
+    $apiKey = Config::get('api.key');
 }
 ```
 
@@ -80,18 +80,18 @@ For file-based configuration values, you can get the resolved path:
 
 ```php
 <?php
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 // Get a configuration value as a resolved filename
-$logPath = Psr11::getAsFilename('log.file');
+$logPath = Config::getAsFilename('log.file');
 ```
 
-## Benefits of Using Psr11
+## Benefits of Using Config Facade
 
 1. **Simplicity**: Access your configuration and services from anywhere without dependency injection
-2. **Consistency**: Standardized approach to working with container values
-3. **Flexibility**: Still maintains all the power of the underlying Container system
-4. **PSR Compatibility**: Follows PSR-11 approach while extending it with useful features
+2. **Consistency**: Familiar pattern similar to Laravel's Config facade
+3. **Flexibility**: Maintains all the power of the underlying PSR-11 Container
+4. **Clean Code**: No need to pass container instances through your application
 
 ## Complete Method Reference
 
@@ -105,14 +105,14 @@ $logPath = Psr11::getAsFilename('log.file');
 
 ## Example Use Case
 
-Here's a complete example showing how to use the Psr11 class in a typical application:
+Here's a complete example showing how to use the Config facade in a typical application:
 
 ```php
 <?php
 // bootstrap.php
 use ByJG\Config\Definition;
 use ByJG\Config\Environment;
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 // Create environments
 $dev = new Environment('dev');
@@ -123,24 +123,24 @@ $definition = (new Definition())
     ->addEnvironment($dev)
     ->addEnvironment($prod);
 
-// Initialize Psr11 with the definition and current environment
+// Initialize Config facade with the definition and current environment
 $env = getenv('APP_ENV') ?: 'dev';
-Psr11::initialize($definition, $env);
+Config::initialize($definition, $env);
 ```
 
 ```php
 <?php
 // anywhere in your application code
-use ByJG\Config\Psr11;
+use ByJG\Config\Config;
 
 class UserController 
 {
     public function login()
     {
         // Get values directly using the static interface
-        $userService = Psr11::get(\App\Service\UserService::class);
-        $jwtSecret = Psr11::get('jwt.secret');
-        $logFile = Psr11::getAsFilename('app.log');
+        $userService = Config::get(\App\Service\UserService::class);
+        $jwtSecret = Config::get('jwt.secret');
+        $logFile = Config::getAsFilename('app.log');
         
         // Use these values in your application logic
         // ...

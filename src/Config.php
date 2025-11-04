@@ -13,26 +13,28 @@ use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 
 /**
- * PSR-11 Container Interface Accessor
- * 
+ * Configuration and Container Facade
+ *
  * This class provides a convenient static interface to access the container functionality
  * without the need to pass around the container instance. It acts as a facade for
  * the Container class.
- * 
+ *
  * Usage:
  * 1. Initialize the container with a Definition:
- *    Psr11::initialize($definition, $env);
- * 
+ *    Config::initialize($definition, $env);
+ *
  * 2. Access container values and services:
- *    $value = Psr11::get('config.key');
- *    $rawValue = Psr11::raw('config.key');
- * 
- * The class implements methods similar to the PSR-11 Container Interface standard
- * but with additional functionality specific to the ByJG Config implementation.
+ *    $value = Config::get('config.key');
+ *    $rawValue = Config::raw('config.key');
+ *
+ * This facade provides static access to both configuration values and dependency injection,
+ * similar to Laravel's Config facade but with extended container functionality.
  */
-class Psr11
+class Config
 {
     private static ?Container $container = null;
+
+    private static ?Definition $definition = null;
 
     /**
      * Gets the container instance
@@ -131,10 +133,16 @@ class Psr11
     public static function initialize(Definition $definition, ?string $env = null): void
     {
         self::$container = $definition->build($env);
+        self::$definition = $definition;
     }
 
     public static function reset(): void
     {
         self::$container = null;
+    }
+
+    public static function definition(): ?Definition
+    {
+        return self::$definition;
     }
 }

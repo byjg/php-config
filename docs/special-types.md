@@ -53,7 +53,7 @@ PARAM1=!mytype 123
 ## Using Param::get() to Postpone Container Calls
 
 :::danger Important
-When we need to get dependencies from the container, we must use `Param::get()` instead of `Psr11::get()`. This is because `Param::get()` postpones the call to the container until the dependency is actually needed, preventing infinite loops when dependencies reference each other.
+When we need to get dependencies from the container, we must use `Param::get()` instead of `Config::get()`. This is because `Param::get()` postpones the call to the container until the dependency is actually needed, preventing infinite loops when dependencies reference each other.
 :::
 
 This will cause an error:
@@ -67,11 +67,11 @@ use Example\Square;
 return [
     "side" => 4,
     "Calculator" =>DI::bind(Area::class)
-        ->toInstance(), 
+        ->toInstance(),
     Square::class => DI::bind(Square::class)
         ->withConstructorArgs([
-               Psr11::get('side'),
-               Psr11::get('Calculator')])
+               Config::get('side'),
+               Config::get('Calculator')])
         ->toInstance(),
 ];
 ```
