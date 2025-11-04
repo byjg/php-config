@@ -12,7 +12,7 @@ The library supports caching of configuration values to improve performance, esp
 
 ### Cache Modes
 
-The `Environment` constructor accepts a PSR-16 compatible cache implementation and a cache mode:
+You can configure caching using either the fluent API or the constructor:
 
 ```php
 <?php
@@ -20,11 +20,17 @@ use ByJG\Config\CacheModeEnum;
 use ByJG\Config\Environment;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 
-// Using file system cache with the environment
 $cache = new FileSystemCacheEngine('/path/to/cache');
+
+// Fluent API (recommended)
+$prod = Environment::create('prod')
+    ->inheritFrom($dev)
+    ->withCache($cache, CacheModeEnum::singleFile);
+
+// Traditional constructor
 $prod = new Environment(
-    'prod', 
-    ['dev'], 
+    'prod',
+    [$dev],
     $cache,
     false,
     false,
@@ -53,16 +59,23 @@ You can use any PSR-16 compatible cache implementation. The library works well w
 
 ## Abstract and Final Environments
 
-The Environment constructor supports two special flags:
+Environments can be marked as abstract or final to control inheritance:
 
 ```php
 <?php
 use ByJG\Config\Environment;
 
+// Fluent API (recommended)
 // Abstract environment (cannot be loaded directly)
-$baseConfig = new Environment('base', [], null, true, false);
+$baseConfig = Environment::create('base')
+    ->setAsAbstract();
 
 // Final environment (cannot be inherited from)
+$secureConfig = Environment::create('secure')
+    ->setAsFinal();
+
+// Traditional constructor
+$baseConfig = new Environment('base', [], null, true, false);
 $secureConfig = new Environment('secure', [], null, false, true);
 ```
 
@@ -166,7 +179,7 @@ Using `toSingleton()` for objects that are frequently accessed can improve perfo
 
 ## Advanced Environment Setup Example
 
-Here's a comprehensive example of setting up a complex environment configuration:
+Here's a comprehensive example of setting up a complex environment configuration using the fluent API:
 
 ```php
 <?php
@@ -176,32 +189,29 @@ use ByJG\Config\CacheModeEnum;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 
 // Create abstract base environment
-$base = new Environment('base', [], null, true);
+$base = Environment::create('base')
+    ->setAsAbstract();
 
 // Development environment inherits from base
-$dev = new Environment('dev', ['base']);
+$dev = Environment::create('dev')
+    ->inheritFrom($base);
 
 // Staging environment with cache
-$stagingCache = new FileSystemCacheEngine('/tmp/cache/staging');
-$staging = new Environment(
-    'staging', 
-    ['dev'], 
-    $stagingCache, 
-    false, 
-    false, 
-    CacheModeEnum::multipleFiles
-);
+$staging = Environment::create('staging')
+    ->inheritFrom($dev)
+    ->withCache(
+        new FileSystemCacheEngine('/tmp/cache/staging'),
+        CacheModeEnum::multipleFiles
+    );
 
-// Production environment with optimized cache
-$prodCache = new FileSystemCacheEngine('/tmp/cache/prod');
-$prod = new Environment(
-    'prod', 
-    ['staging'], 
-    $prodCache, 
-    false, 
-    true, // Final environment
-    CacheModeEnum::singleFile
-);
+// Production environment with optimized cache and marked as final
+$prod = Environment::create('prod')
+    ->inheritFrom($staging)
+    ->withCache(
+        new FileSystemCacheEngine('/tmp/cache/prod'),
+        CacheModeEnum::singleFile
+    )
+    ->setAsFinal();
 
 // Create definition with all environments
 $definition = (new Definition())

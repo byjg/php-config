@@ -16,11 +16,14 @@ The definition will specify how the configuration will be loaded, what environme
 <?php
 use ByJG\Config\Definition;
 use ByJG\Config\Environment;
+use ByJG\Config\CacheModeEnum;
 use ByJG\Cache\Psr16\ArrayCacheEngine;
 
-// Create environments
-$dev = new Environment('dev');
-$prod = new Environment('prod', ['dev'], new ArrayCacheEngine());
+// Create environments using fluent API (recommended)
+$dev = Environment::create('dev');
+$prod = Environment::create('prod')
+    ->inheritFrom($dev)
+    ->withCache(new ArrayCacheEngine(), CacheModeEnum::singleFile);
 
 // Create the definition with environments
 $definition = (new Definition())
@@ -30,7 +33,29 @@ $definition = (new Definition())
 ;
 ```
 
-The `Environment` constructor has the following parameters:
+### Fluent API Methods
+
+The `Environment` class provides a fluent API for easier configuration:
+
+```php
+<?php
+use ByJG\Config\Environment;
+use ByJG\Config\CacheModeEnum;
+use ByJG\Cache\Psr16\FileSystemCacheEngine;
+
+$base = Environment::create('base')
+    ->setAsAbstract();  // Mark as abstract (cannot be loaded, only inherited)
+
+$dev = Environment::create('dev')
+    ->inheritFrom($base);  // Inherit from base environment
+
+$prod = Environment::create('prod')
+    ->inheritFrom($dev)
+    ->withCache(new FileSystemCacheEngine('/tmp/cache'), CacheModeEnum::singleFile)
+    ->setAsFinal();  // Mark as final (cannot be inherited from)
+```
+
+### Traditional Constructor (Still Supported)
 
 ```php
 <?php
@@ -44,7 +69,7 @@ new Environment(
     CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
     bool $abstract = false,          // If true, the environment will not be used to load the configuration
     bool $final = false,             // If true, the environment cannot be used to inherit from
-    CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles  // How the cache will be stored, in a single key or multiple keys
+    CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles  // How the cache will be stored
 );
 ```
 

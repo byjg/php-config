@@ -130,8 +130,13 @@ To configure inheritance, you can specify it when creating the Environment objec
 <?php
 use ByJG\Config\Environment;
 
+// Traditional approach
 $dev = new Environment('dev');
 $prod = new Environment('prod', ['dev']); // 'prod' inherits from 'dev'
+
+// Fluent API (recommended)
+$dev = Environment::create('dev');
+$prod = Environment::create('prod')->inheritFrom($dev);
 ```
 
 ## Load Priority
