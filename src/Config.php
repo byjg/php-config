@@ -39,10 +39,10 @@ class Config
     /**
      * Gets the container instance
      *
-     * @return Container
+     * @return Container|null
      * @throws RunTimeException if the container is not initialized
      */
-    private static function getContainer(): Container
+    private static function getContainer(): ?Container
     {
         if (is_null(self::$container)) {
             self::autoInitialize();
