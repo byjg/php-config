@@ -162,14 +162,19 @@ class Definition
     private function getBaseDir(): string
     {
         if (empty($this->baseDir)) {
-            $dir = __DIR__ . '/../../../../config';
-
-            if (!file_exists($dir)) {
-                $dir = __DIR__ . '/../config';
-            }
-            $this->baseDir = $dir;
+            $this->baseDir = self::findBaseDir();
         }
         return $this->baseDir;
+    }
+
+    public static function findBaseDir(): string
+    {
+        $dir = __DIR__ . '/../../../../config';
+
+        if (!file_exists($dir)) {
+            $dir = __DIR__ . '/../config';
+        }
+        return $dir;
     }
 
     /**

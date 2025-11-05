@@ -38,16 +38,44 @@ class Config
 
     /**
      * Gets the container instance
-     * 
+     *
      * @return Container
      * @throws RunTimeException if the container is not initialized
      */
     private static function getContainer(): Container
     {
         if (is_null(self::$container)) {
-            throw new RunTimeException("Environment isn't build yet");
+            self::autoInitialize();
         }
         return self::$container;
+    }
+
+    /**
+     * Attempts to auto-initialize the container by loading a bootstrap file
+     *
+     * Looks for a ConfigBootstrap.php file in the config directory that implements
+     * ConfigInitializeInterface. If found, it will use it to initialize the container.
+     *
+     * @return void
+     * @throws RunTimeException if no bootstrap file is found or initialization fails
+     */
+    private static function autoInitialize(): void
+    {
+        $bootstrapFile = Definition::findBaseDir() . '/ConfigBootstrap.php';
+
+        if (!file_exists($bootstrapFile)) {
+            throw new RunTimeException("Environment isn't build yet. Please call Config::initialize() or create a config/ConfigBootstrap.php file that implements ConfigInitializeInterface.");
+        }
+
+        $bootstrap = require $bootstrapFile;
+
+        if (!$bootstrap instanceof ConfigInitializeInterface) {
+            throw new RunTimeException("The config/ConfigBootstrap.php file must return an instance of ConfigInitializeInterface.");
+        }
+
+        $env = getenv('APP_ENV') ?: null;
+        $definition = $bootstrap->loadDefinition($env);
+        self::initialize($definition, $env);
     }
 
     /**

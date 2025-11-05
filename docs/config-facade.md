@@ -12,7 +12,51 @@ for accessing configuration values and resolving dependencies.
 
 ## Initializing the Container
 
-Before using any of the static methods, you must initialize the container with a Definition:
+You have two options for initializing the container:
+
+### Option 1: Auto-Initialization (Recommended)
+
+The Config facade can automatically initialize itself by looking for a `config/ConfigBootstrap.php` file. This is the
+simplest approach and requires no manual initialization:
+
+```php
+<?php
+// config/ConfigBootstrap.php
+
+use ByJG\Config\ConfigInitializeInterface;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+return new class implements ConfigInitializeInterface {
+    public function loadDefinition(?string $env = null): Definition {
+        $dev = new Environment('dev');
+        $prod = new Environment('prod', [$dev]);
+
+        return (new Definition())
+            ->addEnvironment($dev)
+            ->addEnvironment($prod);
+    }
+};
+```
+
+Once this file is in place, you can immediately use the Config facade without manual initialization:
+
+```php
+<?php
+use ByJG\Config\Config;
+
+// No initialization needed! Config will auto-load from ConfigBootstrap.php
+$dbHost = Config::get('database.host');
+```
+
+The auto-initialization:
+- Looks for the bootstrap file in the `config` directory (relative to your project root)
+- Uses the `APP_ENV` environment variable to determine which environment to load
+- Only initializes once (subsequent calls use the already-initialized container)
+
+### Option 2: Manual Initialization
+
+You can also manually initialize the container with a Definition:
 
 ```php
 <?php
@@ -88,10 +132,11 @@ $logPath = Config::getAsFilename('log.file');
 
 ## Benefits of Using Config Facade
 
-1. **Simplicity**: Access your configuration and services from anywhere without dependency injection
-2. **Consistency**: Familiar pattern similar to Laravel's Config facade
-3. **Flexibility**: Maintains all the power of the underlying PSR-11 Container
-4. **Clean Code**: No need to pass container instances through your application
+1. **Auto-Initialization**: Automatically loads configuration from a bootstrap file
+2. **Simplicity**: Access your configuration and services from anywhere without dependency injection
+3. **Consistency**: Familiar pattern similar to Laravel's Config facade
+4. **Flexibility**: Maintains all the power of the underlying PSR-11 Container
+5. **Clean Code**: No need to pass container instances through your application
 
 ## Complete Method Reference
 
@@ -105,7 +150,53 @@ $logPath = Config::getAsFilename('log.file');
 
 ## Example Use Case
 
-Here's a complete example showing how to use the Config facade in a typical application:
+Here's a complete example showing how to use the Config facade with auto-initialization:
+
+```php
+<?php
+// config/ConfigBootstrap.php
+use ByJG\Config\ConfigInitializeInterface;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+return new class implements ConfigInitializeInterface {
+    public function loadDefinition(?string $env = null): Definition {
+        // Create environments
+        $dev = new Environment('dev');
+        $prod = new Environment('prod', [$dev]);
+
+        // Create the definition
+        return (new Definition())
+            ->addEnvironment($dev)
+            ->addEnvironment($prod);
+    }
+};
+```
+
+```php
+<?php
+// anywhere in your application code
+use ByJG\Config\Config;
+
+class UserController
+{
+    public function login()
+    {
+        // No initialization needed - Config auto-loads from ConfigBootstrap.php!
+        // Just use Config::get() directly
+        $userService = Config::get(\App\Service\UserService::class);
+        $jwtSecret = Config::get('jwt.secret');
+        $logFile = Config::getAsFilename('app.log');
+
+        // Use these values in your application logic
+        // ...
+    }
+}
+```
+
+### Manual Initialization Example
+
+If you prefer manual initialization or need more control:
 
 ```php
 <?php
@@ -116,7 +207,7 @@ use ByJG\Config\Config;
 
 // Create environments
 $dev = new Environment('dev');
-$prod = new Environment('prod', ['dev']);
+$prod = new Environment('prod', [$dev]);
 
 // Create the definition
 $definition = (new Definition())
@@ -126,26 +217,6 @@ $definition = (new Definition())
 // Initialize Config facade with the definition and current environment
 $env = getenv('APP_ENV') ?: 'dev';
 Config::initialize($definition, $env);
-```
-
-```php
-<?php
-// anywhere in your application code
-use ByJG\Config\Config;
-
-class UserController 
-{
-    public function login()
-    {
-        // Get values directly using the static interface
-        $userService = Config::get(\App\Service\UserService::class);
-        $jwtSecret = Config::get('jwt.secret');
-        $logFile = Config::getAsFilename('app.log');
-        
-        // Use these values in your application logic
-        // ...
-    }
-}
 ```
 
 ----
