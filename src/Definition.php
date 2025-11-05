@@ -167,6 +167,18 @@ class Definition
         return $this->baseDir;
     }
 
+    /**
+     * Finds the base configuration directory
+     *
+     * This static method locates the config directory using a standard path resolution:
+     * 1. First checks for vendor/../../../config (when installed as a dependency)
+     * 2. Falls back to src/../config (when in development)
+     *
+     * This method is used internally by the auto-initialization feature but can also
+     * be used by applications that need to locate the config directory.
+     *
+     * @return string The absolute path to the config directory
+     */
     public static function findBaseDir(): string
     {
         $dir = __DIR__ . '/../../../../config';

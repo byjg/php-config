@@ -130,6 +130,37 @@ use ByJG\Config\Config;
 $logPath = Config::getAsFilename('log.file');
 ```
 
+## Accessing the Definition
+
+You can access the underlying Definition instance:
+
+```php
+<?php
+use ByJG\Config\Config;
+
+// Get the Definition instance (auto-initializes if needed)
+$definition = Config::definition();
+
+// Access Definition methods
+$currentEnv = $definition->getCurrentEnvironment();
+$cacheInterface = $definition->getCacheCurrentEnvironment();
+```
+
+## Resetting the Configuration
+
+For testing or when you need to reinitialize with a different configuration:
+
+```php
+<?php
+use ByJG\Config\Config;
+
+// Reset the container and definition
+Config::reset();
+
+// After reset, the next Config call will auto-initialize again
+$value = Config::get('some.key'); // Triggers auto-initialization
+```
+
 ## Benefits of Using Config Facade
 
 1. **Auto-Initialization**: Automatically loads configuration from a bootstrap file
@@ -140,13 +171,15 @@ $logPath = Config::getAsFilename('log.file');
 
 ## Complete Method Reference
 
-| Method | Description |
-|--------|-------------|
-| `initialize(Definition $definition, ?string $env = null)` | Initializes the container with the provided definition |
-| `get(string $id, mixed ...$parameters)` | Retrieves an entry from the container, resolving dependencies if needed |
-| `raw(string $id)` | Retrieves the raw value without processing |
-| `has(string $id)` | Checks if the container can return an entry for the given identifier |
-| `getAsFilename(string $id)` | Gets the value as a resolved filename path |
+| Method                                                    | Description                                                             |
+|-----------------------------------------------------------|-------------------------------------------------------------------------|
+| `initialize(Definition $definition, ?string $env = null)` | Manually initializes the container with the provided definition         |
+| `get(string $id, mixed ...$parameters)`                   | Retrieves an entry from the container, resolving dependencies if needed |
+| `raw(string $id)`                                         | Retrieves the raw value without processing                              |
+| `has(string $id)`                                         | Checks if the container can return an entry for the given identifier    |
+| `getAsFilename(string $id)`                               | Gets the value as a resolved filename path                              |
+| `definition()`                                            | Gets the Definition instance (auto-initializes if needed)               |
+| `reset()`                                                 | Resets the container and definition, allowing re-initialization         |
 
 ## Example Use Case
 

@@ -19,13 +19,17 @@ use ReflectionException;
  * without the need to pass around the container instance. It acts as a facade for
  * the Container class.
  *
- * Usage:
- * 1. Initialize the container with a Definition:
- *    Config::initialize($definition, $env);
- *
- * 2. Access container values and services:
+ * Usage (Auto-Initialization):
+ * 1. Create config/ConfigBootstrap.php that implements ConfigInitializeInterface
+ * 2. Access container values and services directly:
  *    $value = Config::get('config.key');
  *    $rawValue = Config::raw('config.key');
+ *
+ * Usage (Manual Initialization):
+ * 1. Initialize the container with a Definition:
+ *    Config::initialize($definition, $env);
+ * 2. Access container values and services:
+ *    $value = Config::get('config.key');
  *
  * This facade provides static access to both configuration values and dependency injection,
  * similar to Laravel's Config facade but with extended container functionality.
@@ -147,10 +151,11 @@ class Config
 
     /**
      * Initializes the container with the given definition
-     * 
-     * This method must be called before using any other method in this class.
-     * It builds the container from the provided definition and optional environment.
-     * 
+     *
+     * This method can be called to manually initialize the container.
+     * If not called, the container will auto-initialize from config/ConfigBootstrap.php
+     * when first accessed.
+     *
      * @param Definition $definition The configuration definition
      * @param string|null $env Optional environment name to build the configuration for
      * @return void
@@ -164,12 +169,29 @@ class Config
         self::$definition = $definition;
     }
 
+    /**
+     * Resets the container and definition to null
+     *
+     * This clears the current container and definition, allowing for re-initialization.
+     * Useful for testing or when you need to switch configurations at runtime.
+     *
+     * @return void
+     */
     public static function reset(): void
     {
         self::$container = null;
         self::$definition = null;
     }
 
+    /**
+     * Gets the Definition instance
+     *
+     * Returns the current Definition instance. If not initialized, will attempt
+     * to auto-initialize from config/ConfigBootstrap.php.
+     *
+     * @return Definition|null The definition instance, or null if auto-initialization fails
+     * @throws RunTimeException if auto-initialization fails
+     */
     public static function definition(): ?Definition
     {
         if (is_null(self::$definition)) {
