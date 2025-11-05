@@ -167,10 +167,14 @@ class Config
     public static function reset(): void
     {
         self::$container = null;
+        self::$definition = null;
     }
 
     public static function definition(): ?Definition
     {
+        if (is_null(self::$definition)) {
+            self::autoInitialize();
+        }
         return self::$definition;
     }
 }

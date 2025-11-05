@@ -213,4 +213,69 @@ PHP;
         $this->assertTrue(file_exists($baseDir));
         $this->assertStringEndsWith('config', $baseDir);
     }
+
+    public function testDefinitionAutoInitialize()
+    {
+        // Create a valid bootstrap file
+        $bootstrapContent = <<<'PHP'
+<?php
+
+use ByJG\Config\ConfigInitializeInterface;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+return new class implements ConfigInitializeInterface {
+    public function loadDefinition(?string $env = null): Definition {
+        $test = new Environment('test');
+        return (new Definition())
+            ->addEnvironment($test);
+    }
+};
+PHP;
+
+        file_put_contents($this->bootstrapFile, $bootstrapContent);
+
+        putenv('APP_ENV=test');
+
+        // Calling definition() should auto-initialize
+        $definition = Config::definition();
+
+        $this->assertNotNull($definition);
+        $this->assertInstanceOf(Definition::class, $definition);
+    }
+
+    public function testResetClearsDefinition()
+    {
+        // Create a valid bootstrap file
+        $bootstrapContent = <<<'PHP'
+<?php
+
+use ByJG\Config\ConfigInitializeInterface;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+return new class implements ConfigInitializeInterface {
+    public function loadDefinition(?string $env = null): Definition {
+        $test = new Environment('test');
+        return (new Definition())
+            ->addEnvironment($test);
+    }
+};
+PHP;
+
+        file_put_contents($this->bootstrapFile, $bootstrapContent);
+
+        putenv('APP_ENV=test');
+
+        // Initialize
+        $definition1 = Config::definition();
+        $this->assertNotNull($definition1);
+
+        // Reset
+        Config::reset();
+
+        // Should auto-initialize again
+        $definition2 = Config::definition();
+        $this->assertNotNull($definition2);
+    }
 }
