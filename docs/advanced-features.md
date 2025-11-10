@@ -126,15 +126,14 @@ The `keyStatus()` method returns a `KeyStatusEnum` value that provides informati
 
 The library uses exceptions to handle error conditions:
 
-| Exception                         | When it occurs                                        |
-|-----------------------------------|-------------------------------------------------------|
-| `KeyNotFoundException`            | When a key is not found in the container              |
-| `ContainerException`              | General container errors                              |
-| `ConfigException`                 | General configuration errors                          |
-| `ConfigNotFoundException`         | When a configuration file is not found                |
-| `DependencyInjectionException`    | When there's an error in dependency injection         |
-| `RunTimeException`                | Runtime errors during container operations            |
-| `InvalidDateException`            | When a date parsing error occurs                      |
+| Exception                      | When it occurs                                |
+|--------------------------------|-----------------------------------------------|
+| `KeyNotFoundException`         | When a key is not found in the container      |
+| `ContainerException`           | General container errors                      |
+| `ConfigException`              | General configuration errors                  |
+| `ConfigNotFoundException`      | When a configuration file is not found        |
+| `DependencyInjectionException` | When there's an error in dependency injection |
+| `RunTimeException`             | Runtime errors during container operations    |
 
 Example of handling container exceptions:
 

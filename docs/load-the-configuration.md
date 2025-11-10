@@ -65,13 +65,17 @@ use Psr\SimpleCache\CacheInterface;
 
 new Environment(
     string $environment,             // The environment name
-    array $inheritFrom = [],         // The list of environments to inherit from
+    array $inheritFrom = [],         // Array of Environment instances to inherit from
     CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
     bool $abstract = false,          // If true, the environment will not be used to load the configuration
     bool $final = false,             // If true, the environment cannot be used to inherit from
     CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles  // How the cache will be stored
 );
 ```
+
+:::tip
+When using the constructor form, pass actual `Environment` objects in the `$inheritFrom` array, e.g. `new Environment('prod', [$dev])`.
+:::
 
 ## Build the definition
 

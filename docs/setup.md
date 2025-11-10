@@ -132,7 +132,7 @@ use ByJG\Config\Environment;
 
 // Traditional approach
 $dev = new Environment('dev');
-$prod = new Environment('prod', ['dev']); // 'prod' inherits from 'dev'
+$prod = new Environment('prod', [$dev]); // 'prod' inherits from 'dev'
 
 // Fluent API (recommended)
 $dev = Environment::create('dev');

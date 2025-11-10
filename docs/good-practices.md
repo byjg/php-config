@@ -22,7 +22,7 @@ use ByJG\Config\Environment;
 
 // In your bootstrap/initialization file
 $devConfig = new Environment('dev');
-$prodConfig = new Environment('prod', ['dev']);
+$prodConfig = new Environment('prod', [$devConfig]);
 
 $definition = (new Definition())
     ->addEnvironment($devConfig)
