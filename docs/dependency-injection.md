@@ -163,6 +163,25 @@ use ByJG\Config\Container;
 Container::addEagerSingleton(\Example\Square::class);
 ```
 
+### Lazy parameters for eager singletons
+
+Sometimes an eager singleton needs to keep its own constructor or initializer type-hinted (so static analyzers remain happy) but still postpone the creation of heavy collaborators until they are really used.  
+`LazyParam::get()` solves this by returning a lightweight proxy that satisfies the original type-hint yet asks the container for the real object only on the first method/property call.
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+use ByJG\Config\LazyParam;
+
+return [
+    Example\Service::class => DI::bind(Example\Service::class)
+        ->withMethodCall('boot', [LazyParam::get(Example\ExpensiveDependency::class)])
+        ->toEagerSingleton(),
+];
+```
+
+Because `LazyParam` still resolves through the container, the dependency is tracked normally, but it avoids the upfront instantiation cost that eager singletons would otherwise incur.
+
 ## Delayed Instance
 
 The delayed instance will not return the object immediately. 

@@ -21,6 +21,7 @@ use ReflectionException;
 use Tests\DIClasses\Area;
 use Tests\DIClasses\ClassWithUnionType;
 use Tests\DIClasses\ClassWithUnionType2;
+use Tests\DIClasses\EagerClass;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\Random;
 use Tests\DIClasses\RectangleTriangle;
@@ -57,6 +58,7 @@ class DependencyInjectionTest extends TestCase
         $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::singleFile);
         $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
         $diUnionType = new Environment('di-uniontype');
+        $diTestLazy = new Environment('di-test-lazy');
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
@@ -68,6 +70,7 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment($diTest5CacheSingle)
             ->addEnvironment($diTest6)
             ->addEnvironment($diUnionType)
+            ->addEnvironment($diTestLazy)
         ;
     }
 
@@ -286,6 +289,24 @@ class DependencyInjectionTest extends TestCase
             $square = $config->get(Square::class);
             $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
         }
+    }
+
+    public function testLazyParamWithEagerSingleton()
+    {
+        $config = $this->object->build('di-test-lazy');
+
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(EagerClass::class));
+
+        $instance = $config->get(EagerClass::class);
+        $this->assertInstanceOf(EagerClass::class, $instance);
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+
+        $areaProxy = $instance::getArea();
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+
+        $this->assertEquals(6, $areaProxy->calculate());
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Area::class));
     }
 
     public function testGetInstancesWithParam()

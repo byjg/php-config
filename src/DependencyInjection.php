@@ -90,6 +90,10 @@ class DependencyInjection
     protected function getArgs(?array $argsToParse = null): array
     {
             return array_map(function ($value) {
+                if ($value instanceof LazyParam) {
+                    return LazyProxyFactory::create($this->containerInterface, $value->getParam(), $value->getTypeHint());
+                }
+
                 if ($value instanceof Param) {
                     try {
                         return $this->containerInterface->get($value->getParam());
