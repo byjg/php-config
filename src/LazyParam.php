@@ -12,6 +12,7 @@ class LazyParam extends Param
         $this->typeHint = $typeHint ?? $param;
     }
 
+    #[\Override]
     public static function get(string $param, ?string $typeHint = null): LazyParam
     {
         return new LazyParam($param, $typeHint);
