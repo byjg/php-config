@@ -180,11 +180,33 @@ class DependencyInjection
     }
 
     /**
+     * Automatically inject all constructor parameters based on their type hints.
+     * This is equivalent to calling withInjectedConstructorOverrides([]) with no overrides.
+     *
+     * Note: This method cannot inject built-in types (string, int, bool, etc.) without default values.
+     * If you need to provide scalar values, use withInjectedConstructorOverrides() instead.
+     *
      * @return $this
      * @throws DependencyInjectionException
      * @throws ReflectionException
      */
     public function withInjectedConstructor(): static
+    {
+        return $this->withInjectedConstructorOverrides([]);
+    }
+
+    /**
+     * Inject constructor with mixed automatic injection and forced arguments.
+     * This method automatically injects dependencies based on type hints,
+     * but allows you to override specific parameters with custom values.
+     *
+     * @param array $overrides Associative array where keys are parameter names
+     *                        and values are the forced values to use (can be literal values or Param::get() instances)
+     * @return $this
+     * @throws DependencyInjectionException
+     * @throws ReflectionException
+     */
+    public function withInjectedConstructorOverrides(array $overrides = []): static
     {
         if ($this->use) {
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
@@ -196,9 +218,21 @@ class DependencyInjection
         if (count($params) > 0) {
             $args = [];
             foreach ($params as $param) {
+                $paramName = $param->getName();
+
+                // Check if this parameter has an override
+                if (array_key_exists($paramName, $overrides)) {
+                    $args[] = $overrides[$paramName];
+                    continue;
+                }
+
+                // Otherwise, auto-inject based on type
                 $type = $param->getType();
                 if (is_null($type)) {
-                    throw new DependencyInjectionException("The parameter '$" . $param->getName() . "' has no type defined in class '" . $this->getClass() . "'");
+                    throw new DependencyInjectionException(
+                        "The parameter '\$$paramName' has no type defined and no override provided in class '" .
+                        $this->getClass() . "'"
+                    );
                 }
 
                 // Handle union types (e.g., Class1|Class2)
@@ -207,6 +241,17 @@ class DependencyInjection
                     $typeName = $this->getFirstNonBuiltinType($types, $param);
                     $args[] = Param::get(ltrim($typeName, "\\"));
                 } elseif ($type instanceof ReflectionNamedType) {
+                    // Check if it's a built-in type (string, int, bool, etc.)
+                    if ($type->isBuiltin()) {
+                        // If the parameter has a default value, skip it (constructor will use default)
+                        if ($param->isDefaultValueAvailable()) {
+                            continue;
+                        }
+                        throw new DependencyInjectionException(
+                            "The parameter '\$$paramName' is a built-in type ('{$type->getName()}') and must be provided in overrides array in class '" .
+                            $this->getClass() . "'"
+                        );
+                    }
                     $args[] = Param::get(ltrim($type->getName(), "\\"));
                 } else {
                     $args[] = Param::get(ltrim($type->__toString(), "\\"));

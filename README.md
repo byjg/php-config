@@ -155,6 +155,13 @@ return [
     // Register the repository with auto-injection
     \MyApp\UserRepository::class => DI::bind(\MyApp\UserRepository::class)
         ->withInjectedConstructor()
+        ->toInstance(),
+
+    // For mixed injection (auto-inject classes, manually provide scalars)
+    \MyApp\UserService::class => DI::bind(\MyApp\UserService::class)
+        ->withInjectedConstructorOverrides([
+            'apiKey' => 'my-secret-key'  // Manually provide scalar values
+        ])
         ->toInstance()
 ];
 

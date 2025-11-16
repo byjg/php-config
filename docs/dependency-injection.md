@@ -127,6 +127,68 @@ automatically.
 This component uses type hinting and PHP reflection to determine the classes that are required, not PHPDoc. If you're using older PHP versions or code without type declarations, you can use `withInjectedLegacyConstructor()` which uses PHPDoc comments to determine the types.
 :::
 
+## Mixing automatic injection with manual parameters
+
+Sometimes you need to inject most dependencies automatically but provide specific values for certain parameters (like configuration strings, API keys, or numeric values). The `withInjectedConstructorOverrides()` method gives you the best of both worlds:
+
+```php
+<?php
+namespace Example;
+
+class UserService
+{
+    public function __construct(
+        Database $db,        // Will be auto-injected
+        Logger $logger,      // Will be auto-injected
+        string $apiKey,      // Must be provided manually
+        int $timeout = 30    // Optional, uses default if not overridden
+    ) {
+        // ...
+    }
+}
+```
+
+Configuration:
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+
+return [
+    Database::class => DI::bind(Database::class)
+        ->withConstructorArgs(['localhost', 'mydb'])
+        ->toSingleton(),
+
+    Logger::class => DI::bind(Logger::class)
+        ->withConstructorArgs(['/var/log/app.log'])
+        ->toSingleton(),
+
+    UserService::class => DI::bind(UserService::class)
+        ->withInjectedConstructorOverrides([
+            'apiKey' => 'my-secret-api-key',
+            'timeout' => 60  // Optional: override the default
+        ])
+        ->toInstance(),
+];
+```
+
+**How it works:**
+- **Auto-injected**: Class type-hinted parameters (like `Database` and `Logger`) are automatically resolved from the container
+- **Manual override**: Built-in types (like `string`, `int`, `bool`) must be provided in the overrides array (unless they have default values)
+- **Default values**: Parameters with default values can be omitted from overrides
+- **Flexible overrides**: You can also override class dependencies using `Param::get()` if you need a different instance
+
+```php
+<?php
+// Override a dependency to use a different container entry
+UserService::class => DI::bind(UserService::class)
+    ->withInjectedConstructorOverrides([
+        'apiKey' => 'my-secret-key',
+        'logger' => Param::get('FileLogger')  // Use specific logger instead of default
+    ])
+    ->toInstance(),
+```
+
 ## Get a singleton object
 
 The `DependencyInjection` class with the parameter `toInstance()` will return a new instance 
@@ -232,6 +294,7 @@ Delayed Instances also **cannot** be:
     // To create a new instance choose *only* one below:
     // --------------------------------------------------
     ->withInjectedConstructor()         // If you want inject the constructor automatically using reflection
+    ->withInjectedConstructorOverrides(array)  // Auto-inject dependencies but override specific parameters (e.g., ['apiKey' => 'value'])
     ->withInjectedLegacyConstructor()   // If you want inject the constructor automatically using PHP annotation
     ->withNoConstructor()                // The class has no constructor
     ->withConstructorNoArgs()           // The constructor's class has no arguments
