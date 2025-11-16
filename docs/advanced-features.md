@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 9
 title: Advanced Features
 description: Explore caching, abstract/final environments, and advanced configuration techniques
 ---

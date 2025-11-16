@@ -169,19 +169,19 @@ return [
 $userRepo = $container->get(\MyApp\UserRepository::class);
 ```
 
-## How to Use This Component
+## Documentation Index
 
-Follow the steps below:
+Start with the fundamentals and move toward the advanced features following this order:
 
-- [Auto-Initialization](docs/auto-initialization.md) - Automatically initialize Config with a bootstrap file (recommended);
-- [Using the Config Facade](docs/config-facade.md) - Learn about the static Config facade;
-- [Set up the configuration files](docs/setup.md);
-- [Load the configuration](docs/load-the-configuration.md);
-- [Optionally define the dependency injection](docs/dependency-injection.md);
-- [Learn about special types](docs/special-types.md);
-- [Configure your webserver](docs/configure-webserver.md);
-- [Follow good practices](docs/good-practices.md);
-- [Explore advanced features](docs/advanced-features.md);
+- [Set up the configuration files](docs/setup.md) – Define environments, file naming, and directory structure;
+- [Load the configuration](docs/load-the-configuration.md) – Build `Definition` instances and work with the PSR-11 container;
+- [Using the Config Facade](docs/config-facade.md) – Access container values through the static API;
+- [Auto-Initialization](docs/auto-initialization.md) – Let `Config` bootstrap itself from `config/ConfigBootstrap.php`;
+- [Define dependency injection](docs/dependency-injection.md) – Bind services, constructor parameters, and factories;
+- [Work with special types](docs/special-types.md) – Parse `.env` values through built-in or custom parsers;
+- [Configure your webserver](docs/configure-webserver.md) – Expose environment variables in different runtimes;
+- [Follow good practices](docs/good-practices.md) – Apply conventions that keep configuration manageable;
+- [Explore advanced features](docs/advanced-features.md) – Use caching, inheritance constraints, and container helpers;
 
 ## Installation
 

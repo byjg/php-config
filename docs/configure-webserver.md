@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 7
 title: Configure the Environment Variables
 description: Learn how to set up environment variables in different web servers and deployment environments
 ---
