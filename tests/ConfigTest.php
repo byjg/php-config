@@ -65,7 +65,7 @@ class ConfigTest extends TestCase
     public function testNotAllowInheritFinal()
     {
         $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("The item 'test' is final and cannot be inherited");
+        $this->expectExceptionMessage("The environment 'test' is final and cannot be inherited");
 
         $environment = new Environment('test', [], null, false, true);
         $environment2 = new Environment('test2', [$environment]);
@@ -73,8 +73,7 @@ class ConfigTest extends TestCase
 
     public function testNotAllowInheritNonConfig()
     {
-        $this->expectException(ConfigException::class);
-        $this->expectExceptionMessage("The item 'test' is not a Config object");
+        $this->expectException(\TypeError::class);
 
         $environment = new Environment('test', [], null, false, true);
         $environment2 = new Environment('test2', ['test']);

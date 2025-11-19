@@ -1,3 +1,9 @@
+---
+sidebar_position: 6
+title: Special Types
+description: Learn about special type parsers and using Param::get() for container references
+---
+
 # Special Types
 
 ## Returning parsed value from Static Files
@@ -29,8 +35,9 @@ You can add a new special type:
 
 ```php
 <?php
+use ByJG\Config\ParamParser;
 
-if (!ParamParser::hasParser('mytype') {
+if (!ParamParser::isParserExists('mytype')) {
     ParamParser::addParser('mytype', function ($value) {
         return 'mytype:' . $value;
     });
@@ -43,53 +50,51 @@ Then you can use:
 PARAM1=!mytype 123
 ```
 
-## Dependency Injection with a contructor parameter as array getting from the config
+## Using Param::get() to Postpone Container Calls
 
-Normally when we need to pass to the constructor of the scalar value we use the `Param::get()` method, like this:
+:::danger Important
+When we need to get dependencies from the container, we must use `Param::get()` instead of `Config::get()`. This is because `Param::get()` postpones the call to the container until the dependency is actually needed, preventing infinite loops when dependencies reference each other.
+:::
 
-```php
-return [
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([Param::get('side')])
-        ->toInstance(),
-```
-
-However, if you need to pass an array, and inside the array you need to get a value from the config, we will get an error, 
-because the `Param::get()` isn't change values inside the array.
-
-The exemple below will not work, because when we get `EXAMPLE_ARRAY` the `Param::get()` inside it will not be executed:
+This will cause an error:
 
 ```php
+<?php
+use ByJG\Config\Param;
+use ByJG\Config\DependencyInjection as DI;
+use Example\Square;
+
 return [
-    'custom_side' => 4,
-    
-    EXAMPLE_ARRAY => [
-        'name' => 'Square',
-        'side' => Param::get('custom_side'),
-    ],
-    
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([Param::get('EXAMPLE_ARRAY')])
+    "side" => 4,
+    "Calculator" =>DI::bind(Area::class)
         ->toInstance(),
+    Square::class => DI::bind(Square::class)
+        ->withConstructorArgs([
+               Config::get('side'),
+               Config::get('Calculator')])
+        ->toInstance(),
+];
 ```
 
-To solve this problem, we need to convert `EXAMPLE_ARRAY` into a closure. The clousure is lazy 
-and will be executed only when the value is requested allowing us to use container inside the array 
-(see [Good Practices](good-practices.md)).
+and this is the fix:
 
 ```php
+<?php
+use ByJG\Config\Param;
+use ByJG\Config\DependencyInjection as DI;
+use Example\Square;
+
 return [
-    'custom_side' => 4,
-    
-    EXAMPLE_ARRAY => function () {
-        return [
-            'name' => 'Square',
-            'side' => Psr11::container()->get('custom_side'),
-        ]
-    },
-    
+    "side" => 4,
+    "Calculator" =>DI::bind(Area::class)
+        ->toInstance(), 
     Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([Param::get('EXAMPLE_ARRAY')])
+        ->withConstructorArgs([
+               Param::get('side'),
+               Param::get('Calculator')])
         ->toInstance(),
+];
 ```
 
+----
+[Open source ByJG](http://opensource.byjg.com)

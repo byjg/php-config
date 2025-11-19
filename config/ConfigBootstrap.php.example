@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * ConfigBootstrap Example
+ *
+ * This is an example bootstrap file for auto-initializing the Config facade.
+ * Copy this file to 'ConfigBootstrap.php' (without the .example extension) and
+ * customize it for your application.
+ *
+ * The Config facade will automatically load this file when you first call
+ * Config::get(), Config::has(), or any other Config method.
+ */
+
+use ByJG\Config\ConfigInitializeInterface;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+return new class implements ConfigInitializeInterface {
+    public function loadDefinition(?string $env = null): Definition
+    {
+        // Define your environments
+        // The base environment (development)
+        $dev = new Environment('dev');
+
+        // Staging inherits from dev
+        $staging = new Environment('staging', [$dev]);
+
+        // Production inherits from dev
+        $prod = new Environment('prod', [$dev]);
+
+        // Build and return the definition
+        $definition = (new Definition())
+            ->addEnvironment($dev)
+            ->addEnvironment($staging)
+            ->addEnvironment($prod);
+
+        // Optionally configure additional settings
+        // $definition->withOSEnvironment(['PATH', 'HOME']); // Load specific OS env vars
+        // $definition->withConfigVar('APP_ENV'); // Custom environment variable name
+
+        return $definition;
+    }
+};

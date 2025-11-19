@@ -1,44 +1,66 @@
+---
+sidebar_position: 8
+title: Good Practices
+description: Best practices for using the configuration library effectively
+---
+
 # Good Practices
 
-## Create a singleton for your Definition class
+## Use the Config Facade
 
-This avoids the container to be created more than once and allow you to use the container in any part of your code.
+The library provides a built-in `Config` facade that gives you static access to the container from anywhere in your code.
+
+### Initialize Once
+
+Initialize the Config facade early in your application bootstrap:
 
 ```php
 <?php
+use ByJG\Config\Config;
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
 
-class Psr11
-{
-    private static $definition = null;
-    private static $container = null;
+// In your bootstrap/initialization file
+$devConfig = new Environment('dev');
+$prodConfig = new Environment('prod', [$devConfig]);
 
-    public static function container(string $env = null): \ByJG\Config\Container
-    {
-        if (is_null(self::$container)) {
-            self::$container = self::environment()->build($env);
-        }
+$definition = (new Definition())
+    ->addEnvironment($devConfig)
+    ->addEnvironment($prodConfig);
 
-        return self::$container;
-    }
+// Initialize the Config facade
+Config::initialize($definition);
+```
 
-    public static function environment(): \ByJG\Config\Definition
-    {
-        $devConfig = new \ByJG\Config\Environment('dev');
-        
-        if (is_null(self::$definition)) {
-            self::$definition = (new \ByJG\Config\Definition())
-                ->addEnvironment($devConfig)
-            );
-        }
+### Use Throughout Your Application
 
-        return self::$definition;
-    }
+Once initialized, you can use `Config` anywhere:
+
+```php
+<?php
+use ByJG\Config\Config;
+
+// Get a value from the configuration
+$value = Config::get('property1');
+
+// Use the container for dependency injection
+$square = Config::get(\Example\Square::class);
+
+// Get raw values (without processing)
+$closure = Config::raw('some_closure');
+
+// Check if a key exists
+if (Config::has('api_key')) {
+    $apiKey = Config::get('api_key');
 }
 ```
 
-Usage:
+### Benefits
 
-```php
-<?php
-$value = Psr11::container()->get('property1');
-```
+- No need to pass the container instance around
+- Clean, simple syntax
+- Familiar pattern (similar to Laravel's Config facade)
+- Easy to test (use `Config::reset()` in tests)
+
+----
+[Open source ByJG](http://opensource.byjg.com)

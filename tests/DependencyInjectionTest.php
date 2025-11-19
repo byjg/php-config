@@ -19,12 +19,18 @@ use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 use Tests\DIClasses\Area;
+use Tests\DIClasses\ClassWithUnionType;
+use Tests\DIClasses\ClassWithUnionType2;
+use Tests\DIClasses\EagerClass;
 use Tests\DIClasses\InjectedLegacy;
+use Tests\DIClasses\MixedDependencies;
 use Tests\DIClasses\Random;
 use Tests\DIClasses\RectangleTriangle;
 use Tests\DIClasses\Square;
 use Tests\DIClasses\SumAreas;
 use Tests\DIClasses\TestParam;
+use Tests\DIClasses\UnionTypeClass1;
+use Tests\DIClasses\UnionTypeClass2;
 use PHPUnit\Framework\TestCase;
 
 class DependencyInjectionTest extends TestCase
@@ -52,6 +58,10 @@ class DependencyInjectionTest extends TestCase
         $diTest5CacheMultiple = new Environment('di-test5-cache-multiple', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
         $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::singleFile);
         $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
+        $diUnionType = new Environment('di-uniontype');
+        $diTestLazy = new Environment('di-test-lazy');
+        $diTestOverrides = new Environment('di-test-overrides');
+        $diTestOverridesFail = new Environment('di-test-overrides-fail');
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
@@ -62,6 +72,10 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment($diTest5CacheMultiple)
             ->addEnvironment($diTest5CacheSingle)
             ->addEnvironment($diTest6)
+            ->addEnvironment($diUnionType)
+            ->addEnvironment($diTestLazy)
+            ->addEnvironment($diTestOverrides)
+            ->addEnvironment($diTestOverridesFail)
         ;
     }
 
@@ -282,6 +296,24 @@ class DependencyInjectionTest extends TestCase
         }
     }
 
+    public function testLazyParamWithEagerSingleton()
+    {
+        $config = $this->object->build('di-test-lazy');
+
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(EagerClass::class));
+
+        $instance = $config->get(EagerClass::class);
+        $this->assertInstanceOf(EagerClass::class, $instance);
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+
+        $areaProxy = $instance::getArea();
+        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+
+        $this->assertEquals(6, $areaProxy->calculate());
+        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Area::class));
+    }
+
     public function testGetInstancesWithParam()
     {
         $config = $this->object->build('di-test4');
@@ -331,7 +363,7 @@ class DependencyInjectionTest extends TestCase
     public function testInjectConstructorFail2()
     {
         $this->expectException(DependencyInjectionException::class);
-        $this->expectExceptionMessage("The parameter '\$area' has no type defined in class 'Tests\DIClasses\InjectedFail'");
+        $this->expectExceptionMessage("The parameter '\$area' has no type defined and no override provided in class 'Tests\DIClasses\InjectedFail'");
 
         $this->object = (new Definition())
             ->addEnvironment(new Environment('di-fail2'))
@@ -392,7 +424,7 @@ class DependencyInjectionTest extends TestCase
 
     /**
      * Test for the getClassName() method
-     * 
+     *
      * @throws DependencyInjectionException
      * @throws ConfigNotFoundException
      * @throws ConfigException
@@ -414,5 +446,141 @@ class DependencyInjectionTest extends TestCase
         $value = $config->raw('Value');
         $this->assertInstanceOf(DependencyInjection::class, $value);
         $this->assertEquals(Area::class, $value->getClassName());
+    }
+
+    /**
+     * Test for union types in constructor parameters
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
+     * @throws InvalidArgumentException
+     */
+    public function testUnionTypeConstructor()
+    {
+        $config = $this->object->build('di-uniontype');
+
+        // Get the dependencies
+        $class1 = $config->get(UnionTypeClass1::class);
+        $this->assertInstanceOf(UnionTypeClass1::class, $class1);
+        $this->assertEquals("Class1", $class1->getName());
+
+        $class2 = $config->get(UnionTypeClass2::class);
+        $this->assertInstanceOf(UnionTypeClass2::class, $class2);
+        $this->assertEquals("Class2", $class2->getName());
+
+        // Get the class with union type
+        // It should inject UnionTypeClass1 since it's the first non-builtin type in the union
+        $classWithUnion = $config->get(ClassWithUnionType::class);
+        $this->assertInstanceOf(ClassWithUnionType::class, $classWithUnion);
+        $this->assertEquals("Class1", $classWithUnion->getDependencyName());
+
+        $classWithUnion2 = $config->get(ClassWithUnionType2::class);
+        $this->assertInstanceOf(ClassWithUnionType2::class, $classWithUnion2);
+        $this->assertEquals("Class2", $classWithUnion2->getDependencyName());
+    }
+
+    /**
+     * Test withInjectedConstructorOverrides with single override
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws InvalidArgumentException
+     */
+    public function testWithInjectedConstructorOverridesSingleParameter()
+    {
+        $config = $this->object->build('di-test-overrides');
+
+        $mixed = $config->get('mixed1');
+        $this->assertInstanceOf(MixedDependencies::class, $mixed);
+
+        // Check that auto-injected dependencies work
+        $this->assertEquals(42, $mixed->getRandomNumber());
+        $this->assertEquals(25, $mixed->getArea()->calculate()); // 5 * 10 / 2 = 25
+
+        // Check that overridden parameter works
+        $this->assertEquals('my-secret-key', $mixed->getApiKey());
+
+        // Check default parameter
+        $this->assertEquals(3, $mixed->getMaxRetries());
+    }
+
+    /**
+     * Test withInjectedConstructorOverrides with multiple overrides
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws InvalidArgumentException
+     */
+    public function testWithInjectedConstructorOverridesMultipleParameters()
+    {
+        $config = $this->object->build('di-test-overrides');
+
+        $mixed = $config->get('mixed2');
+        $this->assertInstanceOf(MixedDependencies::class, $mixed);
+
+        // Check that auto-injected dependencies work
+        $this->assertEquals(42, $mixed->getRandomNumber());
+        $this->assertEquals(25, $mixed->getArea()->calculate());
+
+        // Check that both overridden parameters work
+        $this->assertEquals('another-key', $mixed->getApiKey());
+        $this->assertEquals(5, $mixed->getMaxRetries());
+    }
+
+    /**
+     * Test withInjectedConstructorOverrides with Param::get() override
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws InvalidArgumentException
+     */
+    public function testWithInjectedConstructorOverridesWithParamGet()
+    {
+        $config = $this->object->build('di-test-overrides');
+
+        $mixed = $config->get('mixed3');
+        $this->assertInstanceOf(MixedDependencies::class, $mixed);
+
+        // Check that overridden dependency works (custom-random has value 999)
+        $this->assertEquals(999, $mixed->getRandomNumber());
+
+        // Check that other auto-injected dependency works
+        $this->assertEquals(25, $mixed->getArea()->calculate());
+
+        // Check that string override works
+        $this->assertEquals('test-key', $mixed->getApiKey());
+    }
+
+    /**
+     * Test that withInjectedConstructorOverrides fails without required built-in type parameter
+     *
+     * @throws ConfigNotFoundException
+     * @throws ConfigException
+     * @throws ContainerExceptionInterface
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws InvalidArgumentException
+     */
+    public function testWithInjectedConstructorOverridesFailsWithoutBuiltinTypeOverride()
+    {
+        $this->expectException(DependencyInjectionException::class);
+        $this->expectExceptionMessage("The parameter '\$apiKey' is a built-in type");
+
+        // This should fail during build because apiKey is required but not provided
+        $config = $this->object->build('di-test-overrides-fail');
     }
 }

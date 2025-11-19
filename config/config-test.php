@@ -14,7 +14,7 @@ return [
     'property5' => 'test',
 
     'property6' => function () {
-        $x = new Tests\DIClasses\Square(2);
+        $x = new \Tests\DIClasses\Square(2);
         return $x->calculate();
     },
 
