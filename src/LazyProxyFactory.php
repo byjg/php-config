@@ -6,6 +6,7 @@ use ByJG\Config\Exception\DependencyInjectionException;
 use Closure;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionException;
 use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -49,7 +50,10 @@ class LazyProxyFactory
     }
 
     /**
+     * @param class-string $typeHint
+     * @return string
      * @throws DependencyInjectionException
+     * @throws ReflectionException
      */
     private static function ensureProxyClass(string $typeHint): string
     {

@@ -177,6 +177,9 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         }
 
         if ($this->isCachedDependencyInjection($id)) {
+            if ($this->cacheObject === null) {
+                throw new ConfigException("Cache object is not initialized");
+            }
             $this->config[$id] = $this->cacheObject->get($this->cacheKey . "-" . $this->fixCacheKeyName($id));
         }
 
@@ -192,9 +195,12 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     public function getAsFilename(string $id): string
     {
         # Transform ID into a valid filename
-        $id = preg_replace('/[^a-zA-Z0-9]/', '_', $id);
+        $sanitizedId = preg_replace('/[^a-zA-Z0-9]/', '_', $id);
+        if ($sanitizedId === null) {
+            throw new RunTimeException("Failed to sanitize ID '$id'");
+        }
 
-        $filename = sys_get_temp_dir() . "/config-{$this->definitionName}-$id.php";
+        $filename = sys_get_temp_dir() . "/config-{$this->definitionName}-$sanitizedId.php";
         if (!file_exists($filename)) {
             $contents = $this->get($id);
             if (!is_string($contents)) {
@@ -242,7 +248,11 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 
     protected function fixCacheKeyName(string $key): string
     {
-        return strtolower(preg_replace('/[^a-zA-Z0-9]/', '_', $key));
+        $result = preg_replace('/[^a-zA-Z0-9]/', '_', $key);
+        if ($result === null) {
+            throw new RunTimeException("Failed to sanitize cache key '$key'");
+        }
+        return strtolower($result);
     }
 
     /**
