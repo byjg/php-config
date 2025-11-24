@@ -78,8 +78,13 @@ class Definition
             return null;
         }
 
+        $lines = file($filename);
+        if ($lines === false) {
+            return null;
+        }
+
         $config = [];
-        foreach (file($filename) as $line) {
+        foreach ($lines as $line) {
             $line = trim($line);
             if (!preg_match("/^(?<key>\w+)\s*=\s*([\"'])?(?<value>.*?)([\"'])?$/", $line, $result)) {
                 continue;
@@ -101,11 +106,20 @@ class Definition
         }
 
         $config = [];
-        foreach (glob( "$dir/*.php") as $file) {
-            $config = array_merge($config, $this->_loadPhp($file));
+        $phpFiles = glob("$dir/*.php");
+        if ($phpFiles !== false) {
+            foreach ($phpFiles as $file) {
+                $config = array_merge($config, $this->_loadPhp($file));
+            }
         }
-        foreach (glob("$dir/*.env") as $file) {
-            $config = array_merge($config, $this->loadEnvFileContents($file));
+        $envFiles = glob("$dir/*.env");
+        if ($envFiles !== false) {
+            foreach ($envFiles as $file) {
+                $envConfig = $this->loadEnvFileContents($file);
+                if ($envConfig !== null) {
+                    $config = array_merge($config, $envConfig);
+                }
+            }
         }
 
         return $config;
@@ -246,15 +260,21 @@ class Definition
 
         // Check if container is saved in the cache
         if ($this->allowCache && !empty($this->configList[$configName]->getCacheInterface())) {
-            $container = Container::createFromCache($configName, $this->configList[$configName]->getCacheInterface(), $this->configList[$configName]->getCacheMode());
-            if (!is_null($container)) {
-                return $container;
+            $cacheInterface = $this->configList[$configName]->getCacheInterface();
+            if ($cacheInterface !== null) {
+                $container = Container::createFromCache($configName, $cacheInterface, $this->configList[$configName]->getCacheMode());
+                if (!is_null($container)) {
+                    return $container;
+                }
             }
         }
 
         // Delete all files started with sys_get_temp_dir() . '/config-*'
-        foreach (glob(sys_get_temp_dir() . "/config-$configName*") as $file) {
-            unlink($file);
+        $configFiles = glob(sys_get_temp_dir() . "/config-$configName*");
+        if ($configFiles !== false) {
+            foreach ($configFiles as $file) {
+                unlink($file);
+            }
         }
 
         // Create from the Definition and configuration files

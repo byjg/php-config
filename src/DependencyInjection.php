@@ -60,7 +60,7 @@ class DependencyInjection
     }
 
     /**
-     * @return string
+     * @return class-string
      */
     public function getClassName(): string
     {
@@ -89,6 +89,10 @@ class DependencyInjection
      */
     protected function getArgs(?array $argsToParse = null): array
     {
+            $args = is_null($argsToParse) ? $this->args : $argsToParse;
+            if ($args === null) {
+                return [];
+            }
             return array_map(function ($value) {
                 if ($value instanceof LazyParam) {
                     return LazyProxyFactory::create($this->containerInterface, $value->getParam(), $value->getTypeHint());
@@ -98,11 +102,11 @@ class DependencyInjection
                     try {
                         return $this->containerInterface->get($value->getParam());
                     } catch (KeyNotFoundException $ex) {
-                        throw new KeyNotFoundException($ex->getMessage() . " injected from '" . $this->getClass() . "'");
+                        throw new KeyNotFoundException($ex->getMessage() . " injected from '" . $this->getClassName() . "'");
                     }
                 }
                 return $value;
-            }, is_null($argsToParse) ? $this->args : $argsToParse);
+            }, $args);
     }
 
     /**
@@ -212,7 +216,7 @@ class DependencyInjection
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
-        $reflection = new ReflectionMethod($this->getClass(), "__construct");
+        $reflection = new ReflectionMethod($this->getClassName(), "__construct");
         $params = $reflection->getParameters();
 
         if (count($params) > 0) {
@@ -231,7 +235,7 @@ class DependencyInjection
                 if (is_null($type)) {
                     throw new DependencyInjectionException(
                         "The parameter '\$$paramName' has no type defined and no override provided in class '" .
-                        $this->getClass() . "'"
+                        $this->getClassName() . "'"
                     );
                 }
 
@@ -249,7 +253,7 @@ class DependencyInjection
                         }
                         throw new DependencyInjectionException(
                             "The parameter '\$$paramName' is a built-in type ('{$type->getName()}') and must be provided in overrides array in class '" .
-                            $this->getClass() . "'"
+                            $this->getClassName() . "'"
                         );
                     }
                     $args[] = Param::get(ltrim($type->getName(), "\\"));
@@ -280,7 +284,7 @@ class DependencyInjection
         }
 
         throw new DependencyInjectionException(
-            "The parameter '$" . $param->getName() . "' has no non-builtin type in union type in class '" . $this->getClass() . "'"
+            "The parameter '$" . $param->getName() . "' has no non-builtin type in union type in class '" . $this->getClassName() . "'"
         );
     }
 
@@ -295,7 +299,7 @@ class DependencyInjection
             throw new DependencyInjectionException('You cannot set constructor on a already set object (DI::use())');
         }
 
-        $reflection = new ReflectionMethod($this->getClass(), "__construct");
+        $reflection = new ReflectionMethod($this->getClassName(), "__construct");
 
         $docComments = str_replace("\n", " ", $reflection->getDocComment());
 
@@ -305,7 +309,7 @@ class DependencyInjection
         $result = preg_match_all('/@param\s+([\w_\\\\]+)\s+\$[\w_]+/', $docComments, $params);
 
         if (count($methodParams) <> $result) {
-            throw new DependencyInjectionException("The class " . $this->getClass() . " does not have annotations with the param type.");
+            throw new DependencyInjectionException("The class " . $this->getClassName() . " does not have annotations with the param type.");
         }
 
         if (count($methodParams) > 0) {
@@ -408,7 +412,7 @@ class DependencyInjection
         $instance = $this->getInternalInstance();
 
         if (is_null($instance)) {
-            throw new DependencyInjectionException("Could not get a instance of " . $this->getClass());
+            throw new DependencyInjectionException("Could not get a instance of " . $this->getClassName());
         }
 
         $this->processed = true;
@@ -444,10 +448,10 @@ class DependencyInjection
         if ($this->use) {
             $instance = $this->getArgs([$this->class])[0];
         } else if (!empty($this->factory)) {
-            $instance = call_user_func_array([$this->getClass(), $this->factory], $this->getArgs());
+            $instance = call_user_func_array([$this->getClassName(), $this->factory], $this->getArgs());
         } else {
 
-            $reflectionClass = new ReflectionClass($this->getClass());
+            $reflectionClass = new ReflectionClass($this->getClassName());
 
             if (is_null($this->args)) {
                 $instance = $reflectionClass->newInstanceWithoutConstructor();
