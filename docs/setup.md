@@ -141,15 +141,70 @@ $prod = Environment::create('prod')->inheritFrom($dev);
 
 ## Load Priority
 
-If you have multiple files and the same variable is defined in more than one file, 
+If you have multiple files and the same variable is defined in more than one file,
 the system will override the value with the value defined by the last file loaded with the same variable.
 
-The load order is:
+The load order within a single directory is:
 1. `config-<ENV>.php`
 2. `config-<ENV>.env`
 3. `<ENV>/*.php` (in alphabetical order)
 4. `<ENV>/*.env` (in alphabetical order)
 5. `.env`
+
+## Custom Config Directory
+
+By default the library looks for config files in the `config/` directory at the project root. You can override this with `withBaseDir()`:
+
+```php
+<?php
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+$definition = (new Definition())
+    ->addEnvironment(new Environment('prod'))
+    ->withBaseDir('/path/to/my/config');
+```
+
+:::note
+`withBaseDir()` replaces the default directory entirely. It throws a `ConfigException` if the directory does not exist.
+:::
+
+## Multiple Config Directories
+
+Use `addConfigDirectory()` to load config from more than one directory. This is useful for layered configurations — for example, a package that ships default values which the application can then override:
+
+```php
+<?php
+use ByJG\Config\Definition;
+use ByJG\Config\Environment;
+
+$definition = (new Definition())
+    ->addEnvironment(new Environment('prod'))
+    ->addConfigDirectory('/path/to/package/config')   // defaults
+    ->addConfigDirectory('/path/to/app/config');      // overrides
+```
+
+Directories are loaded in the order they are added. For any given key, the value from the **last directory** that defines it wins. Keys that exist only in one directory are available regardless.
+
+The full load order across all directories is:
+
+| Priority (lowest → highest)  | Source                      |
+|------------------------------|-----------------------------|
+| 1st directory — config file  | `config-<ENV>.php` / `.env` |
+| 1st directory — sub-folder   | `<ENV>/*.php` / `*.env`     |
+| 1st directory — root .env    | `.env`                      |
+| 2nd directory — config file  | `config-<ENV>.php` / `.env` |
+| 2nd directory — sub-folder   | `<ENV>/*.php` / `*.env`     |
+| 2nd directory — root .env    | `.env`                      |
+| … and so on                  |                             |
+
+:::note
+`addConfigDirectory()` throws a `ConfigException` if the directory does not exist. If a directory exists but has no config file for the current environment, it is silently skipped.
+:::
+
+:::tip
+`withBaseDir()` and `addConfigDirectory()` can be combined. `withBaseDir()` sets a single directory (replacing any previously added ones), while `addConfigDirectory()` appends to the list.
+:::
 
 
 ----

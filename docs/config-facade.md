@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 4
 title: Config Facade
 description: Using the Config static facade for convenient container access
 ---

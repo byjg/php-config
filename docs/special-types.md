@@ -1,5 +1,5 @@
 ---
-sidebar_position: 6
+sidebar_position: 7
 title: Special Types
 description: Learn about special type parsers and using Param::get() for container references
 ---
