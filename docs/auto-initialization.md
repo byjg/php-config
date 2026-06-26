@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 5
 title: Auto-Initialization
 description: Automatically initialize the Config facade with a bootstrap file
 ---

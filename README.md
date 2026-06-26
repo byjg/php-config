@@ -1,4 +1,11 @@
+---
+sidebar_key: config
+tags: [php]
+---
+
 # Configuration and Dependency Injection
+
+This is a basic and minimalist implementation of PSR-11 for config management and dependency injection.
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%23ea4aaa?logo=githubsponsors&logoColor=white&labelColor=0d1117)](https://github.com/sponsors/byjg)
 [![Build Status](https://github.com/byjg/php-config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-config/actions/workflows/phpunit.yml)
@@ -6,8 +13,6 @@
 [![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-config/)
 [![GitHub license](https://img.shields.io/github/license/byjg/php-config.svg)](https://opensource.byjg.com/license/)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-config.svg)](https://github.com/byjg/php-config/releases/)
-
-This is a basic and minimalist implementation of PSR-11 for config management and dependency injection.
 
 ## Features
 

@@ -452,4 +452,29 @@ class ContainerTest extends TestCase
         $config = $this->object->build('folderenv');
         $filename = $config->getAsFilename('property2');
     }
+
+    public function testMultipleConfigDirectories()
+    {
+        $baseDir = __DIR__ . '/../config';
+        $extraDir = __DIR__ . '/../config-extra';
+
+        $definition = (new Definition())
+            ->addEnvironment(new Environment('multidir'))
+            ->addConfigDirectory($baseDir)
+            ->addConfigDirectory($extraDir);
+
+        $config = $definition->build('multidir');
+
+        $this->assertEquals('from_base', $config->get('base_key'));     // only in first dir
+        $this->assertEquals('from_extra', $config->get('extra_key'));   // only in second dir
+        $this->assertEquals('from_extra', $config->get('shared_key')); // second dir overrides first
+    }
+
+    public function testAddConfigDirectoryThrowsOnMissingDir()
+    {
+        $this->expectException(ConfigException::class);
+        $this->expectExceptionMessage("Directory");
+
+        (new Definition())->addConfigDirectory('/nonexistent/path');
+    }
 }

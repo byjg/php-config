@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 3
 title: Loading the Configuration
 description: Learn how to load and use configuration values in your application
 ---

@@ -121,6 +121,23 @@ class DependencyInjectionTest extends TestCase
         $this->assertNotSame($random2, $random4);
     }
 
+    public function testGetLazyInstanceWithDirectArgs()
+    {
+        $config = $this->object->build('di-test');
+
+        // New preferred way: pass arguments directly to get()
+        $random1 = $config->get("Random2", 5);
+        $this->assertInstanceOf(Random::class, $random1);
+        $this->assertEquals(5, $random1->getNumber());
+
+        $random2 = $config->get("Random2", 15);
+        $this->assertInstanceOf(Random::class, $random2);
+        $this->assertEquals(15, $random2->getNumber());
+
+        // Each call returns a new instance
+        $this->assertNotSame($random1, $random2);
+    }
+
     public function testGetInstancesControl()
     {
         $config = $this->object->build('di-test2');
