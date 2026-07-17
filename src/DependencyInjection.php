@@ -396,6 +396,10 @@ class DependencyInjection
     }
 
     /**
+     * Get an instance of the bound class with optional constructor arguments.
+     *
+     * @internal This method is called internally by the Container. Users should use $container->get(ClassName::class, ...$args) instead.
+     *
      * @return object
      * @throws ContainerExceptionInterface
      * @throws DependencyInjectionException

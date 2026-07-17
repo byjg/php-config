@@ -20,7 +20,7 @@ class Definition
 
     private bool $allowCache = true;
 
-    private string $baseDir = "";
+    private array $baseDirs = [];
 
     private array|bool $loadOsEnv = false;
 
@@ -31,30 +31,42 @@ class Definition
      */
     private function loadConfig(array $currentConfig, string $configName): array
     {
-        $content1 = $this->loadConfigFile($configName);
-        $content2 = $this->loadDirectory($configName);
-        $content3 = $this->loadEnvFileContents($this->getBaseDir() . "/.env");
+        $merged = [];
+        $foundAny = false;
 
-        if (is_null($content1) && is_null($content2)) {
-            throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not found at " . $this->getBaseDir());
+        foreach ($this->getBaseDirs() as $dir) {
+            $content1 = $this->loadConfigFile($configName, $dir);
+            $content2 = $this->loadDirectory($configName, $dir);
+            $content3 = $this->loadEnvFileContents($dir . "/.env");
+
+            if (!is_null($content1) || !is_null($content2)) {
+                $foundAny = true;
+            }
+
+            $merged = array_merge(
+                $merged,
+                is_null($content1) ? [] : $content1,
+                is_null($content2) ? [] : $content2,
+                is_null($content3) ? [] : $content3,
+            );
         }
 
-        return array_merge(
-            is_null($content1) ? [] : $content1,
-            is_null($content2) ? [] : $content2,
-            is_null($content3) ? [] : $content3,
-            $currentConfig
-        );
+        if (!$foundAny) {
+            throw new ConfigNotFoundException("Configuration 'config-$configName.php' or 'config-$configName.env' could not be found in: " . implode(', ', $this->getBaseDirs()));
+        }
+
+        return array_merge($merged, $currentConfig);
     }
 
     /**
      * @param string $configName The configuration to be loaded
+     * @param string $dir The directory to load from
      * @return array|null
      */
-    private function loadConfigFile(string $configName): ?array
+    private function loadConfigFile(string $configName, string $dir): ?array
     {
-        $phpConfig = $this->_loadPhp($this->getBaseDir() . '/config-' . $configName .  '.php');
-        $envFile = $this->loadEnvFileContents($this->getBaseDir() . "/config-$configName.env");
+        $phpConfig = $this->_loadPhp($dir . '/config-' . $configName .  '.php');
+        $envFile = $this->loadEnvFileContents($dir . "/config-$configName.env");
 
         if (is_null($phpConfig) && is_null($envFile)) {
             return null;
@@ -97,9 +109,9 @@ class Definition
         return $config;
     }
 
-    private function loadDirectory(string $configName): ?array
+    private function loadDirectory(string $configName, string $dir): ?array
     {
-        $dir = $this->getBaseDir() . '/' . $configName;
+        $dir = $dir . '/' . $configName;
 
         if (!file_exists($dir)) {
             return [];
@@ -169,16 +181,28 @@ class Definition
         if (!file_exists($dir)) {
             throw new ConfigException("Directory $dir doesn't exists");
         }
-        $this->baseDir = $dir;
+        $this->baseDirs = [$dir];
         return $this;
     }
 
-    private function getBaseDir(): string
+    /**
+     * @throws ConfigException
+     */
+    public function addConfigDirectory(string $dir): static
     {
-        if (empty($this->baseDir)) {
-            $this->baseDir = self::findBaseDir();
+        if (!file_exists($dir)) {
+            throw new ConfigException("Directory $dir doesn't exists");
         }
-        return $this->baseDir;
+        $this->baseDirs[] = $dir;
+        return $this;
+    }
+
+    private function getBaseDirs(): array
+    {
+        if (empty($this->baseDirs)) {
+            $this->baseDirs = [self::findBaseDir()];
+        }
+        return $this->baseDirs;
     }
 
     /**

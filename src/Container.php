@@ -91,6 +91,9 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         if ($value instanceof DependencyInjection) {
             $value->injectContainer($this);
             if ($value->isDelayedInstance()) {
+                if (!empty($args)) {
+                    return $value->getInstance(...$args);
+                }
                 return $value;
             }
             return $value->getInstance();

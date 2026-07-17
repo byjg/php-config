@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
 title: Dependency Injection
 description: Learn how to use dependency injection to manage object creation and dependencies
 ---
@@ -246,9 +246,7 @@ Because `LazyParam` still resolves through the container, the dependency is trac
 
 ## Delayed Instance
 
-The delayed instance will not return the object immediately. 
-Instead, it will return the DependencyInjection object, and then you can get the instance with
-customized constructor arguments.
+The delayed instance allows you to pass custom arguments to the constructor for every instance you get from the container.
 
 You should prefer to use `toInstance()` or `toSingleton()` instead of `toDelayedInstance()`.
 
@@ -262,7 +260,7 @@ return [
 
     Square::class => DI::bind(Square::class)
         ->toDelayedInstance(),
- ];
+];
 ```
 
 And then you can get the instance with custom arguments:
@@ -270,6 +268,11 @@ And then you can get the instance with custom arguments:
 ```php
 <?php
 
+// Recommended: Pass arguments directly to get()
+$square1 = $config->get(Square::class, 5);
+$square2 = $config->get(Square::class, 7);
+
+// Deprecated: Using getInstance() (still works but will be removed in future versions)
 $square1 = $config->get(Square::class)->getInstance(5);
 $square2 = $config->get(Square::class)->getInstance(7);
 ```
