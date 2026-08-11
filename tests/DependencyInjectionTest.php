@@ -2,11 +2,16 @@
 
 namespace Tests;
 
+use ArrayObject;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 use ByJG\Config\CacheModeEnum;
+use ByJG\Config\Container;
+use ByJG\Config\ContainerParam;
 use ByJG\Config\DependencyInjection;
 use ByJG\Config\Environment;
 use ByJG\Config\Definition;
+use ByJG\Config\LazyParam;
+use ByJG\Config\Param;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\ConfigNotFoundException;
 use ByJG\Config\Exception\DependencyInjectionException;
@@ -19,8 +24,10 @@ use Psr\SimpleCache\CacheInterface;
 use Psr\SimpleCache\InvalidArgumentException;
 use ReflectionException;
 use Tests\DIClasses\Area;
+use Tests\DIClasses\ClassWithIntersectionType;
 use Tests\DIClasses\ClassWithUnionType;
 use Tests\DIClasses\ClassWithUnionType2;
+use Tests\DIClasses\ContainerAware;
 use Tests\DIClasses\EagerClass;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\MixedDependencies;
@@ -62,6 +69,8 @@ class DependencyInjectionTest extends TestCase
         $diTestLazy = new Environment('di-test-lazy');
         $diTestOverrides = new Environment('di-test-overrides');
         $diTestOverridesFail = new Environment('di-test-overrides-fail');
+        $diContainer = new Environment('di-container');
+        $diContainerCache = new Environment('di-container-cache', inheritFrom: [$diContainer], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
@@ -76,6 +85,8 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment($diTestLazy)
             ->addEnvironment($diTestOverrides)
             ->addEnvironment($diTestOverridesFail)
+            ->addEnvironment($diContainer)
+            ->addEnvironment($diContainerCache)
         ;
     }
 
@@ -599,5 +610,127 @@ class DependencyInjectionTest extends TestCase
 
         // This should fail during build because apiKey is required but not provided
         $config = $this->object->build('di-test-overrides-fail');
+    }
+
+    /**
+     * An intersection type (A&B) has no single class name to resolve, so auto-wiring must
+     * refuse it at definition time instead of registering a dependency literally named
+     * "Countable&ArrayAccess" that blows up much later with an unrelated "not found".
+     *
+     * @throws DependencyInjectionException
+     * @throws ReflectionException
+     */
+    public function testInjectedConstructorRejectsIntersectionType()
+    {
+        $this->expectException(DependencyInjectionException::class);
+        $this->expectExceptionMessage(
+            "The parameter '\$dependency' has an unsupported type and must be provided in "
+            . "overrides array in class '" . ClassWithIntersectionType::class . "'"
+        );
+
+        DependencyInjection::bind(ClassWithIntersectionType::class)
+            ->withInjectedConstructor();
+    }
+
+    /**
+     * ... and the escape hatch that message points at genuinely works: an override is
+     * consumed before auto-wiring ever inspects the type.
+     *
+     * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
+     */
+    public function testIntersectionTypeCanBeSuppliedThroughOverrides()
+    {
+        $instance = DependencyInjection::bind(ClassWithIntersectionType::class)
+            ->withInjectedConstructorOverrides(['dependency' => new ArrayObject(['a', 'b'])])
+            ->toInstance()
+            ->getInstance();
+
+        $this->assertInstanceOf(ClassWithIntersectionType::class, $instance);
+        $this->assertEquals(2, $instance->countItems());
+    }
+
+    /**
+     * Param::container() resolves to the container itself when used as a constructor
+     * argument.
+     */
+    public function testContainerParamAsConstructorArg()
+    {
+        $config = $this->object->build('di-container');
+
+        $instance = $config->get('container.ctor');
+        $this->assertInstanceOf(ContainerAware::class, $instance);
+        $this->assertSame($config, $instance->getContainer());
+
+        // Not merely non-null — the container it received actually resolves.
+        $this->assertEquals(6, $instance->resolve(Area::class)->calculate());
+    }
+
+    /**
+     * ... and when used as a withMethodCall() argument, which is the case that carries
+     * the container into an already-constructed service.
+     */
+    public function testContainerParamAsMethodCallArg()
+    {
+        $config = $this->object->build('di-container');
+
+        $instance = $config->get('container.method');
+        $this->assertInstanceOf(ContainerAware::class, $instance);
+        $this->assertSame($config, $instance->getContainer());
+        $this->assertEquals(6, $instance->resolve(Area::class)->calculate());
+    }
+
+    /**
+     * Eager singletons are resolved inside Container::__construct(). Reaching for the
+     * container through the static Config facade at that point recurses into
+     * autoInitialize(); Param::container() uses the instance already injected, so it
+     * must work here.
+     */
+    public function testContainerParamInsideEagerSingleton()
+    {
+        $config = $this->object->build('di-container');
+
+        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus('container.eager'));
+
+        $instance = $config->get('container.eager');
+        $this->assertSame($config, $instance->getContainer());
+        $this->assertEquals(6, $instance->resolve(Area::class)->calculate());
+    }
+
+    /**
+     * A DependencyInjection holding a ContainerParam must survive serialization to the
+     * container cache — and on the way back it must bind to the *new* container, not a
+     * stale one. This is why the marker is stateless rather than the container itself.
+     */
+    public function testContainerParamSurvivesCacheRoundTrip()
+    {
+        $this->cache->clear();
+
+        $container = $this->object->build('di-container-cache');
+        $this->assertSame($container, $container->get('container.ctor')->getContainer());
+
+        $container2 = Container::createFromCache('di-container-cache', $this->cache);
+        $this->assertNotNull($container2);
+        $this->assertNotSame($container, $container2);
+
+        $restored = $container2->get('container.ctor');
+        $this->assertInstanceOf(ContainerAware::class, $restored);
+        $this->assertSame($container2, $restored->getContainer());
+        $this->assertEquals(6, $restored->resolve(Area::class)->calculate());
+    }
+
+    /**
+     * Param::container() must not be confused with a normal Param — ContainerParam
+     * extends Param, so the instanceof checks in getArgs() are order-sensitive.
+     */
+    public function testContainerParamIsDistinctFromRegularParam()
+    {
+        $this->assertInstanceOf(ContainerParam::class, Param::container());
+        $this->assertInstanceOf(Param::class, Param::container());
+        $this->assertNotInstanceOf(ContainerParam::class, Param::get(Area::class));
+        $this->assertNotInstanceOf(ContainerParam::class, LazyParam::get(Area::class));
     }
 }
