@@ -2,6 +2,34 @@
 
 ## New Features
 
+### Autowiring a family of classes with `Autowire`
+
+Terminal classes — ones nothing else depends on, such as REST controllers — can now be
+bound by pattern instead of one entry each. The config key is the pattern, `*` matches any
+run of characters:
+
+```php
+use ByJG\Config\Autowire;
+
+return [
+    'App\Controller\*' => Autowire::rule()
+        ->withInjectedConstructor()
+        ->toInstance(),
+];
+```
+
+- A class that declares no constructor degrades to `withConstructorNoArgs()`
+  automatically, so ActiveRecord-style controllers need no special case.
+- An explicit binding always wins over a pattern.
+- `Container::has()` reports pattern-matched classes as available, in line with PSR-11.
+  It requires the class to exist, so a typo stays a plain "not found".
+
+Scope patterns to a namespace. A bare `*Controller` also matches vendor classes, and since
+`has()` consults these rules that can quietly flip `has() ? get() : $default` checks.
+
+Not intended for services or repositories: those bindings carry real decisions (which
+implementation, singleton or not, scalar arguments) and should stay explicit.
+
 ### Injecting the container itself with `Param::container()`
 
 Some services must resolve collaborators on their own — a router that instantiates controllers by class

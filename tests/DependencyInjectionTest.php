@@ -5,6 +5,7 @@ namespace Tests;
 use ArrayObject;
 use ByJG\Cache\Psr16\FileSystemCacheEngine;
 use ByJG\Config\CacheModeEnum;
+use ByJG\Config\Autowire;
 use ByJG\Config\Container;
 use ByJG\Config\ContainerParam;
 use ByJG\Config\DependencyInjection;
@@ -27,7 +28,11 @@ use Tests\DIClasses\Area;
 use Tests\DIClasses\ClassWithIntersectionType;
 use Tests\DIClasses\ClassWithUnionType;
 use Tests\DIClasses\ClassWithUnionType2;
+use Tests\DIClasses\Autowired\OverriddenController;
+use Tests\DIClasses\Autowired\PlainController;
+use Tests\DIClasses\Autowired\WidgetController;
 use Tests\DIClasses\ContainerAware;
+use Tests\DIClasses\NotAController;
 use Tests\DIClasses\EagerClass;
 use Tests\DIClasses\InjectedLegacy;
 use Tests\DIClasses\MixedDependencies;
@@ -70,6 +75,8 @@ class DependencyInjectionTest extends TestCase
         $diTestOverrides = new Environment('di-test-overrides');
         $diTestOverridesFail = new Environment('di-test-overrides-fail');
         $diContainer = new Environment('di-container');
+        $diAutowire = new Environment('di-autowire');
+        $diAutowireCache = new Environment('di-autowire-cache', inheritFrom: [$diAutowire], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
         $diContainerCache = new Environment('di-container-cache', inheritFrom: [$diContainer], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
 
         $this->object = (new Definition())
@@ -87,6 +94,8 @@ class DependencyInjectionTest extends TestCase
             ->addEnvironment($diTestOverridesFail)
             ->addEnvironment($diContainer)
             ->addEnvironment($diContainerCache)
+            ->addEnvironment($diAutowire)
+            ->addEnvironment($diAutowireCache)
         ;
     }
 
@@ -720,6 +729,126 @@ class DependencyInjectionTest extends TestCase
         $this->assertInstanceOf(ContainerAware::class, $restored);
         $this->assertSame($container2, $restored->getContainer());
         $this->assertEquals(6, $restored->resolve(Area::class)->calculate());
+    }
+
+    /**
+     * A pattern rule builds a matching class with its constructor resolved, with no
+     * per-class entry. WidgetController cannot be built with `new`, so a working
+     * instance proves the rule was applied.
+     */
+    public function testAutowireResolvesMatchingClass()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $instance = $config->get(WidgetController::class);
+        $this->assertInstanceOf(WidgetController::class, $instance);
+        $this->assertEquals(6, $instance->calculate());
+    }
+
+    /**
+     * withInjectedConstructor() reflects on __construct, so a class that declares none
+     * must degrade to withConstructorNoArgs() rather than blowing up.
+     */
+    public function testAutowireDegradesForClassWithoutConstructor()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $instance = $config->get(PlainController::class);
+        $this->assertInstanceOf(PlainController::class, $instance);
+        $this->assertEquals('hello', $instance->hello());
+    }
+
+    /**
+     * An explicit binding must win, or a pattern could silently take over a class that
+     * was deliberately configured.
+     */
+    public function testExplicitBindingWinsOverAutowirePattern()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $this->assertEquals('explicit', $config->get(OverriddenController::class)->label());
+    }
+
+    /**
+     * toInstance() on the rule means every resolution is a fresh object.
+     */
+    public function testAutowireHonoursLifetime()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $this->assertNotSame(
+            $config->get(WidgetController::class),
+            $config->get(WidgetController::class)
+        );
+    }
+
+    /**
+     * has() has to agree with get(), per PSR-11 — and must stay false for a class the
+     * pattern does not cover, or feature checks elsewhere silently change meaning.
+     */
+    public function testAutowireAffectsHasOnlyForMatchingExistingClasses()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $this->assertTrue($config->has(WidgetController::class));
+        $this->assertTrue($config->has(PlainController::class));
+
+        // Right shape of name, wrong namespace.
+        $this->assertFalse($config->has(NotAController::class));
+
+        // Matches the pattern, but no such class exists.
+        $this->assertFalse($config->has('Tests\\DIClasses\\Autowired\\NoSuchController'));
+    }
+
+    /**
+     * A class the pattern does not match still fails the ordinary way.
+     */
+    public function testAutowireDoesNotSwallowUnknownKeys()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $this->expectException(KeyNotFoundException::class);
+        $config->get(NotAController::class);
+    }
+
+    /**
+     * The rules live in the config array, so a container restored from cache has to
+     * rebuild its index and keep autowiring.
+     */
+    public function testAutowireSurvivesCacheRoundTrip()
+    {
+        $this->cache->clear();
+
+        $container = $this->object->build('di-autowire-cache');
+        $this->assertEquals(6, $container->get(WidgetController::class)->calculate());
+
+        $container2 = Container::createFromCache('di-autowire-cache', $this->cache);
+        $this->assertNotNull($container2);
+        $this->assertNotSame($container, $container2);
+
+        $this->assertTrue($container2->has(WidgetController::class));
+        $this->assertEquals(6, $container2->get(WidgetController::class)->calculate());
+    }
+
+    /**
+     * Pattern matching is literal apart from `*`; namespace separators are not regex.
+     */
+    public function testAutowirePatternMatching()
+    {
+        $this->assertTrue(Autowire::matchesPattern('App\\Controller\\*', 'App\\Controller\\Thing'));
+        $this->assertTrue(Autowire::matchesPattern('App\\Controller\\*', 'App\\Controller\\Sub\\Thing'));
+        $this->assertFalse(Autowire::matchesPattern('App\\Controller\\*', 'App\\Service\\Thing'));
+        $this->assertFalse(Autowire::matchesPattern('App\\Controller\\*', 'Other\\App\\Controller\\Thing'));
+
+        $this->assertTrue(Autowire::matchesPattern('*Controller', 'Vendor\\Lib\\FooController'));
+        $this->assertFalse(Autowire::matchesPattern('*Controller', 'Vendor\\Lib\\FooService'));
+
+        // A dot is literal, not "any character".
+        $this->assertFalse(Autowire::matchesPattern('App\\Cont.oller\\*', 'App\\Controller\\Thing'));
+
+        // No wildcard at all is an exact match.
+        $this->assertTrue(Autowire::matchesPattern('App\\Thing', 'App\\Thing'));
+        $this->assertFalse(Autowire::matchesPattern('App\\Thing', 'App\\ThingElse'));
     }
 
     /**

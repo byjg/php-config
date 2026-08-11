@@ -248,6 +248,59 @@ return [
 
 Because `LazyParam` still resolves through the container, the dependency is tracked normally, but it avoids the upfront instantiation cost that eager singletons would otherwise incur.
 
+## Autowiring a family of classes
+
+Some classes are *terminal* — nothing else depends on them. A REST controller is the
+usual example: it is named directly by the router, it is always per-request, and its
+constructor arguments are type-hinted services that are themselves explicitly bound. The
+per-class binding encodes no decision, so listing every one of them is ceremony.
+
+`Autowire` replaces those entries with a single rule. The config key is the pattern, where
+`*` matches any run of characters:
+
+```php
+<?php
+use ByJG\Config\Autowire;
+
+return [
+    'App\Controller\*' => Autowire::rule()
+        ->withInjectedConstructor()
+        ->toInstance(),
+];
+```
+
+Any class matching the pattern is now resolvable with no entry of its own, and
+`has()` reports it as available. A class that declares no constructor degrades to
+`withConstructorNoArgs()` automatically, so an ActiveRecord-style controller needs no
+special case.
+
+**An explicit binding always wins.** Add one for the odd class that needs different
+treatment and the rule steps aside:
+
+```php
+'App\Controller\*' => Autowire::rule()->withInjectedConstructor()->toInstance(),
+
+App\Controller\ReportController::class => DI::bind(App\Controller\ReportController::class)
+    ->withInjectedConstructorOverrides(['format' => 'pdf'])
+    ->toInstance(),
+```
+
+### Scope patterns to a namespace
+
+Prefer `App\Controller\*` over a bare `*Controller`. A bare suffix also matches classes in
+your vendor directory, and because `has()` consults these rules, that can quietly change
+the meaning of feature checks written as:
+
+```php
+$logger = Config::has(LoggerInterface::class) ? Config::get(LoggerInterface::class) : new NullLogger();
+```
+
+### Where not to use it
+
+Services and repositories are a poor fit. Their bindings carry real decisions — which
+implementation, singleton or not, scalar constructor arguments — and a pattern would be
+convention standing in for a choice that genuinely has to be made. Bind those explicitly.
+
 ## Injecting the container itself
 
 Some services have to resolve collaborators on their own — a router that instantiates
