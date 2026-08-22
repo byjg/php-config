@@ -96,5 +96,23 @@ return [
 ];
 ```
 
+The same rule applies to the container itself. If a service needs to resolve things on
+its own, use `Param::container()` rather than `Config::getContainer()` — the facade is
+not populated yet while the configuration is being built:
+
+```php
+<?php
+use ByJG\Config\Param;
+use ByJG\Config\DependencyInjection as DI;
+
+return [
+    Example\Server::class => DI::bind(Example\Server::class)
+        ->withMethodCall('withContainer', [Param::container()])
+        ->toSingleton(),
+];
+```
+
+See [Dependency Injection](dependency-injection.md#injecting-the-container-itself) for details.
+
 ----
 [Open source ByJG](http://opensource.byjg.com)

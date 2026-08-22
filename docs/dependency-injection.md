@@ -127,6 +127,10 @@ automatically.
 This component uses type hinting and PHP reflection to determine the classes that are required, not PHPDoc. If you're using older PHP versions or code without type declarations, you can use `withInjectedLegacyConstructor()` which uses PHPDoc comments to determine the types.
 :::
 
+Union types (`Foo|Bar`) are supported — the first non-builtin type of the union is injected. Intersection types
+(`Foo&Bar`) cannot be auto-injected because there is no single class to resolve; provide those parameters through
+[`withInjectedConstructorOverrides()`](#mixing-automatic-injection-with-manual-parameters) instead.
+
 ## Mixing automatic injection with manual parameters
 
 Sometimes you need to inject most dependencies automatically but provide specific values for certain parameters (like configuration strings, API keys, or numeric values). The `withInjectedConstructorOverrides()` method gives you the best of both worlds:
@@ -243,6 +247,92 @@ return [
 ```
 
 Because `LazyParam` still resolves through the container, the dependency is tracked normally, but it avoids the upfront instantiation cost that eager singletons would otherwise incur.
+
+## Autowiring a family of classes
+
+Some classes are *terminal* — nothing else depends on them. A REST controller is the
+usual example: it is named directly by the router, it is always per-request, and its
+constructor arguments are type-hinted services that are themselves explicitly bound. The
+per-class binding encodes no decision, so listing every one of them is ceremony.
+
+`Autowire` replaces those entries with a single rule. The config key is the pattern, where
+`*` matches any run of characters:
+
+```php
+<?php
+use ByJG\Config\Autowire;
+
+return [
+    'App\Controller\*' => Autowire::rule()
+        ->withInjectedConstructor()
+        ->toInstance(),
+];
+```
+
+Any class matching the pattern is now resolvable with no entry of its own, and
+`has()` reports it as available. A class that declares no constructor degrades to
+`withConstructorNoArgs()` automatically, so an ActiveRecord-style controller needs no
+special case.
+
+**An explicit binding always wins.** Add one for the odd class that needs different
+treatment and the rule steps aside:
+
+```php
+'App\Controller\*' => Autowire::rule()->withInjectedConstructor()->toInstance(),
+
+App\Controller\ReportController::class => DI::bind(App\Controller\ReportController::class)
+    ->withInjectedConstructorOverrides(['format' => 'pdf'])
+    ->toInstance(),
+```
+
+### Scope patterns to a namespace
+
+Prefer `App\Controller\*` over a bare `*Controller`. A bare suffix also matches classes in
+your vendor directory, and because `has()` consults these rules, that can quietly change
+the meaning of feature checks written as:
+
+```php
+$logger = Config::has(LoggerInterface::class) ? Config::get(LoggerInterface::class) : new NullLogger();
+```
+
+### Where not to use it
+
+Services and repositories are a poor fit. Their bindings carry real decisions — which
+implementation, singleton or not, scalar constructor arguments — and a pattern would be
+convention standing in for a choice that genuinely has to be made. Bind those explicitly.
+
+## Injecting the container itself
+
+Some services have to resolve collaborators on their own — a router that instantiates
+controllers by class name, for example. `Param::container()` hands such a service the
+container, and works anywhere a `Param` is accepted:
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+use ByJG\Config\Param;
+
+return [
+    Example\Server::class => DI::bind(Example\Server::class)
+        ->withConstructorArgs([Param::get(Psr\Log\LoggerInterface::class)])
+        ->withMethodCall('withContainer', [Param::container()])
+        ->toSingleton(),
+];
+```
+
+Prefer this over reaching for `Config::getContainer()` inside a configuration file. The
+facade is only populated *after* `Definition::build()` returns, while
+`Container::__construct()` resolves eager singletons before that — so a facade call made
+during the build recurses into auto-initialization and fails. `Param::container()` uses
+the container instance that is already injected into every binding, so it is safe even in
+an eager singleton.
+
+It is also cache-safe: the container cache serializes your bindings, and `Param::container()`
+stores a stateless marker rather than a live container. After
+`Container::createFromCache()`, the restored binding receives the *new* container.
+
+Use `Config::getContainer()` only from code built outside dependency injection — a test
+harness assembling its own objects, for instance — where no `Param` can reach.
 
 ## Delayed Instance
 
