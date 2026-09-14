@@ -200,11 +200,5 @@ composer require "byjg/config"
 ./vendor/bin/phpunit
 ```
 
-## Dependencies
-
-```mermaid
-flowchart TD
-    byjg/config --> byjg/cache-engine
-```
 ----
 [Open source ByJG](http://opensource.byjg.com)
