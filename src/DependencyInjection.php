@@ -83,8 +83,9 @@ class DependencyInjection
     /**
      * @param array|null $argsToParse
      * @return array
-     * @throws KeyNotFoundException
      * @throws ContainerExceptionInterface
+     * @throws DependencyInjectionException
+     * @throws KeyNotFoundException
      * @throws NotFoundExceptionInterface
      */
     protected function getArgs(?array $argsToParse = null): array
@@ -94,6 +95,12 @@ class DependencyInjection
                 return [];
             }
             return array_map(function ($value) {
+                // ContainerParam and LazyParam both extend Param, so they must be
+                // matched before the generic Param branch below.
+                if ($value instanceof ContainerParam) {
+                    return $this->containerInterface;
+                }
+
                 if ($value instanceof LazyParam) {
                     return LazyProxyFactory::create($this->containerInterface, $value->getParam(), $value->getTypeHint());
                 }
@@ -258,7 +265,12 @@ class DependencyInjection
                     }
                     $args[] = Param::get(ltrim($type->getName(), "\\"));
                 } else {
-                    $args[] = Param::get(ltrim($type->__toString(), "\\"));
+                    // Intersection types (A&B) and any future ReflectionType subclass: there is
+                    // no single class name to resolve, so it cannot be auto-wired.
+                    throw new DependencyInjectionException(
+                        "The parameter '\$$paramName' has an unsupported type and must be provided in " .
+                        "overrides array in class '" . $this->getClassName() . "'"
+                    );
                 }
             }
             return $this->withConstructorArgs($args);

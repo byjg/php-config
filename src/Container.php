@@ -33,6 +33,14 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
 
     /**
+     * Autowire rules indexed by their pattern. Derived from $config in the constructor;
+     * the rules stay in $config so a container restored from cache rebuilds this index.
+     *
+     * @var array<string, Autowire>
+     */
+    private array $autowireRules = [];
+
+    /**
      * @param array $config
      * @param string|null $definitionName
      * @param CacheInterface|null $cacheObject
@@ -54,8 +62,40 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
         $this->definitionName = $definitionName ?? 'default';
+        $this->indexAutowireRules();
         $this->initializeParsers();
         $this->processEagerSingleton();
+    }
+
+    protected function indexAutowireRules(): void
+    {
+        foreach ($this->config as $key => $value) {
+            if ($value instanceof Autowire) {
+                $this->autowireRules[$key] = $value;
+            }
+        }
+    }
+
+    /**
+     * The first autowire rule whose pattern matches an existing class, or null.
+     *
+     * class_exists() is part of the test on purpose: a pattern must never make has()
+     * true for a class that cannot be loaded, or a typo would surface as a confusing
+     * failure inside the binding instead of a plain "not found".
+     */
+    protected function matchAutowireRule(string $id): ?Autowire
+    {
+        if (empty($this->autowireRules) || !class_exists($id)) {
+            return null;
+        }
+
+        foreach ($this->autowireRules as $pattern => $rule) {
+            if (Autowire::matchesPattern($pattern, $id)) {
+                return $rule;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -132,7 +172,9 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     #[Override]
     public function has(string $id): bool
     {
-        return isset($this->config[$id]);
+        // An explicit binding wins, and is checked first so the common path stays a
+        // plain isset(). Only a miss consults the autowire rules.
+        return isset($this->config[$id]) || $this->matchAutowireRule($id) !== null;
     }
 
     /**
@@ -175,8 +217,17 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     #[Override]
     public function raw(string $id): mixed
     {
-        if (!$this->has($id)) {
-            throw new KeyNotFoundException("The key '$id' does not exists");
+        if (!isset($this->config[$id])) {
+            $rule = $this->matchAutowireRule($id);
+            if (is_null($rule)) {
+                throw new KeyNotFoundException("The key '$id' does not exists");
+            }
+
+            // Materialize the binding so the rule is applied once per class rather than
+            // per call. Written straight to $config, not through set(): this is resolving
+            // a declared rule, not a configuration change, and toSingleton() rules need
+            // the same DependencyInjection instance back on every get().
+            $this->config[$id] = $rule->createBinding($id);
         }
 
         if ($this->isCachedDependencyInjection($id)) {

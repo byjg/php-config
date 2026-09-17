@@ -41,12 +41,26 @@ class Config
     private static ?Definition $definition = null;
 
     /**
-     * Gets the container instance
+     * Gets the container instance.
+     *
+     * Intended for code that must hand the container to a collaborator but is built
+     * outside dependency injection — a test harness constructing its own server, for
+     * example. Inside a DI definition, use {@see Param::container()} instead: it is
+     * resolved from the container that is already injected, so it needs no facade and
+     * is safe within eager singletons.
+     *
+     * Do NOT call this from a configuration definition file. Config::$container is
+     * assigned only after Definition::build() returns, and Container::__construct()
+     * resolves eager singletons before that — so a call made during the build recurses
+     * into autoInitialize() and fails.
      *
      * @return Container
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      * @throws RunTimeException if the container is not initialized
      */
-    private static function getContainer(): Container
+    public static function getContainer(): Container
     {
         if (is_null(self::$container)) {
             self::autoInitialize();
@@ -64,6 +78,9 @@ class Config
      * ConfigInitializeInterface. If found, it will use it to initialize the container.
      *
      * @return void
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      * @throws RunTimeException if no bootstrap file is found or initialization fails
      */
     private static function autoInitialize(): void
@@ -110,12 +127,14 @@ class Config
 
     /**
      * Retrieves a raw value from the container without processing
-     * 
+     *
      * Unlike get(), this method returns the raw value without attempting to
      * instantiate classes or resolve dependencies.
-     * 
+     *
      * @param string $id The identifier of the entry to look for
      * @return mixed The raw entry value
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
      * @throws InvalidArgumentException
      * @throws KeyNotFoundException
      * @throws RunTimeException
@@ -127,9 +146,12 @@ class Config
 
     /**
      * Checks if the container can return an entry for the given identifier
-     * 
+     *
      * @param string $id The identifier to check for
      * @return bool True if the container contains the given identifier, false otherwise
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      * @throws RunTimeException if the container is not initialized
      */
     public static function has(string $id): bool
@@ -139,12 +161,15 @@ class Config
 
     /**
      * Gets the value as a filename
-     * 
+     *
      * This method is useful for file-based configuration values where the path
      * needs to be resolved relative to the project root.
-     * 
+     *
      * @param string $id The identifier of the entry to get as a filename
      * @return string The resolved filename
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      * @throws RunTimeException if the container is not initialized
      */
     public static function getAsFilename(string $id): string
@@ -193,6 +218,9 @@ class Config
      * to auto-initialize from config/ConfigBootstrap.php.
      *
      * @return Definition|null The definition instance, or null if auto-initialization fails
+     * @throws ConfigException
+     * @throws ConfigNotFoundException
+     * @throws InvalidArgumentException
      * @throws RunTimeException if auto-initialization fails
      */
     public static function definition(): ?Definition
