@@ -11,7 +11,8 @@
   "require-dev": {
     "ext-json": "*",
     "byjg/cache-engine": "^7.0",
-    "phpunit/phpunit": "^12.5"
+    "phpunit/phpunit": "^12.5",
+    "psalm/phar": "^6.16"
   },
   "prefer-stable": true,
   "minimum-stability": "dev",
@@ -30,9 +31,6 @@
   },
   "scripts": {
     "test": "vendor/bin/phpunit",
-    "psalm": [
-      "@composer --working-dir=tools/psalm update --no-interaction",
-      "tools/psalm/vendor/bin/psalm --threads=1"
-    ]
+    "psalm": "vendor/bin/psalm.phar"
   }
 }
