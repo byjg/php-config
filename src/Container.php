@@ -30,7 +30,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 
     private ?CacheInterface $cacheObject = null;
     private ?string $cacheKey = null;
-    private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
+    private CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles;
 
     /**
      * Autowire rules indexed by their pattern. Derived from $config in the constructor;
@@ -54,7 +54,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws ReflectionException
      */
-    public function __construct(array $config, ?string $definitionName = null, ?CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
+    public function __construct(array $config, ?string $definitionName = null, ?CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles)
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
@@ -185,27 +185,27 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     public function keyStatus(string $id): ?KeyStatusEnum
     {
         if (!$this->has($id)) {
-            return KeyStatusEnum::NOT_FOUND;
+            return KeyStatusEnum::NotFound;
         }
 
         if ($this->isCachedDependencyInjection($id)) {
-            return KeyStatusEnum::NOT_USED;
+            return KeyStatusEnum::NotUsed;
         }
 
         if (is_string($this->config[$id]) && str_starts_with($this->config[$id], '!dicached')) {
-            return KeyStatusEnum::NOT_USED;
+            return KeyStatusEnum::NotUsed;
         }
 
         if ($this->config[$id] instanceof DependencyInjection) {
             if ($this->config[$id]->isLoaded()) {
-                return KeyStatusEnum::IN_MEMORY;
+                return KeyStatusEnum::InMemory;
             } else if ($this->config[$id]->wasUsed()) {
-                return KeyStatusEnum::WAS_USED;
+                return KeyStatusEnum::WasUsed;
             } else {
-                return KeyStatusEnum::NOT_USED;
+                return KeyStatusEnum::NotUsed;
             }
         }
-        return KeyStatusEnum::STATIC;
+        return KeyStatusEnum::Value;
     }
 
     /**
@@ -270,7 +270,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws Exception
      */
-    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): bool
+    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::MultipleFiles): bool
     {
         if ($this->configChanged) {
             throw new Exception("The configuration was changed. Can't save to cache.");
@@ -289,7 +289,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
                 $valueSerialized = "!dicached " . base64_encode(serialize($value));
             }
 
-            if ($this->cacheMode === CacheModeEnum::multipleFiles && !is_null($valueSerialized)) {
+            if ($this->cacheMode === CacheModeEnum::MultipleFiles && !is_null($valueSerialized)) {
                 $this->cacheObject->set($this->cacheKey . "-" . $this->fixCacheKeyName($key), $valueSerialized);
                 $toCache[$key] = hex2bin("FF");
             } else {
@@ -322,7 +322,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): ?Container
+    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::MultipleFiles): ?Container
     {
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {

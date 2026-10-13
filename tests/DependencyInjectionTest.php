@@ -67,8 +67,8 @@ class DependencyInjectionTest extends TestCase
         $diTest3 = new Environment('di-test3');
         $diTest4 = new Environment('di-test4');
         $diTest5 = new Environment('di-test5', inheritFrom: [$diTest4]);
-        $diTest5CacheMultiple = new Environment('di-test5-cache-multiple', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
-        $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::singleFile);
+        $diTest5CacheMultiple = new Environment('di-test5-cache-multiple', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::MultipleFiles);
+        $diTest5CacheSingle = new Environment('di-test5-cache-single', inheritFrom: [$diTest4], cache: $this->cache, cacheMode: CacheModeEnum::SingleFile);
         $diTest6 = new Environment('di-test6', inheritFrom: [$diTest5]);
         $diUnionType = new Environment('di-uniontype');
         $diTestLazy = new Environment('di-test-lazy');
@@ -76,8 +76,8 @@ class DependencyInjectionTest extends TestCase
         $diTestOverridesFail = new Environment('di-test-overrides-fail');
         $diContainer = new Environment('di-container');
         $diAutowire = new Environment('di-autowire');
-        $diAutowireCache = new Environment('di-autowire-cache', inheritFrom: [$diAutowire], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
-        $diContainerCache = new Environment('di-container-cache', inheritFrom: [$diContainer], cache: $this->cache, cacheMode: CacheModeEnum::multipleFiles);
+        $diAutowireCache = new Environment('di-autowire-cache', inheritFrom: [$diAutowire], cache: $this->cache, cacheMode: CacheModeEnum::MultipleFiles);
+        $diContainerCache = new Environment('di-container-cache', inheritFrom: [$diContainer], cache: $this->cache, cacheMode: CacheModeEnum::MultipleFiles);
 
         $this->object = (new Definition())
             ->addEnvironment($diTest)
@@ -258,42 +258,42 @@ class DependencyInjectionTest extends TestCase
     {
         $config = $this->object->build('di-test4');
 
-        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
-        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+        $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus(TestParam::class));
 
         $square = $config->get(Square::class);
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Square::class));
     }
 
     public function testEagerSingletonInherit()
     {
         $config = $this->object->build('di-test5');
 
-        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
-        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
-        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+        $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus(TestParam::class));
 
         $square = $config->get(Square::class);
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Square::class));
     }
 
     public function testEagerSingletonInheritDisabling()
     {
         $config = $this->object->build('di-test6');
 
-        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('another'));
-        $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Random::class));
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(TestParam::class));
+        $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('another'));
+        $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('constnumber'));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Square::class));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(TestParam::class));
 
         $square = $config->get(TestParam::class);
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(TestParam::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Random::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(TestParam::class));
     }
 
 
@@ -305,13 +305,13 @@ class DependencyInjectionTest extends TestCase
         for ($i = 0; $i < 10; $i++) {
             $config = $this->object->build('di-test5-cache-multiple');
 
-            $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
-            $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
-            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
-            $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+            $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('constnumber'));
+            $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Random::class));
+            $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus(TestParam::class));
 
             $square = $config->get(Square::class);
-            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Square::class));
         }
     }
 
@@ -323,13 +323,13 @@ class DependencyInjectionTest extends TestCase
         for ($i = 0; $i < 10; $i++) {
             $config = $this->object->build('di-test5-cache-single');
 
-            $this->assertEquals(KeyStatusEnum::STATIC, $config->keyStatus('constnumber'));
-            $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Square::class));
-            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Random::class));
-            $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(TestParam::class));
+            $this->assertEquals(KeyStatusEnum::Value, $config->keyStatus('constnumber'));
+            $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Random::class));
+            $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus(TestParam::class));
 
             $square = $config->get(Square::class);
-            $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Square::class));
+            $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Square::class));
         }
     }
 
@@ -337,18 +337,18 @@ class DependencyInjectionTest extends TestCase
     {
         $config = $this->object->build('di-test-lazy');
 
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
-        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus(EagerClass::class));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus(EagerClass::class));
 
         $instance = $config->get(EagerClass::class);
         $this->assertInstanceOf(EagerClass::class, $instance);
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Area::class));
 
         $areaProxy = $instance::getArea();
-        $this->assertEquals(KeyStatusEnum::NOT_USED, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(Area::class));
 
         $this->assertEquals(6, $areaProxy->calculate());
-        $this->assertEquals(KeyStatusEnum::WAS_USED, $config->keyStatus(Area::class));
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(Area::class));
     }
 
     public function testGetInstancesWithParam()
@@ -702,7 +702,7 @@ class DependencyInjectionTest extends TestCase
     {
         $config = $this->object->build('di-container');
 
-        $this->assertEquals(KeyStatusEnum::IN_MEMORY, $config->keyStatus('container.eager'));
+        $this->assertEquals(KeyStatusEnum::InMemory, $config->keyStatus('container.eager'));
 
         $instance = $config->get('container.eager');
         $this->assertSame($config, $instance->getContainer());

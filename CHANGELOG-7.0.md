@@ -87,6 +87,19 @@ so a call made during the build recurses into auto-initialization and throws `Ru
       ->toInstance();
   ```
 
+### Enum cases renamed to PascalCase
+
+Enum cases follow the ByJG standard and are written in PascalCase. The backed values did not
+change, so `->value`, `from()`, `tryFrom()` and stored data are not affected; only code that
+names a case (or reads `->name`) has to be updated.
+
+| Enum | Before (6.x) | After (7.0) |
+|---|---|---|
+| `CacheModeEnum` | `singleFile`, `multipleFiles` | `SingleFile`, `MultipleFiles` |
+| `KeyStatusEnum` | `NOT_FOUND`, `STATIC`, `IN_MEMORY`, `WAS_USED`, `NOT_USED` | `NotFound`, `Value`, `InMemory`, `WasUsed`, `NotUsed` |
+
+Not a plain change of casing: `KeyStatusEnum::STATIC` is now `KeyStatusEnum::Value`.
+
 ## Requirements
 
 - PHP 8.3, 8.4, 8.5 and 8.6 are now supported: `"php": ">=8.3 <8.7"`.
