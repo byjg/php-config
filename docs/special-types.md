@@ -29,6 +29,10 @@ Where `!parser` is one of the pre-defined parsers:
 | !unesc      | Unescape the value                      | `PARAM=!unesc a\nb`           |
 | !file       | Load the content of a file              | `PARAM=!file /path/to/file`   |
 
+A relative `!file` path is resolved from the library's own directory, not the project. Use
+`{__ROOT__}` to point at a project file: `PARAM=!file {__ROOT__}/config/key.pem` (see
+[Paths relative to the project root](setup.md#paths-relative-to-the-project-root)).
+
 ## Adding a new Parser
 
 You can add a new special type:

@@ -54,6 +54,23 @@ PARAM3=!float 3.14
 The file named `.env` will be loaded to **ALL ENVIRONMENTS**.
 :::
 
+#### Paths relative to the project root
+
+`{__ROOT__}` in a value is replaced by the project root: the directory of the root `composer.json`,
+as Composer reports it. It is replaced when the file is loaded, so the value is an absolute path no
+matter where the project is installed, which directory the process runs from, or which entry point
+started it (a CLI script in the root, `public/index.php` under a web server):
+
+```ini
+DBDRIVER_CONNECTION=sqlite://{__ROOT__}/db/dev.sqlite
+LOG_FILE={__ROOT__}/var/log/app.log
+```
+
+With the project in `/srv`, `DBDRIVER_CONNECTION` is `sqlite:///srv/db/dev.sqlite`; in
+`/home/me/project`, it is `sqlite:///home/me/project/db/dev.sqlite`. It is the same in every `.env`
+file, whatever its folder. It works with the [special types](special-types.md) too:
+`LOGO=!file {__ROOT__}/public/logo.svg`. In PHP config files, keep using `__DIR__`.
+
 ### The .php file
 
 The `*.php` file needs to return an associative array with the configuration values. It can return:

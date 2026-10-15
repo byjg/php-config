@@ -422,6 +422,8 @@ class ContainerTest extends TestCase
         $this->assertEquals('string', $config->get('property1'));
         $this->assertFalse($config->get('property2'));
         $this->assertEquals('other_value3', $config->get('property3'));
+        // In an environment folder, {__ROOT__} is still the project root, not the folder.
+        $this->assertSame(dirname(__DIR__) . '/var/log', $config->get('property4'));
     }
 
     public function testGetAsFilename()

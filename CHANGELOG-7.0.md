@@ -73,6 +73,24 @@ Inside a configuration definition, prefer `Param::container()`. `Config::getCont
 while the configuration is being built: the facade is populated only after `Definition::build()` returns,
 so a call made during the build recurses into auto-initialization and throws `RunTimeException`.
 
+### `{__ROOT__}` in `.env` values
+
+`{__ROOT__}` in a `.env` value is replaced, when the file is loaded, by the project root: the directory
+of the root `composer.json`, from `Composer\InstalledVersions`:
+
+```ini
+DBDRIVER_CONNECTION=sqlite://{__ROOT__}/db/dev.sqlite
+LOG_FILE={__ROOT__}/var/log/app.log
+LOGO=!file {__ROOT__}/public/logo.svg
+```
+
+The same file then works wherever the project is installed (a developer machine, a container under
+`/srv`), from any working directory and any entry point (a CLI script, `public/index.php`). It applies
+to every `.env` file, including the ones inside an environment folder, and combines with the `!parser`
+prefixes. PHP config files keep using `__DIR__`. `Definition::getProjectRoot()` returns the same path.
+
+`composer-runtime-api` `^2.0` is a new requirement: it provides `Composer\InstalledVersions`.
+
 ## Breaking Changes
 
 - Constructor auto-injection (`withInjectedConstructor()` / `withInjectedConstructorOverrides()`) now rejects
