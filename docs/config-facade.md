@@ -146,6 +146,30 @@ $currentEnv = $definition->getCurrentEnvironment();
 $cacheInterface = $definition->getCacheCurrentEnvironment();
 ```
 
+## Accessing the Container
+
+You can get the underlying PSR-11 Container:
+
+```php
+<?php
+use ByJG\Config\Config;
+
+$container = Config::getContainer();
+```
+
+This is for code that must hand the container to a collaborator but is itself built
+outside dependency injection — a test harness assembling its own objects, for example.
+
+Two rules:
+
+- **Inside a DI definition, use `Param::container()` instead.** It resolves from the
+  container already injected into the binding, so it needs no facade and works in eager
+  singletons. See [Dependency Injection](dependency-injection.md#injecting-the-container-itself).
+- **Never call it from a configuration file.** The facade is populated only after
+  `Definition::build()` returns, while `Container::__construct()` resolves eager
+  singletons before that — a call during the build recurses into auto-initialization and
+  throws `RunTimeException`.
+
 ## Resetting the Configuration
 
 For testing or when you need to reinitialize with a different configuration:
@@ -179,6 +203,7 @@ $value = Config::get('some.key'); // Triggers auto-initialization
 | `has(string $id)`                                         | Checks if the container can return an entry for the given identifier    |
 | `getAsFilename(string $id)`                               | Gets the value as a resolved filename path                              |
 | `definition()`                                            | Gets the Definition instance (auto-initializes if needed)               |
+| `getContainer()`                                          | Gets the PSR-11 Container (prefer `Param::container()` inside DI)       |
 | `reset()`                                                 | Resets the container and definition, allowing re-initialization         |
 
 ## Example Use Case

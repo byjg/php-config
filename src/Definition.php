@@ -3,6 +3,7 @@
 namespace ByJG\Config;
 
 use ByJG\Config\Exception\ConfigNotFoundException;
+use Composer\InstalledVersions;
 use ByJG\Config\Exception\ConfigException;
 use ByJG\Config\Exception\RunTimeException;
 use Exception;
@@ -101,12 +102,21 @@ class Definition
             if (!preg_match("/^(?<key>\w+)\s*=\s*([\"'])?(?<value>.*?)([\"'])?$/", $line, $result)) {
                 continue;
             }
-            $config[$result["key"]] = $result["value"];
+            $config[$result["key"]] = str_replace('{__ROOT__}', self::getProjectRoot(), $result["value"]);
         }
 
-
-
         return $config;
+    }
+
+    /**
+     * The project root: the directory of the root composer.json. It does not depend on the
+     * working directory or on the entry point (a CLI script, public/index.php, ...).
+     */
+    public static function getProjectRoot(): string
+    {
+        $installPath = InstalledVersions::getRootPackage()['install_path'];
+
+        return realpath($installPath) ?: rtrim($installPath, '/');
     }
 
     private function loadDirectory(string $configName, string $dir): ?array

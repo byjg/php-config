@@ -53,6 +53,10 @@ class EnvFileTest extends TestCase
         $this->assertEquals("Test\nTest\n", $config->get('KEY12'));
         $this->assertEquals("Test2\\nTest2\\n", $config->get('KEY13'));
         $this->assertEquals("file\ncontent\n", $config->get('KEY14'));
+        // {__ROOT__} is the directory of the root composer.json, wherever the project is installed.
+        $root = dirname(__DIR__);
+        $this->assertSame("sqlite://$root/db/dev.sqlite", $config->get('KEY15'));
+        $this->assertEquals("file\ncontent\n", $config->get('KEY16'));
     }
 
     public function testSaveToCacheBeforeChange()

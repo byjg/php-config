@@ -23,7 +23,7 @@ use ByJG\Cache\Psr16\ArrayCacheEngine;
 $dev = Environment::create('dev');
 $prod = Environment::create('prod')
     ->inheritFrom($dev)
-    ->withCache(new ArrayCacheEngine(), CacheModeEnum::singleFile);
+    ->withCache(new ArrayCacheEngine(), CacheModeEnum::SingleFile);
 
 // Create the definition with environments
 $definition = (new Definition())
@@ -51,7 +51,7 @@ $dev = Environment::create('dev')
 
 $prod = Environment::create('prod')
     ->inheritFrom($dev)
-    ->withCache(new FileSystemCacheEngine('/tmp/cache'), CacheModeEnum::singleFile)
+    ->withCache(new FileSystemCacheEngine('/tmp/cache'), CacheModeEnum::SingleFile)
     ->setAsFinal();  // Mark as final (cannot be inherited from)
 ```
 
@@ -69,7 +69,7 @@ new Environment(
     CacheInterface $cache = null,    // The PSR-16 implementation to cache the configuration
     bool $abstract = false,          // If true, the environment will not be used to load the configuration
     bool $final = false,             // If true, the environment cannot be used to inherit from
-    CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles  // How the cache will be stored
+    CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles  // How the cache will be stored
 );
 ```
 
@@ -147,15 +147,15 @@ use ByJG\Config\KeyStatusEnum;
 // Check if a key exists and its status
 $status = $container->keyStatus('myKey');
 
-if ($status === KeyStatusEnum::NOT_FOUND) {
+if ($status === KeyStatusEnum::NotFound) {
     echo "Key not found";
-} elseif ($status === KeyStatusEnum::STATIC) {
+} elseif ($status === KeyStatusEnum::Value) {
     echo "Static value";
-} elseif ($status === KeyStatusEnum::IN_MEMORY) {
+} elseif ($status === KeyStatusEnum::InMemory) {
     echo "Instance is loaded and in memory";
-} elseif ($status === KeyStatusEnum::WAS_USED) {
+} elseif ($status === KeyStatusEnum::WasUsed) {
     echo "Instance was used but is no longer in memory";
-} elseif ($status === KeyStatusEnum::NOT_USED) {
+} elseif ($status === KeyStatusEnum::NotUsed) {
     echo "Instance is defined but not yet used";
 }
 ```

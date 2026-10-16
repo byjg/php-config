@@ -23,6 +23,19 @@ class Param
     }
 
     /**
+     * A marker that resolves to the Container itself, for services that need to resolve
+     * dependencies on their own:
+     *
+     *     ->withMethodCall('withContainer', [Param::container()])
+     *
+     * @see ContainerParam
+     */
+    public static function container(): ContainerParam
+    {
+        return new ContainerParam();
+    }
+
+    /**
      * @return mixed
      */
     public function getParam(): string
