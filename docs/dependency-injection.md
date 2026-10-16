@@ -78,6 +78,173 @@ $config = $definition->build();
 $square = $config->get(\Example\Square::class);
 ```
 
+## Referencing other entries: `Param`
+
+### Why it exists
+
+A configuration file is a PHP array, evaluated once when the configuration is loaded. At that
+moment the container is still being built: no service exists yet, and the `Config` facade is not
+ready. So a binding cannot simply call `Config::get()` to obtain another entry:
+
+```php
+<?php
+// ❌ Config::get() runs while the array is being evaluated, before the container exists
+Example\Square::class => DI::bind(Example\Square::class)
+    ->withConstructorArgs([Config::get('side')])
+    ->toInstance(),
+```
+
+Without an environment this fails at once (`RunTimeException: Environment isn't build yet`). In
+an application with a `ConfigBootstrap`, the call recurses into auto-initialization and fails the
+same way.
+
+A `Param` is the answer: a *reference* to an entry, stored in the binding and resolved later,
+when the binding builds its instance. By then the container exists and holds every entry, so a
+binding can refer to entries defined after it, in another file, or in an environment it inherits.
+
+### The three kinds
+
+| Kind                           | Resolves to                                               | Use it for                                                          |
+|--------------------------------|-----------------------------------------------------------|---------------------------------------------------------------------|
+| `Param::get('key')`            | `$container->get('key')`, when the instance is built      | another entry: a value (from `.env` or a config array) or a service |
+| `Param::container()`           | the container itself                                      | a service or a factory that resolves things by class name           |
+| `LazyParam::get(Class::class)` | a proxy that asks the container on its first use          | a dependency that is expensive or creates a cycle                   |
+
+They are accepted wherever a binding takes arguments: `withConstructorArgs()`,
+`withMethodCall()`, `withFactoryMethod()` and the values of `withInjectedConstructorOverrides()`.
+Any other value is passed as it is.
+
+### A value
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+use ByJG\Config\Param;
+
+return [
+    'DB_HOST' => 'localhost',
+    'DB_PORT' => 3306,
+
+    Example\Database::class => DI::bind(Example\Database::class)
+        ->withConstructorArgs([Param::get('DB_HOST'), Param::get('DB_PORT')])
+        ->toSingleton(),
+];
+```
+
+A `Param` refers to a whole entry and cannot be indexed: `Param::get('database')['host']` fails
+with `Cannot use object of type ByJG\Config\Param as array`. When the values are grouped in an
+array, pass the whole array and let the class read it:
+
+```php
+<?php
+return [
+    'database' => ['host' => 'localhost', 'port' => 3306],
+
+    Example\Database::class => DI::bind(Example\Database::class)
+        ->withConstructorArgs([Param::get('database')])   // __construct(array $config)
+        ->toSingleton(),
+];
+```
+
+### Another service
+
+`Param::get()` takes any key, so it also refers to another binding. The container builds it (or
+returns the singleton) when the instance that needs it is built:
+
+```php
+<?php
+return [
+    Example\UserRepository::class => DI::bind(Example\UserRepository::class)
+        ->withConstructorArgs([Param::get(Example\Database::class)])
+        ->toInstance(),
+];
+```
+
+`withInjectedConstructor()` does the same for every class-typed constructor parameter
+automatically, see [Injecting automatically the constructor arguments](#injecting-automatically-the-constructor-arguments).
+
+### Injecting the container itself
+
+Some services have to resolve collaborators on their own — a router that instantiates
+controllers by class name, for example. `Param::container()` hands such a service the
+container, and works anywhere a `Param` is accepted:
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+use ByJG\Config\Param;
+
+return [
+    Example\Server::class => DI::bind(Example\Server::class)
+        ->withConstructorArgs([Param::get(Psr\Log\LoggerInterface::class)])
+        ->withMethodCall('withContainer', [Param::container()])
+        ->toSingleton(),
+];
+```
+
+Prefer this over reaching for `Config::getContainer()` inside a configuration file. The
+facade is only populated *after* `Definition::build()` returns, while
+`Container::__construct()` resolves eager singletons before that — so a facade call made
+during the build recurses into auto-initialization and fails. `Param::container()` uses
+the container instance that is already injected into every binding, so it is safe even in
+an eager singleton.
+
+It is also cache-safe: the container cache serializes your bindings, and `Param::container()`
+stores a stateless marker rather than a live container. After
+`Container::createFromCache()`, the restored binding receives the *new* container.
+
+Use `Config::getContainer()` only from code built outside dependency injection — a test
+harness assembling its own objects, for instance — where no `Param` can reach.
+
+### Postponing a dependency
+
+`LazyParam::get()` takes the place of `Param::get()` when the dependency should not be built
+together with the instance that needs it: it passes a proxy that satisfies the type-hint and
+asks the container for the real object only on its first method or property call. See
+[Lazy parameters for eager singletons](#lazy-parameters-for-eager-singletons).
+
+## Factory method
+
+`withFactoryMethod()` builds the instance by calling a **static method** of the bound class,
+instead of its constructor:
+
+```php
+<?php
+use ByJG\Config\DependencyInjection as DI;
+use ByJG\Config\Param;
+
+return [
+    'DB_URI' => 'mysql://root@localhost/app',
+
+    // ConnectionFactory::fromUri(string $uri): Connection
+    Example\Connection::class => DI::bind(Example\ConnectionFactory::class)
+        ->withFactoryMethod('fromUri', [Param::get('DB_URI')])
+        ->toSingleton(),
+];
+```
+
+- **The method's return value is the entry.** `get(Example\Connection::class)` returns whatever
+  `ConnectionFactory::fromUri()` returns; the container does not check its type. So the key and
+  the bound class can differ: the key names what you ask for (an interface, a class), the bound
+  class is only where the static method lives. A static constructor of the class itself
+  (`DI::bind(Money::class)->withFactoryMethod('fromCents', [100])`) works the same way.
+- **The arguments are like any other.** Literal values and every kind of [`Param`](#referencing-other-entries-param)
+  are accepted. A factory that has to resolve several collaborators can take the container:
+
+  ```php
+  <?php
+  return [
+      // PaymentMachine::build(ContainerInterface $container): FiniteStateMachine
+      FiniteStateMachine::class => DI::bind(PaymentMachine::class)
+          ->withFactoryMethod('build', [Param::container()])
+          ->toSingleton(),
+  ];
+  ```
+
+- **`withMethodCall()` still applies,** to the object the factory returned.
+- **It cannot be combined with `toDelayedInstance()`**, see
+  [Delayed Instance Limitations](#delayed-instance).
+
 ## Injecting automatically the constructor arguments
 
 Let's figure it out this class:
@@ -301,39 +468,6 @@ Services and repositories are a poor fit. Their bindings carry real decisions �
 implementation, singleton or not, scalar constructor arguments — and a pattern would be
 convention standing in for a choice that genuinely has to be made. Bind those explicitly.
 
-## Injecting the container itself
-
-Some services have to resolve collaborators on their own — a router that instantiates
-controllers by class name, for example. `Param::container()` hands such a service the
-container, and works anywhere a `Param` is accepted:
-
-```php
-<?php
-use ByJG\Config\DependencyInjection as DI;
-use ByJG\Config\Param;
-
-return [
-    Example\Server::class => DI::bind(Example\Server::class)
-        ->withConstructorArgs([Param::get(Psr\Log\LoggerInterface::class)])
-        ->withMethodCall('withContainer', [Param::container()])
-        ->toSingleton(),
-];
-```
-
-Prefer this over reaching for `Config::getContainer()` inside a configuration file. The
-facade is only populated *after* `Definition::build()` returns, while
-`Container::__construct()` resolves eager singletons before that — so a facade call made
-during the build recurses into auto-initialization and fails. `Param::container()` uses
-the container instance that is already injected into every binding, so it is safe even in
-an eager singleton.
-
-It is also cache-safe: the container cache serializes your bindings, and `Param::container()`
-stores a stateless marker rather than a live container. After
-`Container::createFromCache()`, the restored binding receives the *new* container.
-
-Use `Config::getContainer()` only from code built outside dependency injection — a test
-harness assembling its own objects, for instance — where no `Param` can reach.
-
 ## Delayed Instance
 
 The delayed instance allows you to pass custom arguments to the constructor for every instance you get from the container.
@@ -392,7 +526,7 @@ Delayed Instances also **cannot** be:
     ->withNoConstructor()                // The class has no constructor
     ->withConstructorNoArgs()           // The constructor's class has no arguments
     ->withConstructorArgs(array)        // The constructor's class arguments
-    ->withFactoryMethod("method", array_of_args)  // When the class has a static method to instantiate instead of constructor
+    ->withFactoryMethod("method", array_of_args)  // Build it with a static method of the class; its return value is the entry (see "Factory method")
 
     // Call methods after you have a instance
     // --------------------------------------

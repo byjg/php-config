@@ -1,7 +1,7 @@
 ---
 sidebar_position: 7
 title: Special Types
-description: Learn about special type parsers and using Param::get() for container references
+description: Learn about the special type parsers for configuration values
 ---
 
 # Special Types
@@ -54,69 +54,12 @@ Then you can use:
 PARAM1=!mytype 123
 ```
 
-## Using Param::get() to Postpone Container Calls
+## Referencing other entries in a binding
 
-:::danger Important
-When we need to get dependencies from the container, we must use `Param::get()` instead of `Config::get()`. This is because `Param::get()` postpones the call to the container until the dependency is actually needed, preventing infinite loops when dependencies reference each other.
-:::
-
-This will cause an error:
-
-```php
-<?php
-use ByJG\Config\Param;
-use ByJG\Config\DependencyInjection as DI;
-use Example\Square;
-
-return [
-    "side" => 4,
-    "Calculator" =>DI::bind(Area::class)
-        ->toInstance(),
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([
-               Config::get('side'),
-               Config::get('Calculator')])
-        ->toInstance(),
-];
-```
-
-and this is the fix:
-
-```php
-<?php
-use ByJG\Config\Param;
-use ByJG\Config\DependencyInjection as DI;
-use Example\Square;
-
-return [
-    "side" => 4,
-    "Calculator" =>DI::bind(Area::class)
-        ->toInstance(), 
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([
-               Param::get('side'),
-               Param::get('Calculator')])
-        ->toInstance(),
-];
-```
-
-The same rule applies to the container itself. If a service needs to resolve things on
-its own, use `Param::container()` rather than `Config::getContainer()` — the facade is
-not populated yet while the configuration is being built:
-
-```php
-<?php
-use ByJG\Config\Param;
-use ByJG\Config\DependencyInjection as DI;
-
-return [
-    Example\Server::class => DI::bind(Example\Server::class)
-        ->withMethodCall('withContainer', [Param::container()])
-        ->toSingleton(),
-];
-```
-
-See [Dependency Injection](dependency-injection.md#injecting-the-container-itself) for details.
+To use another entry inside a binding — a value parsed here, another service, or the container
+itself — use `Param::get()` or `Param::container()`, never `Config::get()`: the configuration is
+evaluated while the container is being built. See
+[Referencing other entries: `Param`](dependency-injection.md#referencing-other-entries-param).
 
 ----
 [Open source ByJG](http://opensource.byjg.com)

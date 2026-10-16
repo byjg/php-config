@@ -123,10 +123,10 @@ class DatabaseService
     private $host;
     private $port;
     
-    public function __construct($host, $port) 
+    public function __construct(array $database) 
     {
-        $this->host = $host;
-        $this->port = $port;
+        $this->host = $database['host'];
+        $this->port = $database['port'];
     }
 }
 
@@ -150,12 +150,9 @@ return [
         'port' => 3306
     ],
     
-    // Register the database service
+    // Register the database service. A Param refers to the whole entry, so it receives the array
     \MyApp\DatabaseService::class => DI::bind(\MyApp\DatabaseService::class)
-        ->withConstructorArgs([
-            Param::get('database')['host'],
-            Param::get('database')['port']
-        ])
+        ->withConstructorArgs([Param::get('database')])
         ->toSingleton(),
     
     // Register the repository with auto-injection
