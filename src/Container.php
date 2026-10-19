@@ -188,6 +188,11 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             return KeyStatusEnum::NotFound;
         }
 
+        // Matched by an Autowire rule, but its binding was not created yet
+        if (!isset($this->config[$id])) {
+            return KeyStatusEnum::NotUsed;
+        }
+
         if ($this->isCachedDependencyInjection($id)) {
             return KeyStatusEnum::NotUsed;
         }

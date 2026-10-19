@@ -801,6 +801,20 @@ class DependencyInjectionTest extends TestCase
     }
 
     /**
+     * A class matched by a pattern but not resolved yet has no entry in the config,
+     * so keyStatus() must not read it, and reports it like an unused binding.
+     */
+    public function testAutowireKeyStatusBeforeAndAfterResolving()
+    {
+        $config = $this->object->build('di-autowire');
+
+        $this->assertEquals(KeyStatusEnum::NotUsed, $config->keyStatus(WidgetController::class));
+
+        $config->get(WidgetController::class);
+        $this->assertEquals(KeyStatusEnum::WasUsed, $config->keyStatus(WidgetController::class));
+    }
+
+    /**
      * A class the pattern does not match still fails the ordinary way.
      */
     public function testAutowireDoesNotSwallowUnknownKeys()

@@ -120,7 +120,7 @@ The `keyStatus()` method returns a `KeyStatusEnum` value that provides informati
 | `KeyStatusEnum::Value`    | The key exists and has a static value                                          |
 | `KeyStatusEnum::InMemory` | The key exists, is an instance, and is currently loaded in memory              |
 | `KeyStatusEnum::WasUsed`  | The key exists, is an instance, was previously used but is no longer in memory |
-| `KeyStatusEnum::NotUsed`  | The key exists, is an instance, but has not been used yet                      |
+| `KeyStatusEnum::NotUsed`  | The key exists, is an instance, but has not been used yet (includes a class matched by an `Autowire` rule that was not resolved yet) |
 
 ## Error Handling
 

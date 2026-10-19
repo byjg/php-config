@@ -117,6 +117,11 @@ backed), so every reference to a case (or to `->name`) has to be updated.
 
 Not a plain change of casing: `KeyStatusEnum::STATIC` is now `KeyStatusEnum::Value`.
 
+## Bug Fixes
+
+- `Container::keyStatus()` on a class matched by an `Autowire` rule but not resolved yet raised an
+  "Undefined array key" warning and returned `Value`. It now returns `KeyStatusEnum::NotUsed`.
+
 ## Requirements
 
 - PHP 8.3, 8.4, 8.5 and 8.6 are now supported: `"php": ">=8.3 <8.7"`.
