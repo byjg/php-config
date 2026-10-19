@@ -32,7 +32,7 @@ class ContainerTest extends TestCase
     {
         $test = new Environment('test');
         $testCache = new Environment('test-cache', [$test], new FileSystemCacheEngine("multiple"));
-        $testCacheSingle = new Environment('test-cache-single', [$test], new FileSystemCacheEngine("single"), cacheMode: CacheModeEnum::singleFile);
+        $testCacheSingle = new Environment('test-cache-single', [$test], new FileSystemCacheEngine("single"), cacheMode: CacheModeEnum::SingleFile);
         $test2 = new Environment('test2', [$test]);
         $test3 = new Environment('test3', [$test2, $test]);
         $test4 = new Environment('test4', [$test3]); // Recursive Inheritance
@@ -324,7 +324,7 @@ class ContainerTest extends TestCase
             $this->assertNotNull($cacheObject->get('container-cache-test-cache-tests_diclasses_area'));
 
             $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
-            $this->assertEquals(CacheModeEnum::multipleFiles, $this->object->getCacheModeCurrentEnvironment());
+            $this->assertEquals(CacheModeEnum::MultipleFiles, $this->object->getCacheModeCurrentEnvironment());
 
             // Get Container2 from cache and should match with the first one
             $container2 = Container::createFromCache('test-cache', $cacheObject);
@@ -361,7 +361,7 @@ class ContainerTest extends TestCase
             $this->assertNull($cacheObject->get('container-cache-test-cache-single-tests_diclasses_area'));
 
             $this->assertInstanceOf(FileSystemCacheEngine::class, $this->object->getCacheCurrentEnvironment());
-            $this->assertEquals(CacheModeEnum::singleFile, $this->object->getCacheModeCurrentEnvironment());
+            $this->assertEquals(CacheModeEnum::SingleFile, $this->object->getCacheModeCurrentEnvironment());
 
             // Get Container2 from cache and should match with the first one
             $container2 = Container::createFromCache('test-cache-single', $cacheObject);
@@ -422,6 +422,8 @@ class ContainerTest extends TestCase
         $this->assertEquals('string', $config->get('property1'));
         $this->assertFalse($config->get('property2'));
         $this->assertEquals('other_value3', $config->get('property3'));
+        // In an environment folder, {__ROOT__} is still the project root, not the folder.
+        $this->assertSame(dirname(__DIR__) . '/var/log', $config->get('property4'));
     }
 
     public function testGetAsFilename()

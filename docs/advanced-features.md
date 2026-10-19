@@ -25,7 +25,7 @@ $cache = new FileSystemCacheEngine('/path/to/cache');
 // Fluent API (recommended)
 $prod = Environment::create('prod')
     ->inheritFrom($dev)
-    ->withCache($cache, CacheModeEnum::singleFile);
+    ->withCache($cache, CacheModeEnum::SingleFile);
 
 // Traditional constructor
 $prod = new Environment(
@@ -34,7 +34,7 @@ $prod = new Environment(
     $cache,
     false,
     false,
-    CacheModeEnum::singleFile
+    CacheModeEnum::SingleFile
 );
 ```
 
@@ -42,8 +42,8 @@ There are two cache modes available:
 
 | Mode                           | Description                                           |
 |--------------------------------|-------------------------------------------------------|
-| `CacheModeEnum::multipleFiles` | Each configuration key is cached separately (default) |
-| `CacheModeEnum::singleFile`    | All configuration keys are cached as a single entry   |
+| `CacheModeEnum::MultipleFiles` | Each configuration key is cached separately (default) |
+| `CacheModeEnum::SingleFile`    | All configuration keys are cached as a single entry   |
 
 #### When to use each cache mode:
 
@@ -116,11 +116,11 @@ The `keyStatus()` method returns a `KeyStatusEnum` value that provides informati
 
 | Status                     | Description                                                                    |
 |----------------------------|--------------------------------------------------------------------------------|
-| `KeyStatusEnum::NOT_FOUND` | The key does not exist in the container                                        |
-| `KeyStatusEnum::STATIC`    | The key exists and has a static value                                          |
-| `KeyStatusEnum::IN_MEMORY` | The key exists, is an instance, and is currently loaded in memory              |
-| `KeyStatusEnum::WAS_USED`  | The key exists, is an instance, was previously used but is no longer in memory |
-| `KeyStatusEnum::NOT_USED`  | The key exists, is an instance, but has not been used yet                      |
+| `KeyStatusEnum::NotFound` | The key does not exist in the container                                        |
+| `KeyStatusEnum::Value`    | The key exists and has a static value                                          |
+| `KeyStatusEnum::InMemory` | The key exists, is an instance, and is currently loaded in memory              |
+| `KeyStatusEnum::WasUsed`  | The key exists, is an instance, was previously used but is no longer in memory |
+| `KeyStatusEnum::NotUsed`  | The key exists, is an instance, but has not been used yet (includes a class matched by an `Autowire` rule that was not resolved yet) |
 
 ## Error Handling
 
@@ -200,7 +200,7 @@ $staging = Environment::create('staging')
     ->inheritFrom($dev)
     ->withCache(
         new FileSystemCacheEngine('/tmp/cache/staging'),
-        CacheModeEnum::multipleFiles
+        CacheModeEnum::MultipleFiles
     );
 
 // Production environment with optimized cache and marked as final
@@ -208,7 +208,7 @@ $prod = Environment::create('prod')
     ->inheritFrom($staging)
     ->withCache(
         new FileSystemCacheEngine('/tmp/cache/prod'),
-        CacheModeEnum::singleFile
+        CacheModeEnum::SingleFile
     )
     ->setAsFinal();
 

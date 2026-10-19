@@ -1,7 +1,7 @@
 ---
 sidebar_position: 7
 title: Special Types
-description: Learn about special type parsers and using Param::get() for container references
+description: Learn about the special type parsers for configuration values
 ---
 
 # Special Types
@@ -29,6 +29,10 @@ Where `!parser` is one of the pre-defined parsers:
 | !unesc      | Unescape the value                      | `PARAM=!unesc a\nb`           |
 | !file       | Load the content of a file              | `PARAM=!file /path/to/file`   |
 
+A relative `!file` path is resolved from the library's own directory, not the project. Use
+`{__ROOT__}` to point at a project file: `PARAM=!file {__ROOT__}/config/key.pem` (see
+[Paths relative to the project root](setup.md#paths-relative-to-the-project-root)).
+
 ## Adding a new Parser
 
 You can add a new special type:
@@ -50,51 +54,12 @@ Then you can use:
 PARAM1=!mytype 123
 ```
 
-## Using Param::get() to Postpone Container Calls
+## Referencing other entries in a binding
 
-:::danger Important
-When we need to get dependencies from the container, we must use `Param::get()` instead of `Config::get()`. This is because `Param::get()` postpones the call to the container until the dependency is actually needed, preventing infinite loops when dependencies reference each other.
-:::
-
-This will cause an error:
-
-```php
-<?php
-use ByJG\Config\Param;
-use ByJG\Config\DependencyInjection as DI;
-use Example\Square;
-
-return [
-    "side" => 4,
-    "Calculator" =>DI::bind(Area::class)
-        ->toInstance(),
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([
-               Config::get('side'),
-               Config::get('Calculator')])
-        ->toInstance(),
-];
-```
-
-and this is the fix:
-
-```php
-<?php
-use ByJG\Config\Param;
-use ByJG\Config\DependencyInjection as DI;
-use Example\Square;
-
-return [
-    "side" => 4,
-    "Calculator" =>DI::bind(Area::class)
-        ->toInstance(), 
-    Square::class => DI::bind(Square::class)
-        ->withConstructorArgs([
-               Param::get('side'),
-               Param::get('Calculator')])
-        ->toInstance(),
-];
-```
+To use another entry inside a binding — a value parsed here, another service, or the container
+itself — use `Param::get()` or `Param::container()`, never `Config::get()`: the configuration is
+evaluated while the container is being built. See
+[Referencing other entries: `Param`](dependency-injection.md#referencing-other-entries-param).
 
 ----
 [Open source ByJG](http://opensource.byjg.com)

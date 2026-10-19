@@ -22,7 +22,7 @@ class Environment
     /**
      * @throws ConfigException
      */
-    public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
+    public function __construct(string $name, array $inheritFrom = [], ?CacheInterface $cache = null, bool $abstract = false, $final = false, CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles)
     {
         $this->name = $name;
         $this->abstract = $abstract;
@@ -122,10 +122,10 @@ class Environment
      * Configure caching for this environment
      *
      * @param CacheInterface $cache PSR-16 cache implementation
-     * @param CacheModeEnum $mode Cache mode (singleFile or multipleFiles)
+     * @param CacheModeEnum $mode Cache mode (SingleFile or MultipleFiles)
      * @return $this
      */
-    public function withCache(CacheInterface $cache, CacheModeEnum $mode = CacheModeEnum::multipleFiles): self
+    public function withCache(CacheInterface $cache, CacheModeEnum $mode = CacheModeEnum::MultipleFiles): self
     {
         $this->cache = $cache;
         $this->cacheMode = $mode;

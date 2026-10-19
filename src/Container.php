@@ -30,7 +30,15 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
 
     private ?CacheInterface $cacheObject = null;
     private ?string $cacheKey = null;
-    private CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles;
+    private CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles;
+
+    /**
+     * Autowire rules indexed by their pattern. Derived from $config in the constructor;
+     * the rules stay in $config so a container restored from cache rebuilds this index.
+     *
+     * @var array<string, Autowire>
+     */
+    private array $autowireRules = [];
 
     /**
      * @param array $config
@@ -46,7 +54,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws ReflectionException
      */
-    public function __construct(array $config, ?string $definitionName = null, ?CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::multipleFiles)
+    public function __construct(array $config, ?string $definitionName = null, ?CacheInterface $cacheObject = null, CacheModeEnum $cacheMode = CacheModeEnum::MultipleFiles)
     {
         $this->config = $config;
         if (!is_null($definitionName) && !is_null($cacheObject)) {
@@ -54,8 +62,40 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
             $this->saveToCache($definitionName, $cacheObject, $cacheMode);
         }
         $this->definitionName = $definitionName ?? 'default';
+        $this->indexAutowireRules();
         $this->initializeParsers();
         $this->processEagerSingleton();
+    }
+
+    protected function indexAutowireRules(): void
+    {
+        foreach ($this->config as $key => $value) {
+            if ($value instanceof Autowire) {
+                $this->autowireRules[$key] = $value;
+            }
+        }
+    }
+
+    /**
+     * The first autowire rule whose pattern matches an existing class, or null.
+     *
+     * class_exists() is part of the test on purpose: a pattern must never make has()
+     * true for a class that cannot be loaded, or a typo would surface as a confusing
+     * failure inside the binding instead of a plain "not found".
+     */
+    protected function matchAutowireRule(string $id): ?Autowire
+    {
+        if (empty($this->autowireRules) || !class_exists($id)) {
+            return null;
+        }
+
+        foreach ($this->autowireRules as $pattern => $rule) {
+            if (Autowire::matchesPattern($pattern, $id)) {
+                return $rule;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -132,7 +172,9 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     #[Override]
     public function has(string $id): bool
     {
-        return isset($this->config[$id]);
+        // An explicit binding wins, and is checked first so the common path stays a
+        // plain isset(). Only a miss consults the autowire rules.
+        return isset($this->config[$id]) || $this->matchAutowireRule($id) !== null;
     }
 
     /**
@@ -143,27 +185,32 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     public function keyStatus(string $id): ?KeyStatusEnum
     {
         if (!$this->has($id)) {
-            return KeyStatusEnum::NOT_FOUND;
+            return KeyStatusEnum::NotFound;
+        }
+
+        // Matched by an Autowire rule, but its binding was not created yet
+        if (!isset($this->config[$id])) {
+            return KeyStatusEnum::NotUsed;
         }
 
         if ($this->isCachedDependencyInjection($id)) {
-            return KeyStatusEnum::NOT_USED;
+            return KeyStatusEnum::NotUsed;
         }
 
         if (is_string($this->config[$id]) && str_starts_with($this->config[$id], '!dicached')) {
-            return KeyStatusEnum::NOT_USED;
+            return KeyStatusEnum::NotUsed;
         }
 
         if ($this->config[$id] instanceof DependencyInjection) {
             if ($this->config[$id]->isLoaded()) {
-                return KeyStatusEnum::IN_MEMORY;
+                return KeyStatusEnum::InMemory;
             } else if ($this->config[$id]->wasUsed()) {
-                return KeyStatusEnum::WAS_USED;
+                return KeyStatusEnum::WasUsed;
             } else {
-                return KeyStatusEnum::NOT_USED;
+                return KeyStatusEnum::NotUsed;
             }
         }
-        return KeyStatusEnum::STATIC;
+        return KeyStatusEnum::Value;
     }
 
     /**
@@ -175,8 +222,17 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     #[Override]
     public function raw(string $id): mixed
     {
-        if (!$this->has($id)) {
-            throw new KeyNotFoundException("The key '$id' does not exists");
+        if (!isset($this->config[$id])) {
+            $rule = $this->matchAutowireRule($id);
+            if (is_null($rule)) {
+                throw new KeyNotFoundException("The key '$id' does not exists");
+            }
+
+            // Materialize the binding so the rule is applied once per class rather than
+            // per call. Written straight to $config, not through set(): this is resolving
+            // a declared rule, not a configuration change, and toSingleton() rules need
+            // the same DependencyInjection instance back on every get().
+            $this->config[$id] = $rule->createBinding($id);
         }
 
         if ($this->isCachedDependencyInjection($id)) {
@@ -219,7 +275,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws PhpVersionNotSupportedException
      * @throws Exception
      */
-    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): bool
+    public function saveToCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::MultipleFiles): bool
     {
         if ($this->configChanged) {
             throw new Exception("The configuration was changed. Can't save to cache.");
@@ -238,7 +294,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
                 $valueSerialized = "!dicached " . base64_encode(serialize($value));
             }
 
-            if ($this->cacheMode === CacheModeEnum::multipleFiles && !is_null($valueSerialized)) {
+            if ($this->cacheMode === CacheModeEnum::MultipleFiles && !is_null($valueSerialized)) {
                 $this->cacheObject->set($this->cacheKey . "-" . $this->fixCacheKeyName($key), $valueSerialized);
                 $toCache[$key] = hex2bin("FF");
             } else {
@@ -271,7 +327,7 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
      * @throws NotFoundExceptionInterface
      * @throws ReflectionException
      */
-    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::multipleFiles): ?Container
+    public static function createFromCache(string $definitionName, CacheInterface $cacheObject, CacheModeEnum $cacheModeEnum = CacheModeEnum::MultipleFiles): ?Container
     {
         $fromCache = $cacheObject->get("container-cache-$definitionName");
         if (!is_null($fromCache)) {

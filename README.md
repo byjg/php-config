@@ -9,7 +9,8 @@ This is a basic and minimalist implementation of PSR-11 for config management an
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%23ea4aaa?logo=githubsponsors&logoColor=white&labelColor=0d1117)](https://github.com/sponsors/byjg)
 [![Build Status](https://github.com/byjg/php-config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-config/actions/workflows/phpunit.yml)
-[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](https://opensource.byjg.com)
+[![Install MCP Server](https://img.shields.io/badge/Install-MCP_Server-8A2BE2?logo=modelcontextprotocol&logoColor=white)](https://opensource.byjg.com/docs/ai/mcpserver-byjg-docs/)
 [![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-config/)
 [![GitHub license](https://img.shields.io/github/license/byjg/php-config.svg)](https://opensource.byjg.com/license/)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-config.svg)](https://github.com/byjg/php-config/releases/)
@@ -122,10 +123,10 @@ class DatabaseService
     private $host;
     private $port;
     
-    public function __construct($host, $port) 
+    public function __construct(array $database) 
     {
-        $this->host = $host;
-        $this->port = $port;
+        $this->host = $database['host'];
+        $this->port = $database['port'];
     }
 }
 
@@ -149,12 +150,9 @@ return [
         'port' => 3306
     ],
     
-    // Register the database service
+    // Register the database service. A Param refers to the whole entry, so it receives the array
     \MyApp\DatabaseService::class => DI::bind(\MyApp\DatabaseService::class)
-        ->withConstructorArgs([
-            Param::get('database')['host'],
-            Param::get('database')['port']
-        ])
+        ->withConstructorArgs([Param::get('database')])
         ->toSingleton(),
     
     // Register the repository with auto-injection
@@ -174,7 +172,7 @@ return [
 $userRepo = $container->get(\MyApp\UserRepository::class);
 ```
 
-## Documentation Index
+## Documentation
 
 Start with the fundamentals and move toward the advanced features following this order:
 
@@ -194,17 +192,11 @@ Start with the fundamentals and move toward the advanced features following this
 composer require "byjg/config"
 ```
 
-## Tests
+## Running Tests
 
 ```bash
 ./vendor/bin/phpunit
 ```
 
-## Dependencies
-
-```mermaid
-flowchart TD
-    byjg/config --> byjg/cache-engine
-```
 ----
-[Open source ByJG](http://opensource.byjg.com)
+[Open source ByJG](https://opensource.byjg.com)
