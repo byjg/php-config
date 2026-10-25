@@ -1,5 +1,6 @@
 ---
 sidebar_key: config
+sidebar_category: infrastructure
 tags: [php]
 ---
 
