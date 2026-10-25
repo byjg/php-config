@@ -5,7 +5,7 @@ tags: [php]
 
 # Configuration and Dependency Injection
 
-This is a basic and minimalist implementation of PSR-11 for config management and dependency injection.
+Configuration and dependency injection in one PSR-11 container, with environments that inherit from each other and autowiring only where you choose it.
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%23ea4aaa?logo=githubsponsors&logoColor=white&labelColor=0d1117)](https://github.com/sponsors/byjg)
 [![Build Status](https://github.com/byjg/php-config/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-config/actions/workflows/phpunit.yml)
@@ -14,6 +14,28 @@ This is a basic and minimalist implementation of PSR-11 for config management an
 [![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-config/)
 [![GitHub license](https://img.shields.io/github/license/byjg/php-config.svg)](https://opensource.byjg.com/license/)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-config.svg)](https://github.com/byjg/php-config/releases/)
+
+## Why
+
+Every application has a dev, a test, a staging and a production configuration that are
+mostly the same. Copying the files means a change has to be made in four places, and the
+container that builds your services usually decides for you how much is wired by magic.
+
+Config builds the environments as a hierarchy:
+
+```php
+$dev     = new Environment('dev');
+$test    = new Environment('test', [$dev]);                  // dev, plus what test changes
+$base    = new Environment('base', [$dev], abstract: true);  // shared, never loaded directly
+$prod    = new Environment('prod', [$base], final: true);    // nothing may inherit from prod
+```
+
+- **Write a value once.** An environment inherits everything from its parents and only
+  states what is different. `abstract` and `final` keep the hierarchy honest.
+- **Explicit bindings, autowiring when you want it.** `DI::bind()` declares a service and
+  its decisions (implementation, singleton, constructor arguments); an `Autowire::rule()`
+  resolves a whole namespace by type hints. You choose per namespace, trading convenience
+  for a plain lookup.
 
 ## Features
 
