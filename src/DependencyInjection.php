@@ -530,6 +530,19 @@ class DependencyInjection
         return (!is_null($this->instance));
     }
 
+    /**
+     * Whether getInstance() creates an instance of exactly this class: a DI::bind() of the class itself, with no
+     * factory method (which can return a subclass), not DI::use() nor a delayed instance
+     */
+    public function createsExactly(string $className): bool
+    {
+        return !$this->use
+            && !$this->delayedInstance
+            && $this->factory === null
+            && is_string($this->class)
+            && ltrim($this->class, '\\') === ltrim($className, '\\');
+    }
+
     public function isDelayedInstance(): bool
     {
         return $this->delayedInstance;

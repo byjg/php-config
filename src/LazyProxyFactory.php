@@ -11,6 +11,7 @@ use ReflectionIntersectionType;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionProperty;
 use ReflectionType;
 use ReflectionUnionType;
 
@@ -35,8 +36,6 @@ class LazyProxyFactory
             throw new DependencyInjectionException("LazyParam target '$typeHint' does not exist");
         }
 
-        $proxyClass = self::ensureProxyClass($typeHint);
-
         $factory = static function () use ($container, $serviceId, $typeHint) {
             $instance = $container->get($serviceId);
             if (!($instance instanceof $typeHint)) {
@@ -46,7 +45,49 @@ class LazyProxyFactory
             return $instance;
         };
 
+        $native = self::nativeProxyOf($container, $serviceId, $typeHint);
+        if ($native !== null) {
+            /** @psalm-suppress UndefinedMethod PHP 8.4+, which nativeProxyOf() checks */
+            return $native->newLazyProxy(static fn(): object => $factory());
+        }
+
+        $proxyClass = self::ensureProxyClass($typeHint);
         return new $proxyClass($factory);
+    }
+
+    /**
+     * The class of a native lazy proxy (PHP 8.4+) for the service, or null to generate a proxy class.
+     *
+     * A native proxy runs the methods of its class with the properties of the real instance: the real instance must
+     * be of exactly that class (the methods of a subclass would not run), so the service must be a plain DI::bind()
+     * of the class, which is known without creating it. Interfaces, final classes, and classes that extend an
+     * internal class keep the generated proxy (or its error).
+     *
+     * @return ReflectionClass<object>|null
+     * @throws ReflectionException
+     */
+    private static function nativeProxyOf(ContainerInterface $container, string $serviceId, string $typeHint): ?ReflectionClass
+    {
+        if (PHP_VERSION_ID < 80400 || !($container instanceof Container) || !class_exists($typeHint)) {
+            return null;
+        }
+
+        $binding = $container->binding($serviceId);
+        if ($binding === null || !$binding->createsExactly($typeHint)) {
+            return null;
+        }
+
+        $reflection = new ReflectionClass($typeHint);
+        if ($reflection->isFinal() || $reflection->isAbstract()) {
+            return null;
+        }
+        for ($class = $reflection; $class !== false; $class = $class->getParentClass()) {
+            if ($class->isInternal()) {
+                return null;
+            }
+        }
+
+        return $reflection;
     }
 
     /**
@@ -92,6 +133,7 @@ class LazyProxyFactory
         $implementsOrExtends = $reflection->isInterface() ? "implements $target" : "extends $target";
 
         $methodsCode = self::buildMethods($reflection);
+        $unsetCode = self::buildUnsetProperties($reflection);
 
         $namespace = self::PROXY_NAMESPACE;
 
@@ -109,7 +151,7 @@ class $className $implementsOrExtends
     public function __construct(callable \$factory)
     {
         \$this->__factory = Closure::fromCallable(\$factory);
-    }
+$unsetCode    }
 
     private function __getLazyInstance()
     {
@@ -156,6 +198,34 @@ class $className $implementsOrExtends
 $methodsCode
 }
 PHP;
+    }
+
+    /**
+     * The proxy class extends the class, so it has its own copies of the public properties, never set: a property
+     * read on the proxy would read them instead of reaching __get() (which reads the real instance). The constructor
+     * unsets them, in the scope of the class that declares them (a readonly property can be unset only there).
+     * Static properties and properties with hooks (PHP 8.4) cannot be unset.
+     */
+    private static function buildUnsetProperties(ReflectionClass $reflection): string
+    {
+        if ($reflection->isInterface()) {
+            return '';
+        }
+
+        $byClass = [];
+        foreach ($reflection->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+            if ($property->isStatic() || (PHP_VERSION_ID >= 80400 && $property->hasHooks())) {
+                continue;
+            }
+            $byClass[$property->getDeclaringClass()->getName()][] = $property->getName();
+        }
+
+        $code = '';
+        foreach ($byClass as $class => $names) {
+            $unset = implode(', ', array_map(fn(string $name) => "\$this->$name", $names));
+            $code .= "        Closure::bind(function () { unset($unset); }, \$this, \\$class::class)();\n";
+        }
+        return $code;
     }
 
     /**
