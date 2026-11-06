@@ -415,6 +415,15 @@ return [
 
 Because `LazyParam` still resolves through the container, the dependency is tracked normally, but it avoids the upfront instantiation cost that eager singletons would otherwise incur.
 
+**How the proxy is made.** On PHP 8.4+, when the dependency is a plain `DI::bind()` of exactly the type-hinted
+class, the proxy is a native lazy object (`ReflectionClass::newLazyProxy()`): an instance of that class, created
+for real on its first use. Otherwise (PHP 8.3, an interface, a binding of a subclass or with a factory method,
+`DI::use()`, a final class or one that extends an internal class) it is a proxy class generated with `eval()`.
+
+The native proxy costs nothing to create. A generated proxy class is compiled on every request (OPcache does not
+cache `eval()`), ~160 us the first time a type is proxied in a web request. Both read and write the public properties of
+the real instance.
+
 ## Autowiring a family of classes
 
 Some classes are *terminal* — nothing else depends on them. A REST controller is the

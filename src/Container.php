@@ -115,17 +115,10 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
     #[Override]
     public function get(string $id, mixed ...$args): mixed
     {
-        $value = $this->raw($id);
+        $value = $this->parsed($id);
 
         if ($value instanceof Param) {
             return $this->get($value->getParam());
-        }
-
-        if (is_string($value)) {
-            if (preg_match("/^!(?<parser>\w+)\s+(?<value>.*)$/", $value, $parsed)) {
-                $value = ParamParser::parse($parsed["parser"], $parsed["value"]);
-                $this->set($id, $value);
-            }
         }
 
         if ($value instanceof DependencyInjection) {
@@ -152,6 +145,39 @@ class Container implements ContainerInterface, ContainerInterfaceExtended
         }
 
         return call_user_func_array($value, $args);
+    }
+
+    /**
+     * The binding of an entry, without creating its instance: the DependencyInjection of a key bound with
+     * DI::bind() (read from the cache when the container comes from it); null for any other entry.
+     *
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     */
+    public function binding(string $id): ?DependencyInjection
+    {
+        if (!$this->has($id)) {
+            return null;
+        }
+        $value = $this->parsed($id);
+        return $value instanceof DependencyInjection ? $value : null;
+    }
+
+    /**
+     * The value of an entry, parsed: a "!parser value" string (a binding or a closure from the cache, a parsed
+     * parameter) becomes what it describes, kept for the next read
+     *
+     * @throws InvalidArgumentException
+     * @throws KeyNotFoundException
+     */
+    protected function parsed(string $id): mixed
+    {
+        $value = $this->raw($id);
+        if (is_string($value) && preg_match("/^!(?<parser>\w+)\s+(?<value>.*)$/", $value, $parsed)) {
+            $value = ParamParser::parse($parsed["parser"], $parsed["value"]);
+            $this->set($id, $value);
+        }
+        return $value;
     }
 
     protected function set(string $id, mixed $value): void

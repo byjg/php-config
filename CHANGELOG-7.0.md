@@ -5,6 +5,15 @@
 
 ## New Features
 
+### `LazyParam` uses native lazy objects on PHP 8.4+
+
+When the dependency is a plain `DI::bind()` of exactly the type-hinted class, the proxy is now a native lazy object
+(`ReflectionClass::newLazyProxy()`) instead of a class generated with `eval()`, which is compiled again on every web
+request (OPcache does not cache `eval()`): ~160 us per request in php-gluo, whose `ORMInitialization` eager singleton
+takes a `LazyParam`. The other cases (PHP 8.3, an interface, a binding of a subclass or with a factory method, whose
+real instance is not exactly the class) keep the generated proxy. The new `Container::binding($id)` gives the
+binding of an entry without creating it, read from the cache when the container comes from it.
+
 ### Autowiring a family of classes with `Autowire`
 
 Terminal classes — ones nothing else depends on, such as REST controllers — can now be
@@ -118,6 +127,12 @@ backed), so every reference to a case (or to `->name`) has to be updated.
 Not a plain change of casing: `KeyStatusEnum::STATIC` is now `KeyStatusEnum::Value`.
 
 ## Bug Fixes
+
+- **A `LazyParam` proxy reads the public properties of the real instance.** A proxy class generated with `eval()`
+  extends the type-hinted class, so it had its own copies of the public properties, never set: reading one through
+  the proxy threw "must not be accessed before initialization" (typed) or gave the default value (untyped), and a
+  write was lost. Its constructor now unsets them, so the access reaches the real instance. (A native lazy proxy,
+  on PHP 8.4+, never had it.)
 
 - `Container::keyStatus()` on a class matched by an `Autowire` rule but not resolved yet raised an
   "Undefined array key" warning and returned `Value`. It now returns `KeyStatusEnum::NotUsed`.
